@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,12 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShoppingCart, Plus, Clock, CheckCircle, XCircle, User, MapPin, CreditCard, Utensils, Coffee, Truck } from "lucide-react";
+import NewOrderForm from "./NewOrderForm";
 
 const POSOrders = () => {
   const [activeTab, setActiveTab] = useState("orders");
-
-  // Sample POS orders data
-  const orders = [
+  const [showNewOrderForm, setShowNewOrderForm] = useState(false);
+  const [orders, setOrders] = useState([
     {
       id: "POS-001",
       orderNumber: "ORD-2024-001",
@@ -73,7 +72,7 @@ const POSOrders = () => {
       paymentMethod: "Cash",
       waiter: "Grace Muthoni"
     }
-  ];
+  ]);
 
   const outlets = [
     { name: "Main Restaurant", icon: Utensils, orders: 45, revenue: 125000 },
@@ -81,6 +80,11 @@ const POSOrders = () => {
     { name: "Room Service", icon: Truck, orders: 22, revenue: 68000 },
     { name: "Bar & Lounge", icon: Coffee, orders: 35, revenue: 95000 }
   ];
+
+  const handleNewOrder = (newOrder: any) => {
+    setOrders([newOrder, ...orders]);
+    console.log("New order created:", newOrder);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,7 +113,10 @@ const POSOrders = () => {
           <h2 className="text-3xl font-bold text-slate-800">POS Orders Management</h2>
           <p className="text-slate-600">Manage restaurant, bar, and room service orders</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
+        <Button 
+          className="bg-gradient-to-r from-blue-600 to-indigo-600"
+          onClick={() => setShowNewOrderForm(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Order
         </Button>
@@ -130,7 +137,7 @@ const POSOrders = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Total Orders</p>
-                    <p className="text-2xl font-bold text-slate-800">156</p>
+                    <p className="text-2xl font-bold text-slate-800">{orders.length}</p>
                   </div>
                   <ShoppingCart className="h-8 w-8 text-blue-600" />
                 </div>
@@ -152,7 +159,7 @@ const POSOrders = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Preparing</p>
-                    <p className="text-2xl font-bold text-slate-800">8</p>
+                    <p className="text-2xl font-bold text-slate-800">{orders.filter(o => o.status === "Preparing").length}</p>
                   </div>
                   <Clock className="h-8 w-8 text-yellow-600" />
                 </div>
@@ -299,6 +306,14 @@ const POSOrders = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Order Form Modal */}
+      {showNewOrderForm && (
+        <NewOrderForm 
+          onClose={() => setShowNewOrderForm(false)}
+          onOrderCreated={handleNewOrder}
+        />
+      )}
     </div>
   );
 };
