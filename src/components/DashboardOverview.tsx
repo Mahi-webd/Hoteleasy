@@ -1,66 +1,84 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Users, Calendar, Home, CreditCard, TrendingUp, TrendingDown, MapPin, Clock } from "lucide-react";
-
 const DashboardOverview = () => {
-  const kpiData = [
-    {
-      title: "Occupancy Rate",
-      value: "87%",
-      change: "+5.2%",
-      trend: "up",
-      icon: Home,
-      color: "bg-blue-500"
-    },
-    {
-      title: "Revenue Today",
-      value: "KES 245,000",
-      change: "+12.3%",
-      trend: "up",
-      icon: CreditCard,
-      color: "bg-green-500"
-    },
-    {
-      title: "Total Guests",
-      value: "156",
-      change: "+8",
-      trend: "up",
-      icon: Users,
-      color: "bg-purple-500"
-    },
-    {
-      title: "Available Rooms",
-      value: "23",
-      change: "-3",
-      trend: "down",
-      icon: MapPin,
-      color: "bg-orange-500"
-    }
-  ];
-
-  const recentActivity = [
-    { time: "10:30 AM", event: "New check-in: John Doe - Room 205", type: "checkin" },
-    { time: "10:15 AM", event: "Payment received: KES 15,000 - Room 312", type: "payment" },
-    { time: "09:45 AM", event: "Housekeeping completed: Room 108", type: "housekeeping" },
-    { time: "09:30 AM", event: "New reservation: Sarah Johnson - 3 nights", type: "reservation" },
-    { time: "09:00 AM", event: "Check-out completed: Room 201", type: "checkout" }
-  ];
-
-  const todayArrivals = [
-    { name: "Michael Smith", room: "305", time: "2:00 PM", status: "Confirmed" },
-    { name: "Emma Wilson", room: "412", time: "3:30 PM", status: "Pending" },
-    { name: "David Brown", room: "208", time: "4:00 PM", status: "Confirmed" },
-    { name: "Lisa Davis", room: "156", time: "5:30 PM", status: "VIP" }
-  ];
-
-  return (
-    <div className="space-y-6">
+  const kpiData = [{
+    title: "Occupancy Rate",
+    value: "87%",
+    change: "+5.2%",
+    trend: "up",
+    icon: Home,
+    color: "bg-blue-500"
+  }, {
+    title: "Revenue Today",
+    value: "KES 245,000",
+    change: "+12.3%",
+    trend: "up",
+    icon: CreditCard,
+    color: "bg-green-500"
+  }, {
+    title: "Total Guests",
+    value: "156",
+    change: "+8",
+    trend: "up",
+    icon: Users,
+    color: "bg-purple-500"
+  }, {
+    title: "Available Rooms",
+    value: "23",
+    change: "-3",
+    trend: "down",
+    icon: MapPin,
+    color: "bg-orange-500"
+  }];
+  const recentActivity = [{
+    time: "10:30 AM",
+    event: "New check-in: John Doe - Room 205",
+    type: "checkin"
+  }, {
+    time: "10:15 AM",
+    event: "Payment received: KES 15,000 - Room 312",
+    type: "payment"
+  }, {
+    time: "09:45 AM",
+    event: "Housekeeping completed: Room 108",
+    type: "housekeeping"
+  }, {
+    time: "09:30 AM",
+    event: "New reservation: Sarah Johnson - 3 nights",
+    type: "reservation"
+  }, {
+    time: "09:00 AM",
+    event: "Check-out completed: Room 201",
+    type: "checkout"
+  }];
+  const todayArrivals = [{
+    name: "Michael Smith",
+    room: "305",
+    time: "2:00 PM",
+    status: "Confirmed"
+  }, {
+    name: "Emma Wilson",
+    room: "412",
+    time: "3:30 PM",
+    status: "Pending"
+  }, {
+    name: "David Brown",
+    room: "208",
+    time: "4:00 PM",
+    status: "Confirmed"
+  }, {
+    name: "Lisa Davis",
+    room: "156",
+    time: "5:30 PM",
+    status: "VIP"
+  }];
+  return <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
         <h2 className="text-2xl font-bold mb-2">Good Morning, Hotel Manager!</h2>
-        <p className="text-blue-100">Here's what's happening at Paradise Hotel today</p>
+        <p className="text-blue-100">Here's what's happening at Olsupat lodge today</p>
         <div className="flex items-center mt-4 space-x-4 text-sm">
           <div className="flex items-center">
             <Calendar className="mr-1 h-4 w-4" />
@@ -75,8 +93,7 @@ const DashboardOverview = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpiData.map((kpi, index) => (
-          <Card key={index} className="relative overflow-hidden bg-white/70 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
+        {kpiData.map((kpi, index) => <Card key={index} className="relative overflow-hidden bg-white/70 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">{kpi.title}</CardTitle>
               <div className={`${kpi.color} p-2 rounded-lg`}>
@@ -86,19 +103,14 @@ const DashboardOverview = () => {
             <CardContent>
               <div className="text-2xl font-bold text-slate-800 mb-1">{kpi.value}</div>
               <div className="flex items-center text-sm">
-                {kpi.trend === "up" ? (
-                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                )}
+                {kpi.trend === "up" ? <TrendingUp className="mr-1 h-3 w-3 text-green-500" /> : <TrendingDown className="mr-1 h-3 w-3 text-red-500" />}
                 <span className={kpi.trend === "up" ? "text-green-600" : "text-red-600"}>
                   {kpi.change}
                 </span>
                 <span className="text-slate-500 ml-1">from yesterday</span>
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -113,20 +125,15 @@ const DashboardOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {todayArrivals.map((arrival, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              {todayArrivals.map((arrival, index) => <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div>
                     <p className="font-medium text-slate-800">{arrival.name}</p>
                     <p className="text-sm text-slate-600">Room {arrival.room} • {arrival.time}</p>
                   </div>
-                  <Badge variant={
-                    arrival.status === "VIP" ? "default" :
-                    arrival.status === "Confirmed" ? "secondary" : "outline"
-                  }>
+                  <Badge variant={arrival.status === "VIP" ? "default" : arrival.status === "Confirmed" ? "secondary" : "outline"}>
                     {arrival.status}
                   </Badge>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -142,20 +149,13 @@ const DashboardOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.type === "checkin" ? "bg-blue-500" :
-                    activity.type === "payment" ? "bg-green-500" :
-                    activity.type === "housekeeping" ? "bg-purple-500" :
-                    activity.type === "reservation" ? "bg-orange-500" : "bg-red-500"
-                  }`} />
+              {recentActivity.map((activity, index) => <div key={index} className="flex items-start space-x-3">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${activity.type === "checkin" ? "bg-blue-500" : activity.type === "payment" ? "bg-green-500" : activity.type === "housekeeping" ? "bg-purple-500" : activity.type === "reservation" ? "bg-orange-500" : "bg-red-500"}`} />
                   <div className="flex-1">
                     <p className="text-sm text-slate-800">{activity.event}</p>
                     <p className="text-xs text-slate-500">{activity.time}</p>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -195,8 +195,6 @@ const DashboardOverview = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default DashboardOverview;
