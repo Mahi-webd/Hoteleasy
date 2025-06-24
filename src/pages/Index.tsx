@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
 import RoomManagement from "@/components/RoomManagement";
 import GuestManagement from "@/components/GuestManagement";
@@ -20,17 +20,17 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header Navigation */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
               <Home className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Paradise Hotel</h1>
-              <p className="text-sm text-slate-600">Enterprise Management System</p>
+              <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Paradise Hotel</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Enterprise Management System</p>
             </div>
           </div>
           
@@ -39,9 +39,10 @@ const Index = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
               <Input 
                 placeholder="Search guests, rooms, bookings..." 
-                className="pl-10 w-64 bg-white/50 border-slate-200"
+                className="pl-10 w-64 bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600"
               />
             </div>
+            <ThemeToggle />
             <Button variant="ghost" size="sm">
               <Bell className="h-4 w-4" />
             </Button>
@@ -59,7 +60,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="flex">
         {/* Sidebar Navigation */}
-        <aside className="w-64 bg-white/60 backdrop-blur-sm border-r border-slate-200 min-h-screen p-4">
+        <aside className="w-64 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-r border-slate-200 dark:border-slate-700 min-h-screen p-4">
           <nav className="space-y-2">
             <Button
               variant={activeTab === "dashboard" ? "default" : "ghost"}
