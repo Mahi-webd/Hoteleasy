@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard } from "lucide-react";
+import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3 } from "lucide-react";
 import DashboardOverview from "@/components/DashboardOverview";
 import RoomManagement from "@/components/RoomManagement";
 import GuestManagement from "@/components/GuestManagement";
 import ReservationSystem from "@/components/ReservationSystem";
 import BillingSystem from "@/components/BillingSystem";
+import POSOrders from "@/components/POSOrders";
+import MISReports from "@/components/MISReports";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -99,6 +101,22 @@ const Index = () => {
               <CreditCard className="mr-2 h-4 w-4" />
               Billing & Payments
             </Button>
+            <Button
+              variant={activeTab === "pos" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveTab("pos")}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              POS Orders
+            </Button>
+            <Button
+              variant={activeTab === "reports" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveTab("reports")}
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              MIS Reports
+            </Button>
           </nav>
         </aside>
 
@@ -119,6 +137,12 @@ const Index = () => {
             </TabsContent>
             <TabsContent value="billing">
               <BillingSystem />
+            </TabsContent>
+            <TabsContent value="pos">
+              <POSOrders />
+            </TabsContent>
+            <TabsContent value="reports">
+              <MISReports />
             </TabsContent>
           </Tabs>
         </main>
