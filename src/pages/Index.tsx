@@ -15,12 +15,9 @@ import ReservationSystem from "@/components/ReservationSystem";
 import BillingSystem from "@/components/BillingSystem";
 import POSOrders from "@/components/POSOrders";
 import MISReports from "@/components/MISReports";
-
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header Navigation */}
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -29,7 +26,7 @@ const Index = () => {
               <Home className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Paradise Hotel</h1>
+              <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Olsupat Lodge</h1>
               <p className="text-sm text-slate-600 dark:text-slate-400">Enterprise Management System</p>
             </div>
           </div>
@@ -37,10 +34,7 @@ const Index = () => {
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-              <Input 
-                placeholder="Search guests, rooms, bookings..." 
-                className="pl-10 w-64 bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600"
-              />
+              <Input placeholder="Search guests, rooms, bookings..." className="pl-10 w-64 bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600" />
             </div>
             <ThemeToggle />
             <Button variant="ghost" size="sm">
@@ -62,59 +56,31 @@ const Index = () => {
         {/* Sidebar Navigation */}
         <aside className="w-64 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border-r border-slate-200 dark:border-slate-700 min-h-screen p-4">
           <nav className="space-y-2">
-            <Button
-              variant={activeTab === "dashboard" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("dashboard")}
-            >
+            <Button variant={activeTab === "dashboard" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("dashboard")}>
               <Home className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
-            <Button
-              variant={activeTab === "rooms" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("rooms")}
-            >
+            <Button variant={activeTab === "rooms" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("rooms")}>
               <MapPin className="mr-2 h-4 w-4" />
               Room Management
             </Button>
-            <Button
-              variant={activeTab === "guests" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("guests")}
-            >
+            <Button variant={activeTab === "guests" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("guests")}>
               <Users className="mr-2 h-4 w-4" />
               Guest Management
             </Button>
-            <Button
-              variant={activeTab === "reservations" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("reservations")}
-            >
+            <Button variant={activeTab === "reservations" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("reservations")}>
               <Calendar className="mr-2 h-4 w-4" />
               Reservations
             </Button>
-            <Button
-              variant={activeTab === "billing" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("billing")}
-            >
+            <Button variant={activeTab === "billing" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("billing")}>
               <CreditCard className="mr-2 h-4 w-4" />
               Billing & Payments
             </Button>
-            <Button
-              variant={activeTab === "pos" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("pos")}
-            >
+            <Button variant={activeTab === "pos" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("pos")}>
               <ShoppingCart className="mr-2 h-4 w-4" />
               POS Orders
             </Button>
-            <Button
-              variant={activeTab === "reports" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveTab("reports")}
-            >
+            <Button variant={activeTab === "reports" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("reports")}>
               <BarChart3 className="mr-2 h-4 w-4" />
               MIS Reports
             </Button>
@@ -148,8 +114,6 @@ const Index = () => {
           </Tabs>
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
