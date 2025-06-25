@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, User, Settings, Plus, Search, Filter, Users, Wrench, Broom, CheckCircle } from "lucide-react";
+import { Home, User, Settings, Plus, Search, Filter, Users, Wrench, Brush, CheckCircle } from "lucide-react";
 
 const EnhancedRoomManagement = () => {
   const [selectedFloor, setSelectedFloor] = useState("all");
@@ -158,7 +157,7 @@ const EnhancedRoomManagement = () => {
                     type="number"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
-                        addNewFloor(e.target.value);
+                        addNewFloor((e.target as HTMLInputElement).value);
                       }
                     }}
                   />
@@ -417,7 +416,7 @@ const EnhancedRoomManagement = () => {
                   }}
                   className="flex items-center justify-center"
                 >
-                  <Broom className="mr-2 h-4 w-4" />
+                  <Brush className="mr-2 h-4 w-4" />
                   Cleaning
                 </Button>
                 <Button 
