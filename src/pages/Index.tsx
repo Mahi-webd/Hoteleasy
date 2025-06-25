@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
-import RoomManagement from "@/components/RoomManagement";
+import EnhancedRoomManagement from "@/components/EnhancedRoomManagement";
 import GuestManagement from "@/components/GuestManagement";
 import ReservationSystem from "@/components/ReservationSystem";
 import BillingSystem from "@/components/BillingSystem";
@@ -100,7 +101,7 @@ const Index = () => {
               <DashboardOverview />
             </TabsContent>
             <TabsContent value="rooms">
-              <RoomManagement />
+              <EnhancedRoomManagement />
             </TabsContent>
             <TabsContent value="guests">
               <GuestManagement />
