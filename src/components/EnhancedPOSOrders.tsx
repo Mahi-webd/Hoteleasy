@@ -314,7 +314,7 @@ const EnhancedPOSOrders = () => {
                                 </div>
                               </div>
                             </CardContent>
-                          </div>
+                          </Card>
                         ))}
                       </TabsContent>
                     ))}
