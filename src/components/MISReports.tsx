@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, TrendingUp, FileText, Download, Calendar, DollarSign, Users, Home, PieChart, LineChart } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart as RechartsLineChart, Line, PieChart as RechartsPieChart, Cell, AreaChart, Area } from "recharts";
+import Chart3DPie from "./Chart3DPie";
 
 const MISReports = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -184,9 +185,9 @@ const MISReports = () => {
             ))}
           </div>
 
-          {/* Fixed Charts Section with proper sizing */}
+          {/* Charts Section with 3D Pie Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Trend - Fixed container */}
+            {/* Revenue Trend */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -195,7 +196,7 @@ const MISReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-64">
+                <div className="w-full" style={{ height: '300px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsLineChart data={revenueData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -209,27 +210,16 @@ const MISReports = () => {
               </CardContent>
             </Card>
 
-            {/* Department Revenue - Fixed container */}
+            {/* 3D Department Revenue */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <PieChart className="mr-2 h-5 w-5 text-green-600" />
-                  Revenue by Department
+                  3D Revenue by Department
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <ChartTooltip />
-                      <RechartsPieChart data={departmentData} cx="50%" cy="50%" outerRadius={80}>
-                        {departmentData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </RechartsPieChart>
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
+                <Chart3DPie data={departmentData} />
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   {departmentData.map((dept, index) => (
                     <div key={index} className="flex items-center space-x-2">
@@ -244,7 +234,7 @@ const MISReports = () => {
               </CardContent>
             </Card>
 
-            {/* Occupancy Analysis - Fixed container */}
+            {/* Occupancy Analysis */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -253,7 +243,7 @@ const MISReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-64">
+                <div className="w-full" style={{ height: '300px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={occupancyData}>
                       <CartesianGrid strokeDasharray="3 3" />

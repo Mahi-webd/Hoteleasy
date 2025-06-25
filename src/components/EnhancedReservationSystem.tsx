@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,303 +7,206 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, Users, MapPin, Phone, Mail, CreditCard, Search, Plus, CheckCircle, XCircle, Edit } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Search, User, MapPin, Clock, CheckCircle, AlertCircle, Edit, Eye } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 
 const EnhancedReservationSystem = () => {
+  const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [checkInDate, setCheckInDate] = useState<Date>();
-  const [checkOutDate, setCheckOutDate] = useState<Date>();
-  const [reservations, setReservations] = useState([
+  const [selectedReservation, setSelectedReservation] = useState<any>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const reservations = [
     {
       id: "RES001",
-      guestName: "Alice Johnson",
-      email: "alice.johnson@email.com",
-      phone: "+254 700 111 222",
-      roomType: "Deluxe Double",
-      roomNumber: "205",
+      guestName: "John Doe",
+      email: "john.doe@email.com",
+      phone: "+254 700 123 456",
+      roomNumber: "101",
+      roomType: "Deluxe Suite",
       checkIn: "2025-06-25",
       checkOut: "2025-06-28",
+      guests: 2,
       nights: 3,
-      adults: 2,
-      children: 0,
-      status: "Confirmed",
       totalAmount: "KES 45,000",
-      paymentStatus: "Paid",
+      status: "Confirmed",
       bookingDate: "2025-06-20",
-      source: "Direct"
+      specialRequests: "Late checkout, ocean view",
+      paymentStatus: "Paid"
     },
     {
       id: "RES002",
-      guestName: "Robert Smith",
-      email: "robert.smith@email.com",
-      phone: "+254 700 333 444",
-      roomType: "Suite",
-      roomNumber: "301",
+      guestName: "Jane Smith",
+      email: "jane.smith@email.com",
+      phone: "+254 700 234 567",
+      roomNumber: "205",
+      roomType: "Standard Room",
       checkIn: "2025-06-26",
-      checkOut: "2025-06-30",
-      nights: 4,
-      adults: 2,
-      children: 1,
+      checkOut: "2025-06-29",
+      guests: 1,
+      nights: 3,
+      totalAmount: "KES 27,000",
       status: "Pending",
-      totalAmount: "KES 100,000",
-      paymentStatus: "Pending",
       bookingDate: "2025-06-22",
-      source: "Booking.com"
+      specialRequests: "Ground floor room",
+      paymentStatus: "Pending"
     },
     {
       id: "RES003",
-      guestName: "Maria Garcia",
-      email: "maria.garcia@email.com",
-      phone: "+254 700 555 666",
-      roomType: "Standard Single",
-      roomNumber: "102",
+      guestName: "Mike Johnson",
+      email: "mike.johnson@email.com",
+      phone: "+254 700 345 678",
+      roomNumber: "301",
+      roomType: "Executive Suite",
       checkIn: "2025-06-24",
-      checkOut: "2025-06-26",
-      nights: 2,
-      adults: 1,
-      children: 0,
+      checkOut: "2025-06-27",
+      guests: 2,
+      nights: 3,
+      totalAmount: "KES 60,000",
       status: "Checked In",
-      totalAmount: "KES 16,000",
-      paymentStatus: "Paid",
       bookingDate: "2025-06-18",
-      source: "Phone"
-    },
-    {
-      id: "RES004",
-      guestName: "David Wilson",
-      email: "david.wilson@email.com",
-      phone: "+254 700 777 888",
-      roomType: "Presidential Suite",
-      roomNumber: "401",
-      checkIn: "2025-06-27",
-      checkOut: "2025-07-02",
-      nights: 5,
-      adults: 2,
-      children: 2,
-      status: "Confirmed",
-      totalAmount: "KES 225,000",
-      paymentStatus: "Deposit Paid",
-      bookingDate: "2025-06-15",
-      source: "Travel Agent"
+      specialRequests: "Extra towels, minibar stocked",
+      paymentStatus: "Paid"
     }
-  ]);
+  ];
+
+  const filteredReservations = reservations.filter(reservation => {
+    const matchesSearch = reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reservation.roomNumber.includes(searchTerm) ||
+                         reservation.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === "all") return matchesSearch;
+    return matchesSearch && reservation.status.toLowerCase().replace(" ", "-") === activeTab;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Confirmed": return "bg-green-100 text-green-800";
+      case "Confirmed": return "bg-blue-100 text-blue-800";
       case "Pending": return "bg-yellow-100 text-yellow-800";
-      case "Checked In": return "bg-blue-100 text-blue-800";
+      case "Checked In": return "bg-green-100 text-green-800";
       case "Checked Out": return "bg-gray-100 text-gray-800";
       case "Cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "Paid": return "bg-green-100 text-green-800";
-      case "Pending": return "bg-yellow-100 text-yellow-800";
-      case "Deposit Paid": return "bg-blue-100 text-blue-800";
-      case "Overdue": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+  const handleCheckIn = (reservation: any) => {
+    console.log("Checking in guest:", reservation.guestName);
+    // In a real app, this would update the reservation status
+    alert(`Checking in ${reservation.guestName} to room ${reservation.roomNumber}`);
+  };
+
+  const handleViewDetails = (reservation: any) => {
+    console.log("Viewing details for reservation:", reservation.id);
+    setSelectedReservation(reservation);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handleEdit = (reservation: any) => {
+    console.log("Editing reservation:", reservation.id);
+    setSelectedReservation(reservation);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCancel = (reservation: any) => {
+    console.log("Cancelling reservation:", reservation.id);
+    if (confirm(`Are you sure you want to cancel reservation ${reservation.id}?`)) {
+      alert(`Reservation ${reservation.id} has been cancelled`);
     }
   };
-
-  const handleCheckIn = (reservationId: string) => {
-    setReservations(prev => 
-      prev.map(res => 
-        res.id === reservationId 
-          ? { ...res, status: "Checked In" }
-          : res
-      )
-    );
-  };
-
-  const handleConfirm = (reservationId: string) => {
-    setReservations(prev => 
-      prev.map(res => 
-        res.id === reservationId 
-          ? { ...res, status: "Confirmed", paymentStatus: "Paid" }
-          : res
-      )
-    );
-  };
-
-  const filteredReservations = reservations.filter(reservation =>
-    reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reservation.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reservation.roomNumber.includes(searchTerm)
-  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800">Reservations</h2>
-          <p className="text-slate-600">Manage bookings, check-ins, and guest reservations</p>
+          <h2 className="text-3xl font-bold text-slate-800">Reservation Management</h2>
+          <p className="text-slate-600">Manage room bookings and guest reservations</p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
               <Plus className="mr-2 h-4 w-4" />
               New Reservation
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create New Reservation</DialogTitle>
-              <DialogDescription>Add a new booking to the system</DialogDescription>
+              <DialogDescription>Book a new room for a guest</DialogDescription>
             </DialogHeader>
-            
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-slate-800">Guest Information</h3>
-                <div>
-                  <Label htmlFor="guestName">Guest Name</Label>
-                  <Input id="guestName" placeholder="John Doe" />
-                </div>
-                <div>
-                  <Label htmlFor="guestEmail">Email</Label>
-                  <Input id="guestEmail" type="email" placeholder="john@email.com" />
-                </div>
-                <div>
-                  <Label htmlFor="guestPhone">Phone</Label>
-                  <Input id="guestPhone" placeholder="+254 700 123 456" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="adults">Adults</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="1" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 Adult</SelectItem>
-                        <SelectItem value="2">2 Adults</SelectItem>
-                        <SelectItem value="3">3 Adults</SelectItem>
-                        <SelectItem value="4">4 Adults</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="children">Children</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="0" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0 Children</SelectItem>
-                        <SelectItem value="1">1 Child</SelectItem>
-                        <SelectItem value="2">2 Children</SelectItem>
-                        <SelectItem value="3">3 Children</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="guestName">Guest Name</Label>
+                <Input id="guestName" placeholder="John Doe" />
               </div>
-              <div className="space-y-4">
-                <h3 className="font-semibold text-slate-800">Booking Details</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label>Check-in Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !checkInDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {checkInDate ? format(checkInDate, "PPP") : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={checkInDate}
-                          onSelect={setCheckInDate}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label>Check-out Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !checkOutDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {checkOutDate ? format(checkOutDate, "PPP") : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={checkOutDate}
-                          onSelect={setCheckOutDate}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="roomType">Room Type</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard-single">Standard Single - KES 8,000</SelectItem>
-                      <SelectItem value="standard-double">Standard Double - KES 12,000</SelectItem>
-                      <SelectItem value="deluxe-double">Deluxe Double - KES 15,000</SelectItem>
-                      <SelectItem value="suite">Suite - KES 25,000</SelectItem>
-                      <SelectItem value="presidential">Presidential Suite - KES 45,000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="bookingSource">Booking Source</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="direct">Direct</SelectItem>
-                      <SelectItem value="phone">Phone</SelectItem>
-                      <SelectItem value="booking.com">Booking.com</SelectItem>
-                      <SelectItem value="expedia">Expedia</SelectItem>
-                      <SelectItem value="travel-agent">Travel Agent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="specialRequests">Special Requests</Label>
-                  <Textarea id="specialRequests" placeholder="Any special requests or notes" />
-                </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="john@email.com" />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" placeholder="+254 700 123 456" />
+              </div>
+              <div>
+                <Label htmlFor="guests">Number of Guests</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select guests" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 Guest</SelectItem>
+                    <SelectItem value="2">2 Guests</SelectItem>
+                    <SelectItem value="3">3 Guests</SelectItem>
+                    <SelectItem value="4">4 Guests</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="checkIn">Check-in Date</Label>
+                <Input id="checkIn" type="date" />
+              </div>
+              <div>
+                <Label htmlFor="checkOut">Check-out Date</Label>
+                <Input id="checkOut" type="date" />
+              </div>
+              <div>
+                <Label htmlFor="roomType">Room Type</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard Room</SelectItem>
+                    <SelectItem value="deluxe">Deluxe Suite</SelectItem>
+                    <SelectItem value="executive">Executive Suite</SelectItem>
+                    <SelectItem value="presidential">Presidential Suite</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="roomNumber">Room Number</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="101">Room 101</SelectItem>
+                    <SelectItem value="102">Room 102</SelectItem>
+                    <SelectItem value="201">Room 201</SelectItem>
+                    <SelectItem value="202">Room 202</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="specialRequests">Special Requests</Label>
+                <Textarea id="specialRequests" placeholder="Any special requests or notes..." />
               </div>
             </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="outline">Save as Draft</Button>
-              <Button className="bg-green-600 hover:bg-green-700">Confirm Reservation</Button>
-            </div>
+            <Button className="w-full mt-4">Create Reservation</Button>
           </DialogContent>
         </Dialog>
       </div>
@@ -310,221 +214,106 @@ const EnhancedReservationSystem = () => {
       {/* Search and Filters */}
       <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center space-x-2 flex-1">
-              <Search className="h-4 w-4 text-slate-500" />
-              <Input
-                placeholder="Search reservations by guest name, ID, email, or room..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-            </div>
-            <Select>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="checkedIn">Checked In</SelectItem>
-                <SelectItem value="checkedOut">Checked Out</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center space-x-4 mb-4">
+            <Search className="h-4 w-4 text-slate-500" />
+            <Input
+              placeholder="Search by guest name, email, room number, or reservation ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
           </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="all">All Reservations</TabsTrigger>
+              <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="checked-in">Checked In</TabsTrigger>
+              <TabsTrigger value="checked-out">Checked Out</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardContent>
       </Card>
 
       {/* Reservations List */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         {filteredReservations.map((reservation) => (
           <Card key={reservation.id} className="bg-white/70 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Guest Info */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-slate-500" />
-                    <span className="font-semibold text-slate-800">{reservation.guestName}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <MapPin className="h-6 w-6 text-blue-600" />
                   </div>
-                  <div className="text-sm text-slate-600 space-y-1">
-                    <div>{reservation.email}</div>
-                    <div>{reservation.phone}</div>
-                    <div className="flex items-center">
-                      <span className="text-xs bg-slate-100 px-2 py-1 rounded">
-                        {reservation.id}
+                  <div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="text-lg font-bold text-slate-800">{reservation.guestName}</h3>
+                      <Badge className={getStatusColor(reservation.status)}>
+                        {reservation.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-2">
+                      Reservation ID: {reservation.id} • Room {reservation.roomNumber} ({reservation.roomType})
+                    </p>
+                    <div className="flex items-center space-x-4 text-sm text-slate-600">
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{reservation.checkIn} - {reservation.checkOut}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Users className="h-4 w-4" />
+                        <span>{reservation.guests} guests</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{reservation.nights} nights</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <div className="text-right mr-4">
+                    <p className="text-lg font-bold text-slate-800">{reservation.totalAmount}</p>
+                    <p className="text-sm text-slate-600">
+                      Payment: <span className={reservation.paymentStatus === 'Paid' ? 'text-green-600' : 'text-yellow-600'}>
+                        {reservation.paymentStatus}
                       </span>
-                    </div>
+                    </p>
                   </div>
-                </div>
-
-                {/* Booking Details */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-slate-500" />
-                    <span className="font-semibold text-slate-800">
-                      {reservation.roomType} - Room {reservation.roomNumber}
-                    </span>
-                  </div>
-                  <div className="text-sm text-slate-600 space-y-1">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{reservation.checkIn} - {reservation.checkOut}</span>
-                    </div>
-                    <div>{reservation.nights} nights • {reservation.adults} adults • {reservation.children} children</div>
-                    <div>Source: {reservation.source}</div>
-                  </div>
-                </div>
-
-                {/* Status & Payment */}
-                <div className="space-y-2">
-                  <div className="flex flex-col space-y-2">
-                    <Badge className={getStatusColor(reservation.status)}>
-                      {reservation.status}
-                    </Badge>
-                    <Badge className={getPaymentStatusColor(reservation.paymentStatus)}>
-                      {reservation.paymentStatus}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <div className="font-semibold text-slate-800">{reservation.totalAmount}</div>
-                    <div>Booked: {reservation.bookingDate}</div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-col space-y-2">
-                  {reservation.status === "Confirmed" && (
-                    <Button 
-                      size="sm" 
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleCheckIn(reservation.id)}
-                    >
-                      <CheckCircle className="mr-1 h-3 w-3" />
-                      Check In
-                    </Button>
-                  )}
-                  {reservation.status === "Pending" && (
-                    <Button 
-                      size="sm" 
-                      className="bg-blue-600 hover:bg-blue-700"
-                      onClick={() => handleConfirm(reservation.id)}
-                    >
-                      <AlertCircle className="mr-1 h-3 w-3" />
-                      Confirm
-                    </Button>
-                  )}
                   
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Eye className="mr-1 h-3 w-3" />
-                        View Details
+                  <div className="flex space-x-2">
+                    {reservation.status === "Confirmed" && (
+                      <Button size="sm" onClick={() => handleCheckIn(reservation)}>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Check In
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
-                      <DialogHeader>
-                        <DialogTitle>Reservation Details - {reservation.id}</DialogTitle>
-                        <DialogDescription>Complete information for this reservation</DialogDescription>
-                      </DialogHeader>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-lg">Guest Information</h3>
-                          <div className="space-y-2 text-sm">
-                            <div><strong>Name:</strong> {reservation.guestName}</div>
-                            <div><strong>Email:</strong> {reservation.email}</div>
-                            <div><strong>Phone:</strong> {reservation.phone}</div>
-                            <div><strong>Adults:</strong> {reservation.adults}</div>
-                            <div><strong>Children:</strong> {reservation.children}</div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-lg">Booking Information</h3>
-                          <div className="space-y-2 text-sm">
-                            <div><strong>Room:</strong> {reservation.roomType} - {reservation.roomNumber}</div>
-                            <div><strong>Check-in:</strong> {reservation.checkIn}</div>
-                            <div><strong>Check-out:</strong> {reservation.checkOut}</div>
-                            <div><strong>Duration:</strong> {reservation.nights} nights</div>
-                            <div><strong>Total Amount:</strong> {reservation.totalAmount}</div>
-                            <div><strong>Source:</strong> {reservation.source}</div>
-                            <div><strong>Booking Date:</strong> {reservation.bookingDate}</div>
-                            <div><strong>Status:</strong> <Badge className={getStatusColor(reservation.status)}>{reservation.status}</Badge></div>
-                            <div><strong>Payment:</strong> <Badge className={getPaymentStatusColor(reservation.paymentStatus)}>{reservation.paymentStatus}</Badge></div>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="text-slate-600">
-                        <Edit className="mr-1 h-3 w-3" />
-                        Edit
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewDetails(reservation)}
+                    >
+                      View Details
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEdit(reservation)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {reservation.status !== "Checked Out" && reservation.status !== "Cancelled" && (
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleCancel(reservation)}
+                      >
+                        <XCircle className="h-4 w-4" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                      <DialogHeader>
-                        <DialogTitle>Edit Reservation - {reservation.id}</DialogTitle>
-                        <DialogDescription>Modify reservation details</DialogDescription>
-                      </DialogHeader>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-slate-800">Guest Information</h3>
-                          <div>
-                            <Label htmlFor="editGuestName">Guest Name</Label>
-                            <Input id="editGuestName" defaultValue={reservation.guestName} />
-                          </div>
-                          <div>
-                            <Label htmlFor="editGuestEmail">Email</Label>
-                            <Input id="editGuestEmail" defaultValue={reservation.email} />
-                          </div>
-                          <div>
-                            <Label htmlFor="editGuestPhone">Phone</Label>
-                            <Input id="editGuestPhone" defaultValue={reservation.phone} />
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-slate-800">Booking Details</h3>
-                          <div>
-                            <Label htmlFor="editRoomType">Room Type</Label>
-                            <Select defaultValue={reservation.roomType.toLowerCase().replace(' ', '-')}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="standard-single">Standard Single</SelectItem>
-                                <SelectItem value="standard-double">Standard Double</SelectItem>
-                                <SelectItem value="deluxe-double">Deluxe Double</SelectItem>
-                                <SelectItem value="suite">Suite</SelectItem>
-                                <SelectItem value="presidential-suite">Presidential Suite</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="editStatus">Status</Label>
-                            <Select defaultValue={reservation.status.toLowerCase().replace(' ', '')}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="checkedin">Checked In</SelectItem>
-                                <SelectItem value="checkedout">Checked Out</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2 mt-6">
-                        <Button variant="outline">Cancel</Button>
-                        <Button>Save Changes</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -532,7 +321,121 @@ const EnhancedReservationSystem = () => {
         ))}
       </div>
 
-      {/* Quick Stats */}
+      {/* Reservation Details Dialog */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          {selectedReservation && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Reservation Details - {selectedReservation.id}</DialogTitle>
+                <DialogDescription>Complete reservation information</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Guest Information</h3>
+                  <div className="space-y-2">
+                    <div><strong>Name:</strong> {selectedReservation.guestName}</div>
+                    <div><strong>Email:</strong> {selectedReservation.email}</div>
+                    <div><strong>Phone:</strong> {selectedReservation.phone}</div>
+                    <div><strong>Guests:</strong> {selectedReservation.guests}</div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Booking Details</h3>
+                  <div className="space-y-2">
+                    <div><strong>Room:</strong> {selectedReservation.roomNumber} ({selectedReservation.roomType})</div>
+                    <div><strong>Check-in:</strong> {selectedReservation.checkIn}</div>
+                    <div><strong>Check-out:</strong> {selectedReservation.checkOut}</div>
+                    <div><strong>Nights:</strong> {selectedReservation.nights}</div>
+                    <div><strong>Total Amount:</strong> {selectedReservation.totalAmount}</div>
+                    <div><strong>Payment Status:</strong> 
+                      <Badge className={selectedReservation.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800 ml-2' : 'bg-yellow-100 text-yellow-800 ml-2'}>
+                        {selectedReservation.paymentStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <h3 className="font-semibold text-lg">Special Requests</h3>
+                  <p className="text-sm text-slate-600 mt-2">{selectedReservation.specialRequests}</p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>Close</Button>
+                <Button onClick={() => handleEdit(selectedReservation)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Reservation
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Reservation Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          {selectedReservation && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Edit Reservation - {selectedReservation.id}</DialogTitle>
+                <DialogDescription>Modify reservation details</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editGuestName">Guest Name</Label>
+                  <Input id="editGuestName" defaultValue={selectedReservation.guestName} />
+                </div>
+                <div>
+                  <Label htmlFor="editEmail">Email</Label>
+                  <Input id="editEmail" type="email" defaultValue={selectedReservation.email} />
+                </div>
+                <div>
+                  <Label htmlFor="editPhone">Phone</Label>
+                  <Input id="editPhone" defaultValue={selectedReservation.phone} />
+                </div>
+                <div>
+                  <Label htmlFor="editGuests">Number of Guests</Label>
+                  <Select defaultValue={selectedReservation.guests.toString()}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Guest</SelectItem>
+                      <SelectItem value="2">2 Guests</SelectItem>
+                      <SelectItem value="3">3 Guests</SelectItem>
+                      <SelectItem value="4">4 Guests</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="editCheckIn">Check-in Date</Label>
+                  <Input id="editCheckIn" type="date" defaultValue={selectedReservation.checkIn} />
+                </div>
+                <div>
+                  <Label htmlFor="editCheckOut">Check-out Date</Label>
+                  <Input id="editCheckOut" type="date" defaultValue={selectedReservation.checkOut} />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="editSpecialRequests">Special Requests</Label>
+                  <Textarea id="editSpecialRequests" defaultValue={selectedReservation.specialRequests} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button onClick={() => {
+                  alert('Reservation updated successfully!');
+                  setIsEditDialogOpen(false);
+                }}>
+                  Save Changes
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-4 text-center">
@@ -561,7 +464,7 @@ const EnhancedReservationSystem = () => {
             <div className="text-2xl font-bold">
               {reservations.filter(r => r.status === "Checked In").length}
             </div>
-            <div className="text-sm opacity-90">In-House</div>
+            <div className="text-sm opacity-90">Checked In</div>
           </CardContent>
         </Card>
       </div>
