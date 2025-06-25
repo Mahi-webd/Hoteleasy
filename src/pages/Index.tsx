@@ -12,9 +12,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
 import EnhancedRoomManagement from "@/components/EnhancedRoomManagement";
 import GuestManagement from "@/components/GuestManagement";
-import ReservationSystem from "@/components/ReservationSystem";
-import BillingSystem from "@/components/BillingSystem";
-import POSOrders from "@/components/POSOrders";
+import EnhancedReservationSystem from "@/components/EnhancedReservationSystem";
+import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
+import EnhancedPOSOrders from "@/components/EnhancedPOSOrders";
 import MISReports from "@/components/MISReports";
 
 const Index = () => {
@@ -107,13 +107,13 @@ const Index = () => {
               <GuestManagement />
             </TabsContent>
             <TabsContent value="reservations">
-              <ReservationSystem />
+              <EnhancedReservationSystem />
             </TabsContent>
             <TabsContent value="billing">
-              <BillingSystem />
+              <EnhancedBillingSystem />
             </TabsContent>
             <TabsContent value="pos">
-              <POSOrders />
+              <EnhancedPOSOrders />
             </TabsContent>
             <TabsContent value="reports">
               <MISReports />

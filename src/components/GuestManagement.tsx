@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Plus, Search, Phone, Mail, MapPin, Calendar, Star, CreditCard } from "lucide-react";
+import { User, Plus, Search, Phone, Mail, MapPin, Calendar, Star, CreditCard, MessageCircle } from "lucide-react";
 
 const GuestManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,6 +100,13 @@ const GuestManagement = () => {
       case "Reserved": return "bg-yellow-100 text-yellow-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleContact = (guest: any) => {
+    // Create a mailto link or WhatsApp link
+    const subject = `Hello ${guest.name}`;
+    const body = `Dear ${guest.name},\n\nWe hope you're enjoying your stay at Olsupat Lodge.\n\nBest regards,\nOlsupat Lodge Team`;
+    window.open(`mailto:${guest.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   return (
@@ -253,10 +259,69 @@ const GuestManagement = () => {
               </div>
 
               <div className="flex space-x-2 pt-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  View Profile
-                </Button>
-                <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="flex-1">
+                      View Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Avatar>
+                          <AvatarImage src={`/api/placeholder/40/40`} />
+                          <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                            {guest.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        {guest.name}
+                        {guest.vip && <Star className="h-5 w-5 text-yellow-500 fill-current" />}
+                      </DialogTitle>
+                      <DialogDescription>Complete guest profile and history</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Personal Information</h3>
+                        <div className="space-y-2">
+                          <div><strong>Email:</strong> {guest.email}</div>
+                          <div><strong>Phone:</strong> {guest.phone}</div>
+                          <div><strong>Nationality:</strong> {guest.nationality}</div>
+                          <div><strong>ID Number:</strong> {guest.idNumber}</div>
+                          <div><strong>Status:</strong> <Badge className={getStatusColor(guest.status)}>{guest.status}</Badge></div>
+                        </div>
+                        {guest.room && (
+                          <div>
+                            <h4 className="font-medium">Current Stay</h4>
+                            <div><strong>Room:</strong> {guest.room}</div>
+                            <div><strong>Check-in:</strong> {guest.checkIn}</div>
+                            <div><strong>Check-out:</strong> {guest.checkOut}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Guest History</h3>
+                        <div className="space-y-2">
+                          <div><strong>Total Stays:</strong> {guest.totalStays}</div>
+                          <div><strong>Total Spent:</strong> {guest.totalSpent}</div>
+                          <div><strong>Last Stay:</strong> {guest.lastStay}</div>
+                          <div><strong>VIP Status:</strong> {guest.vip ? "Yes" : "No"}</div>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Preferences & Notes</h4>
+                          <p className="text-sm text-slate-600">{guest.preferences}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end space-x-2 mt-6">
+                      <Button variant="outline">Edit Profile</Button>
+                      <Button onClick={() => handleContact(guest)}>
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Contact Guest
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => handleContact(guest)}>
                   Contact
                 </Button>
               </div>
