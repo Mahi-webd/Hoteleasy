@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -185,9 +184,9 @@ const MISReports = () => {
             ))}
           </div>
 
-          {/* Charts Section */}
+          {/* Fixed Charts Section with proper sizing */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Trend */}
+            {/* Revenue Trend - Fixed container */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -196,19 +195,21 @@ const MISReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-80">
-                  <RechartsLineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={3} />
-                  </RechartsLineChart>
-                </ChartContainer>
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip />
+                      <Line type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={3} />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Department Revenue */}
+            {/* Department Revenue - Fixed container */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -217,16 +218,18 @@ const MISReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-80">
-                  <RechartsPieChart>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <RechartsPieChart data={departmentData} cx="50%" cy="50%" outerRadius={100}>
-                      {departmentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <ChartTooltip />
+                      <RechartsPieChart data={departmentData} cx="50%" cy="50%" outerRadius={80}>
+                        {departmentData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </RechartsPieChart>
                     </RechartsPieChart>
-                  </RechartsPieChart>
-                </ChartContainer>
+                  </ResponsiveContainer>
+                </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   {departmentData.map((dept, index) => (
                     <div key={index} className="flex items-center space-x-2">
@@ -241,7 +244,7 @@ const MISReports = () => {
               </CardContent>
             </Card>
 
-            {/* Occupancy Analysis */}
+            {/* Occupancy Analysis - Fixed container */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -250,16 +253,18 @@ const MISReports = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-80">
-                  <BarChart data={occupancyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="occupied" fill="#2563EB" name="Occupied" />
-                    <Bar dataKey="available" fill="#E5E7EB" name="Available" />
-                  </BarChart>
-                </ChartContainer>
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={occupancyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <ChartTooltip />
+                      <Bar dataKey="occupied" fill="#2563EB" name="Occupied" />
+                      <Bar dataKey="available" fill="#E5E7EB" name="Available" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -335,6 +340,7 @@ const MISReports = () => {
           </Card>
         </TabsContent>
 
+        {/* Report Library */}
         <TabsContent value="reports" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {reportCategories.map((category, index) => (
@@ -377,16 +383,18 @@ const MISReports = () => {
                 <CardTitle>Monthly Performance Comparison</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-80">
-                  <AreaChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="revenue" stroke="#2563EB" fill="#2563EB" fillOpacity={0.3} />
-                    <Area type="monotone" dataKey="guests" stroke="#059669" fill="#059669" fillOpacity={0.3} />
-                  </AreaChart>
-                </ChartContainer>
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip />
+                      <Area type="monotone" dataKey="revenue" stroke="#2563EB" fill="#2563EB" fillOpacity={0.3} />
+                      <Area type="monotone" dataKey="guests" stroke="#059669" fill="#059669" fillOpacity={0.3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -396,17 +404,19 @@ const MISReports = () => {
                 <CardTitle>Occupancy vs Revenue Correlation</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-80">
-                  <BarChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar yAxisId="left" dataKey="revenue" fill="#2563EB" name="Revenue (KES)" />
-                    <Line yAxisId="right" type="monotone" dataKey="occupancy" stroke="#059669" strokeWidth={3} name="Occupancy %" />
-                  </BarChart>
-                </ChartContainer>
+                <div className="w-full h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <ChartTooltip />
+                      <Bar yAxisId="left" dataKey="revenue" fill="#2563EB" name="Revenue (KES)" />
+                      <Line yAxisId="right" type="monotone" dataKey="occupancy" stroke="#059669" strokeWidth={3} name="Occupancy %" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>

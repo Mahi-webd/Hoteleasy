@@ -15,15 +15,21 @@ import ReservationSystem from "@/components/ReservationSystem";
 import BillingSystem from "@/components/BillingSystem";
 import POSOrders from "@/components/POSOrders";
 import MISReports from "@/components/MISReports";
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header Navigation */}
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
-              <Home className="h-6 w-6 text-white" />
+            <div className="p-2 rounded-lg">
+              <img 
+                src="/lovable-uploads/398cb7b2-ebc9-4eed-8703-0f2623d53917.png" 
+                alt="Olsupat Lodge" 
+                className="h-12 w-12 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Olsupat Lodge</h1>
@@ -116,4 +122,5 @@ const Index = () => {
       </div>
     </div>;
 };
+
 export default Index;
