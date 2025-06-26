@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star } from "lucide-react";
+import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star, Wrench, UserCheck, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
 import EnhancedRoomManagement from "@/components/EnhancedRoomManagement";
@@ -19,6 +18,9 @@ import MISReports from "@/components/MISReports";
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import GuestFeedback from "@/components/GuestFeedback";
 import DigitalConcierge from "@/components/DigitalConcierge";
+import HousekeepingManagement from "@/components/HousekeepingManagement";
+import MaintenanceRequests from "@/components/MaintenanceRequests";
+import StaffScheduling from "@/components/StaffScheduling";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -95,6 +97,23 @@ const Index = () => {
               MIS Reports
             </Button>
             
+            {/* Operations Section */}
+            <div className="pt-4 border-t border-slate-300 dark:border-slate-600">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">OPERATIONS</p>
+              <Button variant={activeTab === "housekeeping" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("housekeeping")}>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Housekeeping
+              </Button>
+              <Button variant={activeTab === "maintenance" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("maintenance")}>
+                <Wrench className="mr-2 h-4 w-4" />
+                Maintenance
+              </Button>
+              <Button variant={activeTab === "staff" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("staff")}>
+                <Clock className="mr-2 h-4 w-4" />
+                Staff Scheduling
+              </Button>
+            </div>
+            
             {/* Guest Experience Section */}
             <div className="pt-4 border-t border-slate-300 dark:border-slate-600">
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">GUEST EXPERIENCE</p>
@@ -137,6 +156,15 @@ const Index = () => {
             </TabsContent>
             <TabsContent value="reports">
               <MISReports />
+            </TabsContent>
+            <TabsContent value="housekeeping">
+              <HousekeepingManagement />
+            </TabsContent>
+            <TabsContent value="maintenance">
+              <MaintenanceRequests />
+            </TabsContent>
+            <TabsContent value="staff">
+              <StaffScheduling />
             </TabsContent>
             <TabsContent value="mobile-checkin">
               <GuestMobileCheckin />
