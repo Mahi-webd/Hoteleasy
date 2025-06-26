@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star, Wrench, UserCheck, Clock } from "lucide-react";
+import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star, Wrench, UserCheck, Clock, Target } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
 import EnhancedRoomManagement from "@/components/EnhancedRoomManagement";
@@ -21,6 +21,9 @@ import DigitalConcierge from "@/components/DigitalConcierge";
 import HousekeepingManagement from "@/components/HousekeepingManagement";
 import MaintenanceRequests from "@/components/MaintenanceRequests";
 import StaffScheduling from "@/components/StaffScheduling";
+import RevenueAnalytics from "@/components/RevenueAnalytics";
+import FinancialReporting from "@/components/FinancialReporting";
+import BudgetManagement from "@/components/BudgetManagement";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -130,6 +133,23 @@ const Index = () => {
                 Digital Concierge
               </Button>
             </div>
+            
+            {/* Revenue & Analytics Section */}
+            <div className="pt-4 border-t border-slate-300 dark:border-slate-600">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">REVENUE & ANALYTICS</p>
+              <Button variant={activeTab === "revenue-analytics" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("revenue-analytics")}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Revenue Analytics
+              </Button>
+              <Button variant={activeTab === "financial-reporting" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("financial-reporting")}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Financial Reports
+              </Button>
+              <Button variant={activeTab === "budget-management" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("budget-management")}>
+                <Target className="mr-2 h-4 w-4" />
+                Budget Management
+              </Button>
+            </div>
           </nav>
         </aside>
 
@@ -174,6 +194,15 @@ const Index = () => {
             </TabsContent>
             <TabsContent value="concierge">
               <DigitalConcierge />
+            </TabsContent>
+            <TabsContent value="revenue-analytics">
+              <RevenueAnalytics />
+            </TabsContent>
+            <TabsContent value="financial-reporting">
+              <FinancialReporting />
+            </TabsContent>
+            <TabsContent value="budget-management">
+              <BudgetManagement />
             </TabsContent>
           </Tabs>
         </main>
