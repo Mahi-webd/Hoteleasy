@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3 } from "lucide-react";
+import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DashboardOverview from "@/components/DashboardOverview";
 import EnhancedRoomManagement from "@/components/EnhancedRoomManagement";
@@ -16,6 +16,9 @@ import EnhancedReservationSystem from "@/components/EnhancedReservationSystem";
 import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
 import EnhancedPOSOrders from "@/components/EnhancedPOSOrders";
 import MISReports from "@/components/MISReports";
+import GuestMobileCheckin from "@/components/GuestMobileCheckin";
+import GuestFeedback from "@/components/GuestFeedback";
+import DigitalConcierge from "@/components/DigitalConcierge";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -91,6 +94,23 @@ const Index = () => {
               <BarChart3 className="mr-2 h-4 w-4" />
               MIS Reports
             </Button>
+            
+            {/* Guest Experience Section */}
+            <div className="pt-4 border-t border-slate-300 dark:border-slate-600">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2">GUEST EXPERIENCE</p>
+              <Button variant={activeTab === "mobile-checkin" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("mobile-checkin")}>
+                <Smartphone className="mr-2 h-4 w-4" />
+                Mobile Check-in
+              </Button>
+              <Button variant={activeTab === "feedback" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("feedback")}>
+                <Star className="mr-2 h-4 w-4" />
+                Guest Feedback
+              </Button>
+              <Button variant={activeTab === "concierge" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("concierge")}>
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Digital Concierge
+              </Button>
+            </div>
           </nav>
         </aside>
 
@@ -117,6 +137,15 @@ const Index = () => {
             </TabsContent>
             <TabsContent value="reports">
               <MISReports />
+            </TabsContent>
+            <TabsContent value="mobile-checkin">
+              <GuestMobileCheckin />
+            </TabsContent>
+            <TabsContent value="feedback">
+              <GuestFeedback />
+            </TabsContent>
+            <TabsContent value="concierge">
+              <DigitalConcierge />
             </TabsContent>
           </Tabs>
         </main>
