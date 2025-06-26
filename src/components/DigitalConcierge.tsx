@@ -192,7 +192,7 @@ const DigitalConcierge = () => {
                       <div className="text-sm text-slate-600">Room {session.roomNumber}</div>
                     </div>
                     <div className="text-right">
-                      <Badge className={getStatusColor(session.status)} size="sm">
+                      <Badge className={getStatusColor(session.status)}>
                         {session.status}
                       </Badge>
                       {session.unreadCount > 0 && (
