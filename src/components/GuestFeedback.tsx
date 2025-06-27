@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, MessageSquare, TrendingUp, Users, AlertCircle, CheckCircle, Clock, Filter } from "lucide-react";
+import { Star, MessageSquare, TrendingUp, Users, AlertCircle, CheckCircle, Clock, Filter, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const GuestFeedback = () => {
