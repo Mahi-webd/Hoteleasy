@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, PieChart, Calendar, Download, Target, Users, Home } from "lucide-react";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from "recharts";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from "recharts";
 
 const RevenueAnalytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
@@ -186,7 +185,7 @@ const RevenueAnalytics = () => {
                 <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPieChart>
-                      <pie 
+                      <Pie 
                         data={departmentData} 
                         cx="50%" 
                         cy="50%" 
@@ -198,7 +197,7 @@ const RevenueAnalytics = () => {
                         {departmentData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
-                      </pie>
+                      </Pie>
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 </div>
