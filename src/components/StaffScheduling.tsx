@@ -2,442 +2,519 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, User, Plus, Edit, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Clock, Users, Calendar as CalendarIcon, UserCheck, AlertTriangle, Coffee, Plus, Filter, MoreHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface StaffMember {
-  id: number;
-  name: string;
-  role: "manager" | "receptionist" | "housekeeping" | "maintenance" | "security" | "restaurant";
-  department: string;
-  phone: string;
-  email: string;
-  status: "active" | "inactive" | "on-leave";
-}
-
-interface Shift {
-  id: number;
-  staffId: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  position: string;
-  status: "scheduled" | "completed" | "no-show" | "cancelled";
-}
-
 const StaffScheduling = () => {
-  const [staff] = useState<StaffMember[]>([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      role: "manager",
-      department: "Administration",
-      phone: "+254-700-123456",
-      email: "sarah@olsupat.com",
-      status: "active"
-    },
-    {
-      id: 2,
-      name: "Maria Santos",
-      role: "housekeeping",
-      department: "Housekeeping",
-      phone: "+254-700-234567",
-      email: "maria@olsupat.com",
-      status: "active"
-    },
-    {
-      id: 3,
-      name: "James Wilson",
-      role: "receptionist",
-      department: "Front Desk",
-      phone: "+254-700-345678",
-      email: "james@olsupat.com",
-      status: "active"
-    },
-    {
-      id: 4,
-      name: "Mike Thompson",
-      role: "maintenance",
-      department: "Maintenance",
-      phone: "+254-700-456789",
-      email: "mike@olsupat.com",
-      status: "active"
-    },
-    {
-      id: 5,
-      name: "Lisa Chen",
-      role: "restaurant",
-      department: "Restaurant",
-      phone: "+254-700-567890",
-      email: "lisa@olsupat.com",
-      status: "on-leave"
-    }
-  ]);
-
-  const [shifts, setShifts] = useState<Shift[]>([
-    {
-      id: 1,
-      staffId: 3,
-      date: "2024-01-16",
-      startTime: "08:00",
-      endTime: "16:00",
-      position: "Front Desk - Morning",
-      status: "scheduled"
-    },
-    {
-      id: 2,
-      staffId: 2,
-      date: "2024-01-16",
-      startTime: "09:00",
-      endTime: "17:00",
-      position: "Housekeeping",
-      status: "scheduled"
-    },
-    {
-      id: 3,
-      staffId: 4,
-      date: "2024-01-16",
-      startTime: "10:00",
-      endTime: "18:00",
-      position: "Maintenance",
-      status: "scheduled"
-    },
-    {
-      id: 4,
-      staffId: 1,
-      date: "2024-01-15",
-      startTime: "08:00",
-      endTime: "20:00",
-      position: "Manager",
-      status: "completed"
-    }
-  ]);
-
-  const [selectedDate, setSelectedDate] = useState("2024-01-16");
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [newShift, setNewShift] = useState({
-    staffId: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    position: ""
-  });
-
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState("week");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const { toast } = useToast();
+
+  // Mock staff data
+  const staffMembers = [
+    {
+      id: "S001",
+      name: "Alice Johnson",
+      department: "Front Desk",
+      position: "Receptionist",
+      email: "alice@hotel.com",
+      phone: "+254 700 123456",
+      status: "active",
+      shifts: [
+        { date: "2024-01-15", start: "08:00", end: "16:00", type: "morning" },
+        { date: "2024-01-16", start: "08:00", end: "16:00", type: "morning" }
+      ]
+    },
+    {
+      id: "S002", 
+      name: "Bob Wilson",
+      department: "Housekeeping",
+      position: "Housekeeper",
+      email: "bob@hotel.com",
+      phone: "+254 700 234567",
+      status: "active",
+      shifts: [
+        { date: "2024-01-15", start: "06:00", end: "14:00", type: "morning" },
+        { date: "2024-01-17", start: "14:00", end: "22:00", type: "evening" }
+      ]
+    },
+    {
+      id: "S003",
+      name: "Carol Davis",
+      department: "Restaurant", 
+      position: "Server",
+      email: "carol@hotel.com",
+      phone: "+254 700 345678",
+      status: "active",
+      shifts: [
+        { date: "2024-01-15", start: "12:00", end: "20:00", type: "evening" },
+        { date: "2024-01-16", start: "06:00", end: "14:00", type: "morning" }
+      ]
+    },
+    {
+      id: "S004",
+      name: "David Brown",
+      department: "Maintenance",
+      position: "Technician", 
+      email: "david@hotel.com",
+      phone: "+254 700 456789",
+      status: "off",
+      shifts: []
+    },
+    {
+      id: "S005",
+      name: "Emma Taylor",
+      department: "Security",
+      position: "Security Guard",
+      email: "emma@hotel.com", 
+      phone: "+254 700 567890",
+      status: "active",
+      shifts: [
+        { date: "2024-01-15", start: "22:00", end: "06:00", type: "night" },
+        { date: "2024-01-16", start: "22:00", end: "06:00", type: "night" }
+      ]
+    }
+  ];
+
+  const departments = ["Front Desk", "Housekeeping", "Restaurant", "Maintenance", "Security"];
+
+  const shiftStats = {
+    totalStaff: staffMembers.length,
+    onDuty: staffMembers.filter(s => s.status === "active").length,
+    offDuty: staffMembers.filter(s => s.status === "off").length,
+    overtime: 2
+  };
+
+  const handleAddShift = (staffId: string) => {
+    toast({
+      title: "Shift Added",
+      description: "New shift has been scheduled successfully",
+    });
+  };
+
+  const handleRequestTimeOff = (staffId: string) => {
+    toast({
+      title: "Time Off Requested",
+      description: "Time off request has been submitted for approval",
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800";
-      case "inactive": return "bg-gray-100 text-gray-800";
-      case "on-leave": return "bg-yellow-100 text-yellow-800";
-      case "scheduled": return "bg-blue-100 text-blue-800";
-      case "completed": return "bg-green-100 text-green-800";
-      case "no-show": return "bg-red-100 text-red-800";
-      case "cancelled": return "bg-gray-100 text-gray-800";
+      case "active": return "bg-green-100 text-green-800 border-green-200";
+      case "off": return "bg-red-100 text-red-800 border-red-200";
+      case "break": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getShiftTypeColor = (type: string) => {
+    switch (type) {
+      case "morning": return "bg-blue-100 text-blue-800";
+      case "evening": return "bg-orange-100 text-orange-800";
+      case "night": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "manager": return "bg-purple-100 text-purple-800";
-      case "receptionist": return "bg-blue-100 text-blue-800";
-      case "housekeeping": return "bg-green-100 text-green-800";
-      case "maintenance": return "bg-orange-100 text-orange-800";
-      case "security": return "bg-red-100 text-red-800";
-      case "restaurant": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const addNewShift = () => {
-    if (!newShift.staffId || !newShift.date || !newShift.startTime || !newShift.endTime || !newShift.position) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const shift: Shift = {
-      id: Date.now(),
-      staffId: parseInt(newShift.staffId),
-      date: newShift.date,
-      startTime: newShift.startTime,
-      endTime: newShift.endTime,
-      position: newShift.position,
-      status: "scheduled"
-    };
-
-    setShifts(prev => [...prev, shift]);
-    setNewShift({
-      staffId: "",
-      date: "",
-      startTime: "",
-      endTime: "",
-      position: ""
-    });
-    setIsScheduleDialogOpen(false);
-
-    toast({
-      title: "Shift Scheduled",
-      description: "New shift has been added to the schedule",
-    });
-  };
-
-  const updateShiftStatus = (shiftId: number, newStatus: string) => {
-    setShifts(prev => prev.map(shift => 
-      shift.id === shiftId 
-        ? { ...shift, status: newStatus as Shift['status'] }
-        : shift
-    ));
-
-    toast({
-      title: "Shift Updated",
-      description: `Shift status changed to ${newStatus}`,
-    });
-  };
-
-  const filteredShifts = shifts.filter(shift => shift.date === selectedDate);
-
-  const todayShifts = shifts.filter(shift => shift.date === new Date().toISOString().split('T')[0]);
-  const activeStaff = staff.filter(s => s.status === "active").length;
+  const filteredStaff = staffMembers.filter(staff => {
+    return departmentFilter === "all" || staff.department === departmentFilter;
+  });
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-slate-800">Staff Scheduling</h2>
-        <p className="text-slate-600">Manage staff schedules and shifts</p>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{staff.length}</div>
-            <div className="text-sm opacity-90">Total Staff</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{activeStaff}</div>
-            <div className="text-sm opacity-90">Active Staff</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{todayShifts.length}</div>
-            <div className="text-sm opacity-90">Today's Shifts</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{staff.filter(s => s.status === "on-leave").length}</div>
-            <div className="text-sm opacity-90">On Leave</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Staff List */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Staff Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staff.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {member.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{member.name}</div>
-                          <div className="text-sm text-slate-500">{member.department}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getRoleColor(member.role)}>
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(member.status)}>
-                        {member.status.replace('-', ' ')}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Schedule */}
-        <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Schedule
-              </CardTitle>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-40"
-                />
-                <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Shift
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Schedule New Shift</DialogTitle>
-                      <DialogDescription>
-                        Create a new shift assignment for a staff member.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="staff">Staff Member</Label>
-                        <Select onValueChange={(value) => setNewShift(prev => ({ ...prev, staffId: value }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select staff member" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {staff.filter(s => s.status === "active").map((member) => (
-                              <SelectItem key={member.id} value={member.id.toString()}>
-                                {member.name} - {member.role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="date">Date</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={newShift.date}
-                          onChange={(e) => setNewShift(prev => ({ ...prev, date: e.target.value }))}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="startTime">Start Time</Label>
-                          <Input
-                            id="startTime"
-                            type="time"
-                            value={newShift.startTime}
-                            onChange={(e) => setNewShift(prev => ({ ...prev, startTime: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="endTime">End Time</Label>
-                          <Input
-                            id="endTime"
-                            type="time"
-                            value={newShift.endTime}
-                            onChange={(e) => setNewShift(prev => ({ ...prev, endTime: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="position">Position/Notes</Label>
-                        <Input
-                          id="position"
-                          value={newShift.position}
-                          onChange={(e) => setNewShift(prev => ({ ...prev, position: e.target.value }))}
-                          placeholder="e.g., Front Desk - Morning Shift"
-                        />
-                      </div>
-                      <Button onClick={addNewShift} className="w-full">
-                        Schedule Shift
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Staff Scheduling</h1>
+          <p className="text-slate-600 dark:text-slate-400">Manage staff schedules and assignments</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Staff
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Staff Member</DialogTitle>
+                <DialogDescription>Enter staff member details</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="staffName">Full Name</Label>
+                  <Input id="staffName" placeholder="Enter full name" />
+                </div>
+                <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(dept => (
+                        <SelectItem key={dept} value={dept.toLowerCase().replace(' ', '-')}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="position">Position</Label>
+                  <Input id="position" placeholder="Job title" />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="email@hotel.com" />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" placeholder="+254 700 000000" />
+                </div>
+                <Button className="w-full">Add Staff Member</Button>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredShifts.map((shift) => {
-                const staffMember = staff.find(s => s.id === shift.staffId);
-                return (
-                  <div key={shift.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {staffMember?.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Tabs defaultValue="schedule" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="staff">Staff List</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedule" className="space-y-6">
+          {/* Schedule Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Staff</p>
+                    <p className="text-2xl font-bold">{shiftStats.totalStaff}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">On Duty</p>
+                    <p className="text-2xl font-bold">{shiftStats.onDuty}</p>
+                  </div>
+                  <UserCheck className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Off Duty</p>
+                    <p className="text-2xl font-bold">{shiftStats.offDuty}</p>
+                  </div>
+                  <Coffee className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Overtime</p>
+                    <p className="text-2xl font-bold">{shiftStats.overtime}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Schedule Calendar */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Weekly Schedule</CardTitle>
+                  <CardDescription>Current week staff assignments</CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {departments.map(dept => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    This Week
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredStaff.map((staff) => (
+                  <div key={staff.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <div className="font-medium">{staffMember?.name}</div>
-                        <div className="text-sm text-slate-600">{shift.position}</div>
-                        <div className="flex items-center gap-1 text-sm text-slate-500">
-                          <Clock className="h-3 w-3" />
-                          {shift.startTime} - {shift.endTime}
-                        </div>
+                        <h4 className="font-medium">{staff.name}</h4>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {staff.position} • {staff.department}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getStatusColor(staff.status)}>
+                          {staff.status}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(shift.status)}>
-                        {shift.status.replace('-', ' ')}
-                      </Badge>
-                      <Select onValueChange={(value) => updateShiftStatus(shift.id, value)}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue placeholder="Update" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="scheduled">Scheduled</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="no-show">No Show</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex flex-wrap gap-2">
+                      {staff.shifts.map((shift, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-sm">
+                          <Badge variant="outline" className={getShiftTypeColor(shift.type)}>
+                            {shift.date}: {shift.start} - {shift.end}
+                          </Badge>
+                        </div>
+                      ))}
+                      {staff.shifts.length === 0 && (
+                        <span className="text-sm text-slate-500">No shifts scheduled</span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-              {filteredShifts.length === 0 && (
-                <div className="text-center py-8 text-slate-500">
-                  No shifts scheduled for {selectedDate}
-                </div>
-              )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="staff" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4" />
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map(dept => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Showing {filteredStaff.length} staff members
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredStaff.map((staff) => (
+              <Card key={staff.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-medium text-lg">{staff.name}</h4>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{staff.position}</p>
+                    </div>
+                    <Badge className={getStatusColor(staff.status)}>
+                      {staff.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Department:</strong> {staff.department}</p>
+                    <p><strong>Email:</strong> {staff.email}</p>
+                    <p><strong>Phone:</strong> {staff.phone}</p>
+                    <p><strong>Shifts this week:</strong> {staff.shifts.length}</p>
+                  </div>
+                  
+                  <div className="flex space-x-2 mt-4">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="flex-1">
+                          <Clock className="mr-1 h-3 w-3" />
+                          Schedule
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Schedule Shift - {staff.name}</DialogTitle>
+                          <DialogDescription>Add a new shift for this staff member</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="shiftDate">Date</Label>
+                            <Input id="shiftDate" type="date" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="startTime">Start Time</Label>
+                              <Input id="startTime" type="time" />
+                            </div>
+                            <div>
+                              <Label htmlFor="endTime">End Time</Label>
+                              <Input id="endTime" type="time" />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="shiftType">Shift Type</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select shift type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="morning">Morning</SelectItem>
+                                <SelectItem value="evening">Evening</SelectItem>
+                                <SelectItem value="night">Night</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="notes">Notes</Label>
+                            <Textarea id="notes" placeholder="Additional notes..." />
+                          </div>
+                          <Button 
+                            className="w-full"
+                            onClick={() => handleAddShift(staff.id)}
+                          >
+                            Schedule Shift
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleRequestTimeOff(staff.id)}
+                    >
+                      Time Off
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="attendance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Attendance</CardTitle>
+              <CardDescription>Track staff check-in and check-out times</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {staffMembers.slice(0, 5).map((staff) => (
+                  <div key={staff.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{staff.name}</h4>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{staff.department}</p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">Check-in: 08:00</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Status: {staff.status === "active" ? "Present" : "Absent"}
+                        </p>
+                      </div>
+                      <Badge className={getStatusColor(staff.status)}>
+                        {staff.status === "active" ? "Present" : "Absent"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Department Summary</CardTitle>
+                <CardDescription>Staff distribution by department</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {departments.map((dept) => {
+                    const count = staffMembers.filter(s => s.department === dept).length;
+                    return (
+                      <div key={dept} className="flex items-center justify-between">
+                        <span className="font-medium">{dept}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-24 h-2 bg-slate-200 rounded-full">
+                            <div 
+                              className="h-2 bg-blue-500 rounded-full"
+                              style={{ width: `${(count / staffMembers.length) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{count}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Weekly Hours</CardTitle>
+                <CardDescription>Total working hours by staff</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {staffMembers.slice(0, 5).map((staff) => (
+                    <div key={staff.id} className="flex items-center justify-between">
+                      <div>
+                        <span className="font-medium">{staff.name}</span>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{staff.department}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-medium">
+                          {staff.shifts.length * 8} hours
+                        </span>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {staff.shifts.length} shifts
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
