@@ -5,95 +5,87 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Bot, Send, Clock, MapPin, Utensils, Car, Calendar, Phone, Star, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MessageCircle, Bot, User, Clock, Star, Settings, Send, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const DigitalConcierge = () => {
-  const [chatMessage, setChatMessage] = useState("");
-  const [activeChat, setActiveChat] = useState("bot");
+  const [newMessage, setNewMessage] = useState("");
+  const [selectedChat, setSelectedChat] = useState("chat001");
   const { toast } = useToast();
 
-  // Mock chat conversations
-  const chatConversations = [
+  // Mock chat data
+  const chatSessions = [
     {
-      id: "guest1",
-      guest: "John Smith",
-      room: "201",
+      id: "chat001",
+      guestName: "John Smith",
+      roomNumber: "201",
       status: "active",
-      lastMessage: "Thank you for the restaurant recommendations!",
-      timestamp: "2 min ago",
-      unread: 0
-    },
-    {
-      id: "guest2", 
-      guest: "Sarah Johnson",
-      room: "305",
-      status: "pending",
-      lastMessage: "Can you help me book a taxi to the airport?",
-      timestamp: "5 min ago",
+      lastMessage: "Can you recommend a good restaurant nearby?",
+      timestamp: "2024-01-15 16:30",
       unread: 1
     },
     {
-      id: "guest3",
-      guest: "Mike Wilson", 
-      room: "102",
+      id: "chat002",
+      guestName: "Sarah Johnson",
+      roomNumber: "105", 
       status: "resolved",
-      lastMessage: "Perfect, see you at 7 PM for dinner",
-      timestamp: "1 hour ago",
+      lastMessage: "Thank you for the spa booking!",
+      timestamp: "2024-01-15 14:20",
       unread: 0
     }
   ];
 
-  // Mock AI chat messages
-  const aiChatMessages = [
+  const messages = [
     {
+      id: "msg001",
       sender: "guest",
-      message: "Hi, I'm looking for good restaurants nearby",
-      timestamp: "10:30 AM"
+      message: "Hello, I need help with room service",
+      timestamp: "16:25"
     },
     {
+      id: "msg002",
       sender: "bot",
-      message: "I'd be happy to help you find great restaurants! Based on your location, I recommend these nearby options: 1) The Garden Bistro (5 min walk) - International cuisine, 2) Local Spice Kitchen (3 min walk) - Traditional Kenyan dishes, 3) Sunset Terrace (10 min walk) - Fine dining with city views. Would you like more details about any of these?",
-      timestamp: "10:30 AM"
+      message: "I'd be happy to help you with room service! What would you like to order?",
+      timestamp: "16:26"
     },
     {
+      id: "msg003",
       sender: "guest", 
-      message: "Tell me more about The Garden Bistro",
-      timestamp: "10:32 AM"
-    },
-    {
-      sender: "bot",
-      message: "The Garden Bistro is perfect for you! ✨ Open daily 6 PM - 11 PM, they specialize in fresh international cuisine with a beautiful outdoor seating area. Average price: $25-40 per person. They're known for their grilled salmon and pasta dishes. Would you like me to make a reservation for you?",
-      timestamp: "10:32 AM"
+      message: "Can you recommend a good restaurant nearby?",
+      timestamp: "16:30"
     }
   ];
 
-  // Popular guest requests
-  const popularRequests = [
-    { icon: Utensils, title: "Restaurant Recommendations", count: 156 },
-    { icon: Car, title: "Transportation", count: 124 },
-    { icon: MapPin, title: "Local Attractions", count: 98 },
-    { icon: Calendar, title: "Event Bookings", count: 87 },
-    { icon: Phone, title: "Room Service", count: 76 }
+  const quickResponses = [
+    "Thank you for contacting us!",
+    "I'll connect you with our staff right away.",
+    "Is there anything else I can help you with?",
+    "Your request has been forwarded to the appropriate department."
   ];
 
-  // Quick responses
-  const quickResponses = [
-    "I'd be happy to help you with that!",
-    "Let me check availability for you.",
-    "I'll arrange that right away.",
-    "Would you like me to make a reservation?",
-    "I can provide directions to that location."
+  const services = [
+    { name: "Room Service", icon: "🍽️", available: true },
+    { name: "Spa Booking", icon: "💆", available: true },
+    { name: "Restaurant Reservations", icon: "🍷", available: true },
+    { name: "Transportation", icon: "🚗", available: false },
+    { name: "Local Attractions", icon: "🗺️", available: true },
+    { name: "Housekeeping", icon: "🧹", available: true }
   ];
 
   const handleSendMessage = () => {
-    if (!chatMessage.trim()) return;
-    
-    toast({
-      title: "Message Sent",
-      description: "Your response has been sent to the guest",
-    });
-    setChatMessage("");
+    if (newMessage.trim()) {
+      toast({
+        title: "Message Sent",
+        description: "Your message has been sent to the guest",
+      });
+      setNewMessage("");
+    }
+  };
+
+  const handleQuickResponse = (response: string) => {
+    setNewMessage(response);
   };
 
   return (
@@ -101,7 +93,7 @@ const DigitalConcierge = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Digital Concierge</h1>
-          <p className="text-slate-600 dark:text-slate-400">AI-powered guest assistance and chat support</p>
+          <p className="text-slate-600 dark:text-slate-400">AI-powered guest assistance and live chat support</p>
         </div>
         <Button>
           <Settings className="mr-2 h-4 w-4" />
@@ -112,55 +104,49 @@ const DigitalConcierge = () => {
       <Tabs defaultValue="chat" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="chat">Live Chat</TabsTrigger>
-          <TabsTrigger value="ai-demo">AI Assistant</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chat" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-            {/* Chat List */}
-            <Card className="lg:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Chat Sessions List */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Active Chats
-                </CardTitle>
+                <CardTitle className="text-lg">Active Chats</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="space-y-1">
-                  {chatConversations.map((chat) => (
-                    <div 
+                  {chatSessions.map((chat) => (
+                    <div
                       key={chat.id}
-                      className={`p-4 border-b cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                        activeChat === chat.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
+                      className={`p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 border-b ${
+                        selectedChat === chat.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                       }`}
-                      onClick={() => setActiveChat(chat.id)}
+                      onClick={() => setSelectedChat(chat.id)}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium text-sm">{chat.guest}</h4>
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          {chat.unread > 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              {chat.unread}
-                            </Badge>
-                          )}
-                          <Badge 
-                            variant={
-                              chat.status === 'active' ? 'default' : 
-                              chat.status === 'pending' ? 'secondary' : 'outline'
-                            }
-                            className="text-xs"
-                          >
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{chat.guestName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-medium text-sm">{chat.guestName}</h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-400">Room {chat.roomNumber}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={chat.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                             {chat.status}
                           </Badge>
+                          {chat.unread > 0 && (
+                            <Badge className="bg-red-500 text-white ml-1">{chat.unread}</Badge>
+                          )}
                         </div>
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                        Room {chat.room}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">{chat.lastMessage}</p>
-                      <p className="text-xs text-slate-400 mt-1">{chat.timestamp}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{chat.lastMessage}</p>
+                      <p className="text-xs text-slate-500 mt-1">{chat.timestamp}</p>
                     </div>
                   ))}
                 </div>
@@ -168,54 +154,59 @@ const DigitalConcierge = () => {
             </Card>
 
             {/* Chat Window */}
-            <Card className="lg:col-span-2 flex flex-col">
+            <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>
-                  {activeChat === "bot" ? "AI Assistant Demo" : 
-                   chatConversations.find(c => c.id === activeChat)?.guest || "Select a chat"}
-                </CardTitle>
-                {activeChat !== "bot" && (
-                  <CardDescription>
-                    Room {chatConversations.find(c => c.id === activeChat)?.room}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                {/* Messages */}
-                <div className="flex-1 space-y-4 mb-4 max-h-96 overflow-y-auto">
-                  {activeChat === "bot" ? (
-                    aiChatMessages.map((msg, index) => (
-                      <div key={index} className={`flex ${msg.sender === 'guest' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          msg.sender === 'guest' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-slate-100 dark:bg-slate-700'
-                        }`}>
-                          <p className="text-sm">{msg.message}</p>
-                          <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-slate-500 dark:text-slate-400">
-                      <MessageCircle className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                      <p>Select a conversation to view messages</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Avatar>
+                      <AvatarFallback>JS</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h4 className="font-medium">John Smith</h4>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Room 201 • Online</p>
                     </div>
-                  )}
+                  </div>
+                  <Button size="sm" variant="outline">
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Messages */}
+                <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
+                  {messages.map((message) => (
+                    <div key={message.id} className={`flex ${message.sender === 'guest' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        message.sender === 'guest' 
+                          ? 'bg-blue-500 text-white' 
+                          : message.sender === 'bot'
+                          ? 'bg-green-100 text-green-800 border border-green-200'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                      }`}>
+                        <p className="text-sm">{message.message}</p>
+                        <p className={`text-xs mt-1 ${
+                          message.sender === 'guest' ? 'text-blue-100' : 'text-slate-500'
+                        }`}>
+                          {message.timestamp}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Quick Responses */}
                 <div className="mb-4">
                   <p className="text-sm font-medium mb-2">Quick Responses:</p>
                   <div className="flex flex-wrap gap-2">
-                    {quickResponses.slice(0, 3).map((response, index) => (
-                      <Button 
+                    {quickResponses.map((response, index) => (
+                      <Button
                         key={index}
-                        variant="outline" 
                         size="sm"
-                        onClick={() => setChatMessage(response)}
+                        variant="outline"
+                        onClick={() => handleQuickResponse(response)}
+                        className="text-xs"
                       >
-                        {response.substring(0, 20)}...
+                        {response}
                       </Button>
                     ))}
                   </div>
@@ -225,8 +216,8 @@ const DigitalConcierge = () => {
                 <div className="flex space-x-2">
                   <Input
                     placeholder="Type your message..."
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   />
                   <Button onClick={handleSendMessage}>
@@ -238,86 +229,43 @@ const DigitalConcierge = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="ai-demo" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bot className="mr-2 h-5 w-5" />
-                  AI Assistant Demo
-                </CardTitle>
-                <CardDescription>Experience how our AI helps guests</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {aiChatMessages.map((msg, index) => (
-                    <div key={index} className={`flex ${msg.sender === 'guest' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-md px-4 py-2 rounded-lg ${
-                        msg.sender === 'guest' 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-slate-100 dark:bg-slate-700'
-                      }`}>
-                        <p className="text-sm">{msg.message}</p>
-                        <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
+        <TabsContent value="services" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Services</CardTitle>
+              <CardDescription>Configure concierge services and availability</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {services.map((service, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl">{service.icon}</span>
+                        <h4 className="font-medium">{service.name}</h4>
                       </div>
+                      <Badge className={service.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {service.available ? "Available" : "Unavailable"}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Capabilities</CardTitle>
-                <CardDescription>What our digital concierge can do</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Utensils className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <h4 className="font-medium">Restaurant Recommendations</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Personalized dining suggestions</p>
-                    </div>
+                    <Button size="sm" variant="outline" className="w-full">
+                      Configure
+                    </Button>
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-green-500" />
-                    <div>
-                      <h4 className="font-medium">Local Attractions</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Tourist spots and activities</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Car className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <h4 className="font-medium">Transportation</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Taxi, Uber, and public transport</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-purple-500" />
-                    <div>
-                      <h4 className="font-medium">Booking Services</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Reservations and appointments</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Requests</p>
-                    <p className="text-2xl font-bold">1,247</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Chats</p>
+                    <p className="text-2xl font-bold">142</p>
                   </div>
                   <MessageCircle className="h-8 w-8 text-blue-500" />
                 </div>
@@ -329,7 +277,7 @@ const DigitalConcierge = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">AI Resolution</p>
-                    <p className="text-2xl font-bold">78%</p>
+                    <p className="text-2xl font-bold">73%</p>
                   </div>
                   <Bot className="h-8 w-8 text-green-500" />
                 </div>
@@ -341,105 +289,65 @@ const DigitalConcierge = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">Avg Response</p>
-                    <p className="text-2xl font-bold">1.2m</p>
+                    <p className="text-2xl font-bold">1.2min</p>
                   </div>
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
               </CardContent>
             </Card>
-          </div>
 
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Satisfaction</p>
+                    <p className="text-2xl font-bold">4.6</p>
+                  </div>
+                  <Star className="h-8 w-8 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="settings">
           <Card>
             <CardHeader>
-              <CardTitle>Popular Requests</CardTitle>
-              <CardDescription>Most common guest inquiries</CardDescription>
+              <CardTitle>AI Configuration</CardTitle>
+              <CardDescription>Configure AI responses and behavior</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {popularRequests.map((request, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <request.icon className="h-5 w-5 text-blue-500" />
-                      <span className="font-medium">{request.title}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-32 h-2 bg-slate-200 rounded-full">
-                        <div 
-                          className="h-2 bg-blue-500 rounded-full"
-                          style={{ width: `${(request.count / 156) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium">{request.count}</span>
-                    </div>
-                  </div>
-                ))}
+                <div>
+                  <label className="text-sm font-medium">AI Response Style</label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select response style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="formal">Formal</SelectItem>
+                      <SelectItem value="casual">Casual</SelectItem>
+                      <SelectItem value="friendly">Friendly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Auto-escalation Threshold</label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select threshold" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">After 3 failed attempts</SelectItem>
+                      <SelectItem value="5">After 5 failed attempts</SelectItem>
+                      <SelectItem value="never">Never auto-escalate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button>Save Configuration</Button>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Assistant Settings</CardTitle>
-                <CardDescription>Configure AI behavior and responses</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Response Tone</label>
-                  <select className="w-full p-2 border rounded-md">
-                    <option>Friendly & Professional</option>
-                    <option>Formal & Polite</option>
-                    <option>Casual & Warm</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Auto-Resolution</label>
-                  <div className="space-y-1">
-                    <label className="flex items-center">
-                      <input type="checkbox" className="mr-2" defaultChecked />
-                      <span className="text-sm">Basic inquiries</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input type="checkbox" className="mr-2" defaultChecked />
-                      <span className="text-sm">Restaurant recommendations</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input type="checkbox" className="mr-2" />
-                      <span className="text-sm">Booking modifications</span>
-                    </label>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Chat Settings</CardTitle>
-                <CardDescription>Configure chat availability and routing</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Operating Hours</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input placeholder="Start time" defaultValue="06:00" />
-                    <Input placeholder="End time" defaultValue="23:00" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Staff Notification</label>
-                  <select className="w-full p-2 border rounded-md">
-                    <option>Immediate for urgent requests</option>
-                    <option>Every 5 minutes</option>
-                    <option>Every 15 minutes</option>
-                  </select>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
