@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ import BudgetManagement from "@/components/BudgetManagement";
 import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
 import InventoryAlerts from "@/components/InventoryAlerts";
+import EmbeddedChatbot from "@/components/EmbeddedChatbot";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -236,6 +238,9 @@ const Index = () => {
           </Tabs>
         </main>
       </div>
+      
+      {/* Embedded Chatbot */}
+      <EmbeddedChatbot />
     </div>;
 };
 
