@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Zap, MessageSquare, ClipboardCheck, AlertTriangle, Clock, 
   Users, Bed, Coffee, Wrench, DollarSign, Calendar, Send,
@@ -16,6 +18,13 @@ import { useToast } from "@/hooks/use-toast";
 const QuickActionsDashboard = () => {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [customMessage, setCustomMessage] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [selectedGuest, setSelectedGuest] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("sms");
+  const [showRoomDialog, setShowRoomDialog] = useState(false);
+  const [showSupplyDialog, setShowSupplyDialog] = useState(false);
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const { toast } = useToast();
 
   // Quick action statistics
@@ -28,7 +37,6 @@ const QuickActionsDashboard = () => {
     checkoutsToday: 8
   };
 
-  // Communication templates
   const messageTemplates = [
     { id: "welcome", title: "Welcome Message", content: "Welcome to Olsupat Lodge! We're delighted to have you stay with us. If you need anything during your stay, please don't hesitate to contact our front desk." },
     { id: "checkout", title: "Checkout Reminder", content: "Thank you for staying with us! Please note that checkout time is 11:00 AM. If you need a late checkout, please contact the front desk." },
@@ -37,22 +45,56 @@ const QuickActionsDashboard = () => {
     { id: "feedback", title: "Feedback Request", content: "We hope you're enjoying your stay! We'd love to hear your feedback. Please let us know if there's anything we can do to make your experience even better." }
   ];
 
-  // Common quick actions
-  const quickActions = [
-    { title: "Check Room Status", icon: Bed, color: "blue", action: () => handleQuickAction("Room status updated") },
-    { title: "Send Housekeeping", icon: Users, color: "green", action: () => handleQuickAction("Housekeeping dispatched") },
-    { title: "Order Supplies", icon: Coffee, color: "orange", action: () => handleQuickAction("Supply order created") },
-    { title: "Schedule Maintenance", icon: Wrench, color: "red", action: () => handleQuickAction("Maintenance scheduled") },
-    { title: "Process Payment", icon: DollarSign, color: "purple", action: () => handleQuickAction("Payment processed") },
-    { title: "Update Calendar", icon: Calendar, color: "indigo", action: () => handleQuickAction("Calendar updated") }
-  ];
+  const rooms = ["101", "102", "103", "201", "202", "203", "301", "302", "303"];
+  const guests = ["John Doe", "Jane Smith", "Mike Johnson", "Sarah Wilson", "David Brown"];
 
-  const handleQuickAction = (message: string) => {
+  const handleRoomStatusCheck = () => {
+    setShowRoomDialog(true);
+  };
+
+  const handleHousekeepingDispatch = () => {
+    if (!selectedRoom) {
+      toast({
+        title: "Room Required",
+        description: "Please select a room for housekeeping",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
-      title: "Action Completed",
-      description: message,
+      title: "Housekeeping Dispatched",
+      description: `Housekeeping team has been sent to Room ${selectedRoom}`,
+    });
+    setSelectedRoom("");
+  };
+
+  const handleSupplyOrder = () => {
+    setShowSupplyDialog(true);
+  };
+
+  const handleMaintenanceSchedule = () => {
+    setShowMaintenanceDialog(true);
+  };
+
+  const handlePaymentProcess = () => {
+    setShowPaymentDialog(true);
+  };
+
+  const handleCalendarUpdate = () => {
+    toast({
+      title: "Calendar Updated",
+      description: "Room availability calendar has been refreshed",
     });
   };
+
+  const quickActions = [
+    { title: "Check Room Status", icon: Bed, color: "blue", action: handleRoomStatusCheck },
+    { title: "Send Housekeeping", icon: Users, color: "green", action: handleHousekeepingDispatch },
+    { title: "Order Supplies", icon: Coffee, color: "orange", action: handleSupplyOrder },
+    { title: "Schedule Maintenance", icon: Wrench, color: "red", action: handleMaintenanceSchedule },
+    { title: "Process Payment", icon: DollarSign, color: "purple", action: handlePaymentProcess },
+    { title: "Update Calendar", icon: Calendar, color: "indigo", action: handleCalendarUpdate }
+  ];
 
   const handleSendMessage = () => {
     if (!selectedTemplate && !customMessage) {
@@ -64,12 +106,26 @@ const QuickActionsDashboard = () => {
       return;
     }
 
+    if (!selectedGuest) {
+      toast({
+        title: "Error",
+        description: "Please select a guest to send the message to",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const messageContent = selectedTemplate 
+      ? messageTemplates.find(t => t.id === selectedTemplate)?.content || ""
+      : customMessage;
+
     toast({
       title: "Message Sent",
-      description: "Your message has been sent successfully",
+      description: `Message sent to ${selectedGuest} via ${selectedMethod.toUpperCase()}`,
     });
     setCustomMessage("");
     setSelectedTemplate("");
+    setSelectedGuest("");
   };
 
   return (
@@ -172,7 +228,23 @@ const QuickActionsDashboard = () => {
           <CardDescription>Send pre-written messages to guests instantly</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Select Guest</label>
+              <Select value={selectedGuest} onValueChange={setSelectedGuest}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose guest..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {guests.map((guest) => (
+                    <SelectItem key={guest} value={guest}>
+                      {guest}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-sm font-medium mb-2 block">Message Template</label>
               <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
@@ -192,15 +264,30 @@ const QuickActionsDashboard = () => {
             <div>
               <label className="text-sm font-medium mb-2 block">Send Method</label>
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant={selectedMethod === "sms" ? "default" : "outline"} 
+                  className="flex-1"
+                  onClick={() => setSelectedMethod("sms")}
+                >
                   <Phone className="mr-1 h-3 w-3" />
                   SMS
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant={selectedMethod === "email" ? "default" : "outline"} 
+                  className="flex-1"
+                  onClick={() => setSelectedMethod("email")}
+                >
                   <Mail className="mr-1 h-3 w-3" />
                   Email
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant={selectedMethod === "app" ? "default" : "outline"} 
+                  className="flex-1"
+                  onClick={() => setSelectedMethod("app")}
+                >
                   <MessageCircle className="mr-1 h-3 w-3" />
                   App
                 </Button>
@@ -264,6 +351,189 @@ const QuickActionsDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <Dialog open={showRoomDialog} onOpenChange={setShowRoomDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Room Status Check</DialogTitle>
+            <DialogDescription>Select a room to check its current status</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="room-select">Room Number</Label>
+              <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select room..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rooms.map((room) => (
+                    <SelectItem key={room} value={room}>
+                      Room {room}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => {
+              if (selectedRoom) {
+                toast({
+                  title: "Room Status Updated",
+                  description: `Room ${selectedRoom} status has been checked and updated`,
+                });
+                setShowRoomDialog(false);
+                setSelectedRoom("");
+              }
+            }}>
+              Check Status
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSupplyDialog} onOpenChange={setShowSupplyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Order Supplies</DialogTitle>
+            <DialogDescription>Place a new supply order</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="supply-type">Supply Type</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select supply type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="towels">Towels</SelectItem>
+                  <SelectItem value="toiletries">Toiletries</SelectItem>
+                  <SelectItem value="linens">Bed Linens</SelectItem>
+                  <SelectItem value="cleaning">Cleaning Supplies</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input type="number" placeholder="Enter quantity" />
+            </div>
+            <Button onClick={() => {
+              toast({
+                title: "Supply Order Created",
+                description: "Your supply order has been submitted successfully",
+              });
+              setShowSupplyDialog(false);
+            }}>
+              Place Order
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showMaintenanceDialog} onOpenChange={setShowMaintenanceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Schedule Maintenance</DialogTitle>
+            <DialogDescription>Create a new maintenance request</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="maintenance-room">Room Number</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select room..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rooms.map((room) => (
+                    <SelectItem key={room} value={room}>
+                      Room {room}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="issue-type">Issue Type</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select issue type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ac">Air Conditioning</SelectItem>
+                  <SelectItem value="plumbing">Plumbing</SelectItem>
+                  <SelectItem value="electrical">Electrical</SelectItem>
+                  <SelectItem value="furniture">Furniture</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea placeholder="Describe the issue..." />
+            </div>
+            <Button onClick={() => {
+              toast({
+                title: "Maintenance Scheduled",
+                description: "Maintenance request has been created and assigned",
+              });
+              setShowMaintenanceDialog(false);
+            }}>
+              Schedule Maintenance
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Payment</DialogTitle>
+            <DialogDescription>Process a guest payment</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="payment-guest">Guest</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select guest..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {guests.map((guest) => (
+                    <SelectItem key={guest} value={guest}>
+                      {guest}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="amount">Amount (KES)</Label>
+              <Input type="number" placeholder="Enter amount" />
+            </div>
+            <div>
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Credit Card</SelectItem>
+                  <SelectItem value="mpesa">M-Pesa</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => {
+              toast({
+                title: "Payment Processed",
+                description: "Payment has been successfully processed",
+              });
+              setShowPaymentDialog(false);
+            }}>
+              Process Payment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
