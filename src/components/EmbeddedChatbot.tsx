@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, X, Minimize2, Maximize2, Bot, User, AlertTriangle, Info, Sparkles } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -39,7 +38,6 @@ const EmbeddedChatbot = () => {
   const [alertCount, setAlertCount] = useState(3);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   // Mock hotel data - in real app, this would come from your state management
   const rooms: Room[] = [
@@ -196,12 +194,6 @@ const EmbeddedChatbot = () => {
     };
     setMessages(prev => [...prev, alertMsg]);
     setAlertCount(prev => prev + 1);
-    if (!isOpen) {
-      toast({
-        title: "New Alert",
-        description: alertMessage,
-      });
-    }
   };
 
   // Simulate periodic alerts with slower pace
@@ -240,7 +232,7 @@ const EmbeddedChatbot = () => {
           onClick={() => setIsOpen(true)}
           className="rounded-full h-16 w-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-2xl relative border-2 border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-105"
           style={{
-            animation: alertCount > 0 ? 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+            animation: alertCount > 0 ? 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
           }}
         >
           <MessageCircle className="h-7 w-7 text-white" />
