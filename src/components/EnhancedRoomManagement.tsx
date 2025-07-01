@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Home, User, Settings, Plus, Search, Filter, Users, Wrench, Brush, CheckCircle } from "lucide-react";
 
@@ -21,15 +22,16 @@ const EnhancedRoomManagement = () => {
   const [showNewRoomTypeDialog, setShowNewRoomTypeDialog] = useState(false);
   const [showNewFloorDialog, setShowNewFloorDialog] = useState(false);
 
+  // Updated rooms with guest capacity and smoking status
   const [rooms, setRooms] = useState([
-    { number: "101", type: "Standard Single", status: "occupied", guest: "John Doe", floor: 1, rate: "KES 8,000" },
-    { number: "102", type: "Standard Double", status: "available", guest: null, floor: 1, rate: "KES 12,000" },
-    { number: "103", type: "Deluxe Double", status: "cleaning", guest: null, floor: 1, rate: "KES 15,000" },
-    { number: "104", type: "Suite", status: "maintenance", guest: null, floor: 1, rate: "KES 25,000" },
-    { number: "201", type: "Standard Single", status: "occupied", guest: "Jane Smith", floor: 2, rate: "KES 8,000" },
-    { number: "202", type: "Standard Double", status: "available", guest: null, floor: 2, rate: "KES 12,000" },
-    { number: "203", type: "Deluxe Double", status: "occupied", guest: "Mike Johnson", floor: 2, rate: "KES 15,000" },
-    { number: "204", type: "Presidential Suite", status: "available", guest: null, floor: 2, rate: "KES 45,000" },
+    { number: "101", type: "Standard Single", status: "occupied", guest: "John Doe", floor: 1, rate: "KES 8,000", capacity: 1, smoking: false },
+    { number: "102", type: "Standard Double", status: "available", guest: null, floor: 1, rate: "KES 12,000", capacity: 2, smoking: false },
+    { number: "103", type: "Deluxe Double", status: "cleaning", guest: null, floor: 1, rate: "KES 15,000", capacity: 2, smoking: true },
+    { number: "104", type: "Suite", status: "maintenance", guest: null, floor: 1, rate: "KES 25,000", capacity: 4, smoking: false },
+    { number: "201", type: "Standard Single", status: "occupied", guest: "Jane Smith", floor: 2, rate: "KES 8,000", capacity: 1, smoking: false },
+    { number: "202", type: "Standard Double", status: "available", guest: null, floor: 2, rate: "KES 12,000", capacity: 2, smoking: false },
+    { number: "203", type: "Deluxe Double", status: "occupied", guest: "Mike Johnson", floor: 2, rate: "KES 15,000", capacity: 2, smoking: false },
+    { number: "204", type: "Presidential Suite", status: "available", guest: null, floor: 2, rate: "KES 45,000", capacity: 6, smoking: true },
   ]);
 
   const [roomTypes, setRoomTypes] = useState([
@@ -73,7 +75,9 @@ const EnhancedRoomManagement = () => {
       status: "available",
       guest: null,
       floor: parseInt(roomData.floor),
-      rate: `KES ${roomData.rate}`
+      rate: `KES ${roomData.rate}`,
+      capacity: parseInt(roomData.capacity),
+      smoking: roomData.smoking
     };
     setRooms([...rooms, newRoom]);
     setShowNewRoomDialog(false);
@@ -136,6 +140,7 @@ const EnhancedRoomManagement = () => {
           <p className="text-slate-600 dark:text-slate-400">Manage room status, assignments, and availability</p>
         </div>
         <div className="flex space-x-2">
+          {/* ... keep existing code (floor and room type dialogs) */}
           <Dialog open={showNewFloorDialog} onOpenChange={setShowNewFloorDialog}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -225,60 +230,64 @@ const EnhancedRoomManagement = () => {
                 <DialogTitle>Add New Room</DialogTitle>
                 <DialogDescription>Create a new room in the hotel inventory</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="roomNumber">Room Number</Label>
-                  <Input id="roomNumber" placeholder="e.g., 105" />
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                addNewRoom({
+                  number: formData.get('roomNumber'),
+                  type: formData.get('roomType') || 'standard-single',
+                  floor: formData.get('floor') || '1',
+                  rate: formData.get('rate'),
+                  capacity: formData.get('capacity'),
+                  smoking: formData.get('smoking') === 'on'
+                });
+              }}>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="roomNumber">Room Number</Label>
+                    <Input name="roomNumber" id="roomNumber" placeholder="e.g., 105" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="roomType">Room Type</Label>
+                    <Select name="roomType">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roomTypes.map(type => (
+                          <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="floor">Floor</Label>
+                    <Select name="floor">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select floor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {floors.map(floor => (
+                          <SelectItem key={floor} value={floor.toString()}>Floor {floor}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="capacity">Guest Capacity</Label>
+                    <Input name="capacity" id="capacity" placeholder="e.g., 2" type="number" min="1" max="10" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="rate">Daily Rate (KES)</Label>
+                    <Input name="rate" id="rate" placeholder="e.g., 12000" type="number" required />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox name="smoking" id="smoking" />
+                    <Label htmlFor="smoking">Smoking Room</Label>
+                  </div>
+                  <Button type="submit" className="w-full">Add Room</Button>
                 </div>
-                <div>
-                  <Label htmlFor="roomType">Room Type</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roomTypes.map(type => (
-                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="floor">Floor</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select floor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {floors.map(floor => (
-                        <SelectItem key={floor} value={floor.toString()}>Floor {floor}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="rate">Daily Rate (KES)</Label>
-                  <Input id="rate" placeholder="e.g., 12000" type="number" />
-                </div>
-                <Button 
-                  className="w-full"
-                  onClick={() => {
-                    const numberInput = document.getElementById('roomNumber') as HTMLInputElement;
-                    const rateInput = document.getElementById('rate') as HTMLInputElement;
-                    const typeSelect = document.querySelector('[data-state="open"]') as HTMLElement;
-                    const floorSelect = document.querySelector('[data-state="open"]') as HTMLElement;
-                    
-                    addNewRoom({
-                      number: numberInput.value,
-                      type: 'standard-single', // Default for demo
-                      floor: '1', // Default for demo
-                      rate: rateInput.value
-                    });
-                  }}
-                >
-                  Add Room
-                </Button>
-              </div>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -324,7 +333,7 @@ const EnhancedRoomManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Room Grid */}
+      {/* Room Grid with updated capacity and smoking info */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredRooms.map((room) => (
           <Card key={room.number} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-300 cursor-pointer">
@@ -352,9 +361,20 @@ const EnhancedRoomManagement = () => {
               )}
               
               <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">Capacity:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{room.capacity} guests</span>
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Rate:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{room.rate}</span>
               </div>
+              
+              {room.smoking && (
+                <Badge variant="outline" className="text-xs">
+                  🚬 Smoking
+                </Badge>
+              )}
               
               <div className="flex space-x-2 pt-2">
                 <Button 

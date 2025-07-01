@@ -1,537 +1,545 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { 
-  Zap, MessageSquare, ClipboardCheck, AlertTriangle, Clock, 
-  Users, Bed, Coffee, Wrench, DollarSign, Calendar, Send,
-  CheckCircle, XCircle, Phone, Mail, MessageCircle
-} from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Home, Users, MessageCircle, Package, Wrench, Phone, Mail, CreditCard, AlertTriangle, CheckCircle, Clock, DollarSign, Settings, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const QuickActionsDashboard = () => {
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [customMessage, setCustomMessage] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState("");
-  const [selectedGuest, setSelectedGuest] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState("sms");
-  const [showRoomDialog, setShowRoomDialog] = useState(false);
-  const [showSupplyDialog, setShowSupplyDialog] = useState(false);
-  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const { toast } = useToast();
+  const [showGuestCommunication, setShowGuestCommunication] = useState(false);
+  const [showRoomStatus, setShowRoomStatus] = useState(false);
+  const [showSupplyOrder, setShowSupplyOrder] = useState(false);
+  const [showMaintenanceSchedule, setShowMaintenanceSchedule] = useState(false);
+  const [showPaymentProcess, setShowPaymentProcess] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [roomStatusInfo, setRoomStatusInfo] = useState(null);
 
-  // Quick action statistics
-  const quickStats = {
-    pendingTasks: 8,
-    lowInventory: 3,
-    maintenanceAlerts: 2,
-    guestRequests: 5,
-    checkinsToday: 12,
-    checkoutsToday: 8
-  };
-
-  const messageTemplates = [
-    { id: "welcome", title: "Welcome Message", content: "Welcome to Olsupat Lodge! We're delighted to have you stay with us. If you need anything during your stay, please don't hesitate to contact our front desk." },
-    { id: "checkout", title: "Checkout Reminder", content: "Thank you for staying with us! Please note that checkout time is 11:00 AM. If you need a late checkout, please contact the front desk." },
-    { id: "maintenance", title: "Maintenance Notice", content: "We apologize for any inconvenience. Our maintenance team is working to resolve the issue as quickly as possible. We'll keep you updated on the progress." },
-    { id: "amenity", title: "Amenity Information", content: "Our restaurant is open from 7:00 AM to 10:00 PM. Room service is available 24/7. The fitness center is located on the 2nd floor and is open 24 hours." },
-    { id: "feedback", title: "Feedback Request", content: "We hope you're enjoying your stay! We'd love to hear your feedback. Please let us know if there's anything we can do to make your experience even better." }
+  // Mock data
+  const guests = [
+    { id: 1, name: "John Doe", room: "101", email: "john@email.com", phone: "+254712345678" },
+    { id: 2, name: "Jane Smith", room: "201", email: "jane@email.com", phone: "+254723456789" },
+    { id: 3, name: "Mike Johnson", room: "203", email: "mike@email.com", phone: "+254734567890" },
   ];
 
-  const rooms = ["101", "102", "103", "201", "202", "203", "301", "302", "303"];
-  const guests = ["John Doe", "Jane Smith", "Mike Johnson", "Sarah Wilson", "David Brown"];
+  const rooms = [
+    { number: "101", type: "Standard Single", status: "occupied", guest: "John Doe", floor: 1, rate: "KES 8,000", capacity: 1, smoking: false },
+    { number: "102", type: "Standard Double", status: "available", guest: null, floor: 1, rate: "KES 12,000", capacity: 2, smoking: false },
+    { number: "103", type: "Deluxe Double", status: "cleaning", guest: null, floor: 1, rate: "KES 15,000", capacity: 2, smoking: true },
+    { number: "201", type: "Standard Single", status: "occupied", guest: "Jane Smith", floor: 2, rate: "KES 8,000", capacity: 1, smoking: false },
+    { number: "202", type: "Standard Double", status: "available", guest: null, floor: 2, rate: "KES 12,000", capacity: 2, smoking: false },
+    { number: "203", type: "Deluxe Double", status: "occupied", guest: "Mike Johnson", floor: 2, rate: "KES 15,000", capacity: 2, smoking: false },
+  ];
 
-  const handleRoomStatusCheck = () => {
-    setShowRoomDialog(true);
+  const handleRoomStatusCheck = (roomNumber: string) => {
+    const room = rooms.find(r => r.number === roomNumber);
+    if (room) {
+      setRoomStatusInfo(room);
+      toast({
+        title: "Room Status Retrieved",
+        description: `Room ${roomNumber}: ${room.status} - ${room.type}`,
+      });
+    } else {
+      toast({
+        title: "Room Not Found",
+        description: `Room ${roomNumber} does not exist`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const communicationTemplates = [
+    { id: 1, name: "Welcome Message", content: "Welcome to Olsupat Lodge! We hope you enjoy your stay. Please don't hesitate to contact us if you need anything." },
+    { id: 2, name: "Checkout Reminder", content: "This is a friendly reminder that your checkout time is 11:00 AM. Please let us know if you need a late checkout." },
+    { id: 3, name: "Service Follow-up", content: "Thank you for using our room service. We hope everything was to your satisfaction. Please rate your experience." },
+    { id: 4, name: "Maintenance Notice", content: "We will be performing brief maintenance in your area. We apologize for any inconvenience and appreciate your patience." },
+  ];
+
+  const handleGuestCommunication = (guestId: string, template: string, method: string) => {
+    const guest = guests.find(g => g.id.toString() === guestId);
+    const templateContent = communicationTemplates.find(t => t.id.toString() === template);
+    
+    if (guest && templateContent) {
+      toast({
+        title: "Message Sent",
+        description: `${templateContent.name} sent to ${guest.name} via ${method}`,
+      });
+      setShowGuestCommunication(false);
+    }
   };
 
   const handleHousekeepingDispatch = () => {
-    if (!selectedRoom) {
-      toast({
-        title: "Room Required",
-        description: "Please select a room for housekeeping",
-        variant: "destructive",
-      });
-      return;
-    }
     toast({
       title: "Housekeeping Dispatched",
-      description: `Housekeeping team has been sent to Room ${selectedRoom}`,
+      description: "Housekeeping team has been notified and dispatched to the requested rooms",
     });
-    setSelectedRoom("");
   };
 
-  const handleSupplyOrder = () => {
-    setShowSupplyDialog(true);
-  };
-
-  const handleMaintenanceSchedule = () => {
-    setShowMaintenanceDialog(true);
-  };
-
-  const handlePaymentProcess = () => {
-    setShowPaymentDialog(true);
-  };
-
-  const handleCalendarUpdate = () => {
+  const handleSupplyOrder = (supplier: string, items: string, priority: string) => {
     toast({
-      title: "Calendar Updated",
-      description: "Room availability calendar has been refreshed",
+      title: "Supply Order Placed",
+      description: `Order placed with ${supplier} - Priority: ${priority}`,
     });
+    setShowSupplyOrder(false);
   };
 
-  const quickActions = [
-    { title: "Check Room Status", icon: Bed, color: "blue", action: handleRoomStatusCheck },
-    { title: "Send Housekeeping", icon: Users, color: "green", action: handleHousekeepingDispatch },
-    { title: "Order Supplies", icon: Coffee, color: "orange", action: handleSupplyOrder },
-    { title: "Schedule Maintenance", icon: Wrench, color: "red", action: handleMaintenanceSchedule },
-    { title: "Process Payment", icon: DollarSign, color: "purple", action: handlePaymentProcess },
-    { title: "Update Calendar", icon: Calendar, color: "indigo", action: handleCalendarUpdate }
-  ];
-
-  const handleSendMessage = () => {
-    if (!selectedTemplate && !customMessage) {
-      toast({
-        title: "Error",
-        description: "Please select a template or write a custom message",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedGuest) {
-      toast({
-        title: "Error",
-        description: "Please select a guest to send the message to",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const messageContent = selectedTemplate 
-      ? messageTemplates.find(t => t.id === selectedTemplate)?.content || ""
-      : customMessage;
-
+  const handleMaintenanceSchedule = (type: string, room: string, priority: string, description: string) => {
     toast({
-      title: "Message Sent",
-      description: `Message sent to ${selectedGuest} via ${selectedMethod.toUpperCase()}`,
+      title: "Maintenance Scheduled",
+      description: `${type} maintenance scheduled for Room ${room} - Priority: ${priority}`,
     });
-    setCustomMessage("");
-    setSelectedTemplate("");
-    setSelectedGuest("");
+    setShowMaintenanceSchedule(false);
+  };
+
+  const handlePaymentProcess = (amount: string, method: string, guestId: string) => {
+    const guest = guests.find(g => g.id.toString() === guestId);
+    toast({
+      title: "Payment Processed",
+      description: `KES ${amount} payment processed for ${guest?.name} via ${method}`,
+    });
+    setShowPaymentProcess(false);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Quick Actions</h1>
-          <p className="text-slate-600 dark:text-slate-400">Streamline your daily operations with one-click actions</p>
-        </div>
-        <Badge variant="outline" className="px-3 py-1">
-          <Clock className="mr-1 h-3 w-3" />
-          {new Date().toLocaleDateString()}
-        </Badge>
+      <div>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Quick Actions Dashboard</h2>
+        <p className="text-slate-600 dark:text-slate-400">Perform common hotel operations with one-click actions</p>
       </div>
 
-      {/* Alert Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950">
-          <CardContent className="p-4 text-center">
-            <AlertTriangle className="h-6 w-6 text-red-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-red-700">{quickStats.maintenanceAlerts}</p>
-            <p className="text-xs text-red-600">Urgent Issues</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950">
-          <CardContent className="p-4 text-center">
-            <Coffee className="h-6 w-6 text-yellow-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-yellow-700">{quickStats.lowInventory}</p>
-            <p className="text-xs text-yellow-600">Low Stock</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-          <CardContent className="p-4 text-center">
-            <MessageCircle className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-blue-700">{quickStats.guestRequests}</p>
-            <p className="text-xs text-blue-600">Guest Requests</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 bg-green-50 dark:bg-green-950">
-          <CardContent className="p-4 text-center">
-            <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-green-700">{quickStats.checkinsToday}</p>
-            <p className="text-xs text-green-600">Check-ins</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-200 bg-purple-50 dark:bg-purple-950">
-          <CardContent className="p-4 text-center">
-            <XCircle className="h-6 w-6 text-purple-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-purple-700">{quickStats.checkoutsToday}</p>
-            <p className="text-xs text-purple-600">Check-outs</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
-          <CardContent className="p-4 text-center">
-            <ClipboardCheck className="h-6 w-6 text-orange-600 mx-auto mb-1" />
-            <p className="text-xl font-bold text-orange-700">{quickStats.pendingTasks}</p>
-            <p className="text-xs text-orange-600">Pending Tasks</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Zap className="mr-2 h-5 w-5" />
-            One-Click Actions
-          </CardTitle>
-          <CardDescription>Perform common tasks with a single click</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {quickActions.map((action, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                className="h-20 flex flex-col items-center justify-center space-y-2 hover:scale-105 transition-transform"
-                onClick={action.action}
-              >
-                <action.icon className={`h-6 w-6 text-${action.color}-600`} />
-                <span className="text-xs text-center">{action.title}</span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Communication Templates */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MessageSquare className="mr-2 h-5 w-5" />
-            Quick Communication
-          </CardTitle>
-          <CardDescription>Send pre-written messages to guests instantly</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Select Guest</label>
-              <Select value={selectedGuest} onValueChange={setSelectedGuest}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose guest..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {guests.map((guest) => (
-                    <SelectItem key={guest} value={guest}>
-                      {guest}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Message Template</label>
-              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a template..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {messageTemplates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Send Method</label>
-              <div className="flex space-x-2">
-                <Button 
-                  size="sm" 
-                  variant={selectedMethod === "sms" ? "default" : "outline"} 
-                  className="flex-1"
-                  onClick={() => setSelectedMethod("sms")}
-                >
-                  <Phone className="mr-1 h-3 w-3" />
-                  SMS
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={selectedMethod === "email" ? "default" : "outline"} 
-                  className="flex-1"
-                  onClick={() => setSelectedMethod("email")}
-                >
-                  <Mail className="mr-1 h-3 w-3" />
-                  Email
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={selectedMethod === "app" ? "default" : "outline"} 
-                  className="flex-1"
-                  onClick={() => setSelectedMethod("app")}
-                >
-                  <MessageCircle className="mr-1 h-3 w-3" />
-                  App
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Message Preview</label>
-            <Textarea
-              placeholder="Write a custom message or select a template above..."
-              value={
-                selectedTemplate 
-                  ? messageTemplates.find(t => t.id === selectedTemplate)?.content || ""
-                  : customMessage
-              }
-              onChange={(e) => {
-                if (!selectedTemplate) {
-                  setCustomMessage(e.target.value);
-                }
-              }}
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              {selectedTemplate ? "Using template" : "Custom message"}
-            </div>
-            <Button onClick={handleSendMessage}>
-              <Send className="mr-2 h-4 w-4" />
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Guest Communication */}
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-blue-700 dark:text-blue-300">
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Guest Communication
+            </CardTitle>
+            <CardDescription>Send messages to guests via SMS, email, or in-app notifications</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => setShowGuestCommunication(true)}
+            >
               Send Message
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Recent Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Actions</CardTitle>
-          <CardDescription>Your recent quick actions for reference</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[
-              { time: "2 min ago", action: "Sent welcome message to Room 201", user: "You" },
-              { time: "5 min ago", action: "Dispatched housekeeping to Room 105", user: "You" },
-              { time: "8 min ago", action: "Ordered bathroom supplies", user: "You" },
-              { time: "12 min ago", action: "Scheduled AC maintenance for Room 304", user: "You" },
-              { time: "15 min ago", action: "Processed payment for Booking #1234", user: "You" },
-            ].map((item, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                <div>
-                  <p className="text-sm font-medium">{item.action}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{item.time} • {item.user}</p>
-                </div>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
-      <Dialog open={showRoomDialog} onOpenChange={setShowRoomDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Room Status Check</DialogTitle>
-            <DialogDescription>Select a room to check its current status</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="room-select">Room Number</Label>
-              <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select room..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem key={room} value={room}>
-                      Room {room}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={() => {
-              if (selectedRoom) {
-                toast({
-                  title: "Room Status Updated",
-                  description: `Room ${selectedRoom} status has been checked and updated`,
-                });
-                setShowRoomDialog(false);
-                setSelectedRoom("");
-              }
-            }}>
+        {/* Room Status Check */}
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-green-700 dark:text-green-300">
+              <Home className="mr-2 h-5 w-5" />
+              Room Status Check
+            </CardTitle>
+            <CardDescription>Quickly check the status and details of any room</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a room" />
+              </SelectTrigger>
+              <SelectContent>
+                {rooms.map(room => (
+                  <SelectItem key={room.number} value={room.number}>
+                    Room {room.number} - {room.type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => handleRoomStatusCheck(selectedRoom)}
+              disabled={!selectedRoom}
+            >
               Check Status
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            {roomStatusInfo && (
+              <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                <h4 className="font-semibold text-sm mb-2">Room {roomStatusInfo.number} Details:</h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Status:</span>
+                    <Badge className={
+                      roomStatusInfo.status === 'occupied' ? 'bg-red-100 text-red-800' :
+                      roomStatusInfo.status === 'available' ? 'bg-green-100 text-green-800' :
+                      roomStatusInfo.status === 'cleaning' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-orange-100 text-orange-800'
+                    }>
+                      {roomStatusInfo.status}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type:</span>
+                    <span>{roomStatusInfo.type}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Floor:</span>
+                    <span>{roomStatusInfo.floor}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Rate:</span>
+                    <span>{roomStatusInfo.rate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Capacity:</span>
+                    <span>{roomStatusInfo.capacity} guests</span>
+                  </div>
+                  {roomStatusInfo.guest && (
+                    <div className="flex justify-between">
+                      <span>Guest:</span>
+                      <span>{roomStatusInfo.guest}</span>
+                    </div>
+                  )}
+                  {roomStatusInfo.smoking && (
+                    <div className="flex justify-between">
+                      <span>Type:</span>
+                      <span>🚬 Smoking Room</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      <Dialog open={showSupplyDialog} onOpenChange={setShowSupplyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Order Supplies</DialogTitle>
-            <DialogDescription>Place a new supply order</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="supply-type">Supply Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select supply type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="towels">Towels</SelectItem>
-                  <SelectItem value="toiletries">Toiletries</SelectItem>
-                  <SelectItem value="linens">Bed Linens</SelectItem>
-                  <SelectItem value="cleaning">Cleaning Supplies</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input type="number" placeholder="Enter quantity" />
-            </div>
-            <Button onClick={() => {
-              toast({
-                title: "Supply Order Created",
-                description: "Your supply order has been submitted successfully",
-              });
-              setShowSupplyDialog(false);
-            }}>
+        {/* Housekeeping Dispatch */}
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-purple-700 dark:text-purple-300">
+              <Users className="mr-2 h-5 w-5" />
+              Housekeeping Dispatch
+            </CardTitle>
+            <CardDescription>Send housekeeping staff to specific rooms or areas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              onClick={handleHousekeepingDispatch}
+            >
+              Dispatch Team
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Supply Order */}
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-700 dark:text-orange-300">
+              <Package className="mr-2 h-5 w-5" />
+              Quick Supply Order
+            </CardTitle>
+            <CardDescription>Place emergency or routine supply orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              onClick={() => setShowSupplyOrder(true)}
+            >
               Place Order
             </Button>
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Maintenance Schedule */}
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-700 dark:text-red-300">
+              <Wrench className="mr-2 h-5 w-5" />
+              Maintenance Schedule
+            </CardTitle>
+            <CardDescription>Schedule urgent or routine maintenance tasks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-red-600 hover:bg-red-700"
+              onClick={() => setShowMaintenanceSchedule(true)}
+            >
+              Schedule Maintenance
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Payment Processing */}
+        <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border-indigo-200 dark:border-indigo-700">
+          <CardHeader>
+            <CardTitle className="flex items-center text-indigo-700 dark:text-indigo-300">
+              <CreditCard className="mr-2 h-5 w-5" />
+              Quick Payment
+            </CardTitle>
+            <CardDescription>Process guest payments and charges</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              onClick={() => setShowPaymentProcess(true)}
+            >
+              Process Payment
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Guest Communication Dialog */}
+      <Dialog open={showGuestCommunication} onOpenChange={setShowGuestCommunication}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Guest Communication</DialogTitle>
+            <DialogDescription>Send a message to a guest</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handleGuestCommunication(
+              formData.get('guest') as string,
+              formData.get('template') as string,
+              formData.get('method') as string
+            );
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guest">Select Guest</Label>
+                <Select name="guest" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a guest" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {guests.map(guest => (
+                      <SelectItem key={guest.id} value={guest.id.toString()}>
+                        {guest.name} - Room {guest.room}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="template">Message Template</Label>
+                <Select name="template" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {communicationTemplates.map(template => (
+                      <SelectItem key={template.id} value={template.id.toString()}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="method">Communication Method</Label>
+                <Select name="method" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="app">In-App Notification</SelectItem>
+                    <SelectItem value="phone">Phone Call</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">Send Message</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showMaintenanceDialog} onOpenChange={setShowMaintenanceDialog}>
+      {/* Supply Order Dialog */}
+      <Dialog open={showSupplyOrder} onOpenChange={setShowSupplyOrder}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Quick Supply Order</DialogTitle>
+            <DialogDescription>Place an order for supplies</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handleSupplyOrder(
+              formData.get('supplier') as string,
+              formData.get('items') as string,
+              formData.get('priority') as string
+            );
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="supplier">Supplier</Label>
+                <Select name="supplier" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="linen-supply">Premium Linen Supply</SelectItem>
+                    <SelectItem value="cleaning-supplies">CleanCo Supplies</SelectItem>
+                    <SelectItem value="food-beverage">F&B Distributors</SelectItem>
+                    <SelectItem value="maintenance">Maintenance Parts Co</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="items">Items Needed</Label>
+                <Textarea name="items" placeholder="List the items you need..." required />
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority Level</Label>
+                <Select name="priority" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Set priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">Place Order</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Maintenance Schedule Dialog */}
+      <Dialog open={showMaintenanceSchedule} onOpenChange={setShowMaintenanceSchedule}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Schedule Maintenance</DialogTitle>
-            <DialogDescription>Create a new maintenance request</DialogDescription>
+            <DialogDescription>Schedule a maintenance task</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="maintenance-room">Room Number</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select room..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem key={room} value={room}>
-                      Room {room}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handleMaintenanceSchedule(
+              formData.get('type') as string,
+              formData.get('room') as string,
+              formData.get('priority') as string,
+              formData.get('description') as string
+            );
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="type">Maintenance Type</Label>
+                <Select name="type" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="plumbing">Plumbing</SelectItem>
+                    <SelectItem value="electrical">Electrical</SelectItem>
+                    <SelectItem value="hvac">HVAC</SelectItem>
+                    <SelectItem value="furniture">Furniture</SelectItem>
+                    <SelectItem value="appliance">Appliance</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="room">Room/Location</Label>
+                <Select name="room" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rooms.map(room => (
+                      <SelectItem key={room.number} value={room.number}>
+                        Room {room.number}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="lobby">Lobby</SelectItem>
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                    <SelectItem value="gym">Gym</SelectItem>
+                    <SelectItem value="pool">Pool Area</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select name="priority" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Set priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea name="description" placeholder="Describe the maintenance issue..." required />
+              </div>
+              <Button type="submit" className="w-full">Schedule Maintenance</Button>
             </div>
-            <div>
-              <Label htmlFor="issue-type">Issue Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select issue type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ac">Air Conditioning</SelectItem>
-                  <SelectItem value="plumbing">Plumbing</SelectItem>
-                  <SelectItem value="electrical">Electrical</SelectItem>
-                  <SelectItem value="furniture">Furniture</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea placeholder="Describe the issue..." />
-            </div>
-            <Button onClick={() => {
-              toast({
-                title: "Maintenance Scheduled",
-                description: "Maintenance request has been created and assigned",
-              });
-              setShowMaintenanceDialog(false);
-            }}>
-              Schedule Maintenance
-            </Button>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+      {/* Payment Processing Dialog */}
+      <Dialog open={showPaymentProcess} onOpenChange={setShowPaymentProcess}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Process Payment</DialogTitle>
             <DialogDescription>Process a guest payment</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="payment-guest">Guest</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select guest..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {guests.map((guest) => (
-                    <SelectItem key={guest} value={guest}>
-                      {guest}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            handlePaymentProcess(
+              formData.get('amount') as string,
+              formData.get('method') as string,
+              formData.get('guest') as string
+            );
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guest">Guest</Label>
+                <Select name="guest" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select guest" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {guests.map(guest => (
+                      <SelectItem key={guest.id} value={guest.id.toString()}>
+                        {guest.name} - Room {guest.room}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="amount">Amount (KES)</Label>
+                <Input name="amount" type="number" placeholder="Enter amount" required />
+              </div>
+              <div>
+                <Label htmlFor="method">Payment Method</Label>
+                <Select name="method" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Credit/Debit Card</SelectItem>
+                    <SelectItem value="mpesa">M-Pesa</SelectItem>
+                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">Process Payment</Button>
             </div>
-            <div>
-              <Label htmlFor="amount">Amount (KES)</Label>
-              <Input type="number" placeholder="Enter amount" />
-            </div>
-            <div>
-              <Label htmlFor="payment-method">Payment Method</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Credit Card</SelectItem>
-                  <SelectItem value="mpesa">M-Pesa</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={() => {
-              toast({
-                title: "Payment Processed",
-                description: "Payment has been successfully processed",
-              });
-              setShowPaymentDialog(false);
-            }}>
-              Process Payment
-            </Button>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
