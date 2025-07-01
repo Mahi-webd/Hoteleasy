@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,7 +49,7 @@ const Index = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="flex items-center space-x-4 md:hidden">
+            <div className="flex items-center space-x-3">
               <div className="p-2 rounded-lg">
                 <img 
                   src="/lovable-uploads/398cb7b2-ebc9-4eed-8703-0f2623d53917.png" 

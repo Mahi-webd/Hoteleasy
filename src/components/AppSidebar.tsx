@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,18 +29,7 @@ const AppSidebar = ({ isOpen, onToggle, activeTab, setActiveTab }: AppSidebarPro
       `}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg">
-              <img 
-                src="/lovable-uploads/398cb7b2-ebc9-4eed-8703-0f2623d53917.png" 
-                alt="Olsupat Lodge" 
-                className="h-8 w-8 object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Olsupat Lodge</h1>
-            </div>
-          </div>
+          <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Navigation</div>
           <Button
             variant="ghost"
             size="sm"
