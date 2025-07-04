@@ -6,9 +6,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import DatabaseRoomManagement from "@/components/DatabaseRoomManagement";
+import GuestManagementSystem from "@/components/GuestManagementSystem";
+import { useState } from "react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const [activeView, setActiveView] = useState("rooms");
+
+  const renderActiveView = () => {
+    switch (activeView) {
+      case "rooms":
+        return <DatabaseRoomManagement />;
+      case "guests":
+        return <GuestManagementSystem />;
+      default:
+        return <DatabaseRoomManagement />;
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -39,7 +53,27 @@ const Index = () => {
             </div>
           </div>
           
-          <DatabaseRoomManagement />
+          {/* Navigation Tabs */}
+          <div className="mb-6">
+            <div className="flex space-x-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-lg p-1 w-fit">
+              <Button
+                variant={activeView === "rooms" ? "default" : "ghost"}
+                onClick={() => setActiveView("rooms")}
+                className="px-4 py-2"
+              >
+                Room Management
+              </Button>
+              <Button
+                variant={activeView === "guests" ? "default" : "ghost"}
+                onClick={() => setActiveView("guests")}
+                className="px-4 py-2"
+              >
+                Guest Management
+              </Button>
+            </div>
+          </div>
+          
+          {renderActiveView()}
         </main>
       </div>
     </SidebarProvider>
