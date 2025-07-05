@@ -44,7 +44,7 @@ interface Reservation {
   check_out_date: string;
   adults: number;
   children: number;
-  total_rate: number;
+  total_amount: number;
   special_requests?: string;
   status: string;
   guests: {
@@ -69,12 +69,12 @@ const GuestManagementSystem = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch guests
+  // Fetch guests with type assertion
   const { data: guests = [], isLoading: guestsLoading } = useQuery({
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('guests')
+        .from('guests' as any)
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -83,12 +83,12 @@ const GuestManagementSystem = () => {
     }
   });
 
-  // Fetch reservations
+  // Fetch reservations with type assertion
   const { data: reservations = [] } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('reservations')
+        .from('reservations' as any)
         .select(`
           *,
           guests(first_name, last_name, email),
@@ -152,7 +152,7 @@ const GuestManagementSystem = () => {
       notes?: string;
     }) => {
       const { error } = await supabase
-        .from('guests')
+        .from('guests' as any)
         .insert([guestData]);
       
       if (error) throw error;
@@ -179,7 +179,7 @@ const GuestManagementSystem = () => {
   const updateGuestMutation = useMutation({
     mutationFn: async ({ guestId, updates }: { guestId: string; updates: Partial<Guest> }) => {
       const { error } = await supabase
-        .from('guests')
+        .from('guests' as any)
         .update(updates)
         .eq('id', guestId);
       
@@ -257,21 +257,21 @@ const GuestManagementSystem = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Guest Management</h2>
-          <p className="text-slate-600 dark:text-slate-400">Manage guest profiles, preferences, and history</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">Guest Management</h2>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">Manage guest profiles, preferences, and history</p>
         </div>
         <Dialog open={showAddGuestDialog} onOpenChange={setShowAddGuestDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Guest
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Guest</DialogTitle>
               <DialogDescription>Create a new guest profile</DialogDescription>
@@ -281,7 +281,7 @@ const GuestManagementSystem = () => {
               const formData = new FormData(e.target as HTMLFormElement);
               handleAddGuest(formData);
             }}>
-              <div className="grid grid-cols-2 gap-4 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 space-y-2">
                 <div>
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input name="firstName" id="firstName" required />
@@ -290,7 +290,7 @@ const GuestManagementSystem = () => {
                   <Label htmlFor="lastName">Last Name *</Label>
                   <Input name="lastName" id="lastName" required />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input name="email" id="email" type="email" required />
                 </div>
@@ -310,7 +310,7 @@ const GuestManagementSystem = () => {
                   <Label htmlFor="dateOfBirth">Date of Birth</Label>
                   <Input name="dateOfBirth" id="dateOfBirth" type="date" />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Label htmlFor="address">Address</Label>
                   <Input name="address" id="address" />
                 </div>
@@ -322,19 +322,19 @@ const GuestManagementSystem = () => {
                   <Label htmlFor="country">Country</Label>
                   <Input name="country" id="country" />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Label htmlFor="preferences">Preferences</Label>
                   <Textarea name="preferences" id="preferences" placeholder="Guest preferences..." />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea name="notes" id="notes" placeholder="Additional notes..." />
                 </div>
-                <div className="col-span-2 flex items-center space-x-2">
+                <div className="col-span-1 sm:col-span-2 flex items-center space-x-2">
                   <Checkbox name="vip" id="vip" />
                   <Label htmlFor="vip">VIP Guest</Label>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Button type="submit" className="w-full" disabled={addGuestMutation.isPending}>
                     {addGuestMutation.isPending ? "Adding..." : "Add Guest"}
                   </Button>
@@ -347,19 +347,19 @@ const GuestManagementSystem = () => {
 
       {/* Filters */}
       <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-slate-200 dark:border-slate-700">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-slate-500" />
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center space-x-2 flex-1">
+              <Search className="h-4 w-4 text-slate-500 flex-shrink-0" />
               <Input
                 placeholder="Search guests..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="w-full sm:w-64"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -375,22 +375,22 @@ const GuestManagementSystem = () => {
       </Card>
 
       {/* Guest Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredGuests.map((guest) => (
           <Card key={guest.id} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-slate-500" />
-                  <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  <User className="h-5 w-5 text-slate-500 flex-shrink-0" />
+                  <CardTitle className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">
                     {guest.first_name} {guest.last_name}
                   </CardTitle>
                   {guest.vip && (
-                    <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
+                    <Star className="h-4 w-4 text-yellow-500 flex-shrink-0" fill="currentColor" />
                   )}
                 </div>
               </div>
-              <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 break-all">
                 {guest.email}
               </CardDescription>
             </CardHeader>
@@ -401,14 +401,14 @@ const GuestManagementSystem = () => {
               
               {guest.phone && (
                 <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-700 dark:text-slate-300">{guest.phone}</span>
+                  <Phone className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                  <span className="text-slate-700 dark:text-slate-300 break-all">{guest.phone}</span>
                 </div>
               )}
               
               {guest.nationality && (
                 <div className="flex items-center space-x-2 text-sm">
-                  <MapPin className="h-4 w-4 text-slate-500" />
+                  <MapPin className="h-4 w-4 text-slate-500 flex-shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">{guest.nationality}</span>
                 </div>
               )}
@@ -427,7 +427,7 @@ const GuestManagementSystem = () => {
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm"
                   onClick={() => handleViewGuest(guest)}
                 >
                   <User className="mr-1 h-3 w-3" />
@@ -440,44 +440,44 @@ const GuestManagementSystem = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {guests.filter(g => g.status === "active").length}
             </div>
-            <div className="text-sm opacity-90">Active Guests</div>
+            <div className="text-xs sm:text-sm opacity-90">Active Guests</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {guests.filter(g => g.status === "checked_in").length}
             </div>
-            <div className="text-sm opacity-90">Checked In</div>
+            <div className="text-xs sm:text-sm opacity-90">Checked In</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {guests.filter(g => g.vip).length}
             </div>
-            <div className="text-sm opacity-90">VIP Guests</div>
+            <div className="text-xs sm:text-sm opacity-90">VIP Guests</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {reservations.length}
             </div>
-            <div className="text-sm opacity-90">Total Reservations</div>
+            <div className="text-xs sm:text-sm opacity-90">Total Reservations</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Guest Details Dialog */}
       <Dialog open={showGuestDetailsDialog} onOpenChange={setShowGuestDetailsDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <User className="h-5 w-5" />
@@ -491,51 +491,51 @@ const GuestManagementSystem = () => {
           {selectedGuest && (
             <Tabs defaultValue="profile">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="reservations">Reservations</TabsTrigger>
-                <TabsTrigger value="preferences">Preferences</TabsTrigger>
+                <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
+                <TabsTrigger value="reservations" className="text-xs sm:text-sm">Reservations</TabsTrigger>
+                <TabsTrigger value="preferences" className="text-xs sm:text-sm">Preferences</TabsTrigger>
               </TabsList>
               <TabsContent value="profile" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Email</Label>
-                    <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                      <Mail className="h-4 w-4 text-slate-500" />
-                      <span>{selectedGuest.email}</span>
+                    <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded break-all">
+                      <Mail className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedGuest.email}</span>
                     </div>
                   </div>
                   <div>
                     <Label>Phone</Label>
                     <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                      <Phone className="h-4 w-4 text-slate-500" />
-                      <span>{selectedGuest.phone || 'Not provided'}</span>
+                      <Phone className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedGuest.phone || 'Not provided'}</span>
                     </div>
                   </div>
                   <div>
                     <Label>Nationality</Label>
                     <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                      <MapPin className="h-4 w-4 text-slate-500" />
-                      <span>{selectedGuest.nationality || 'Not provided'}</span>
+                      <MapPin className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedGuest.nationality || 'Not provided'}</span>
                     </div>
                   </div>
                   <div>
                     <Label>Total Stays</Label>
                     <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                      <Calendar className="h-4 w-4 text-slate-500" />
-                      <span>{selectedGuest.total_stays}</span>
+                      <Calendar className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedGuest.total_stays}</span>
                     </div>
                   </div>
                   <div>
                     <Label>Total Spent</Label>
                     <div className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                      <CreditCard className="h-4 w-4 text-slate-500" />
-                      <span>KES {selectedGuest.total_spent?.toLocaleString()}</span>
+                      <CreditCard className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                      <span className="text-sm">KES {selectedGuest.total_spent?.toLocaleString()}</span>
                     </div>
                   </div>
                   <div>
                     <Label>Last Stay</Label>
                     <div className="p-2 bg-slate-50 rounded">
-                      <span>{selectedGuest.last_stay ? new Date(selectedGuest.last_stay).toLocaleDateString() : 'Never'}</span>
+                      <span className="text-sm">{selectedGuest.last_stay ? new Date(selectedGuest.last_stay).toLocaleDateString() : 'Never'}</span>
                     </div>
                   </div>
                 </div>
@@ -545,12 +545,12 @@ const GuestManagementSystem = () => {
                   {reservations
                     .filter(r => r.guests.email === selectedGuest.email)
                     .map((reservation) => (
-                      <Card key={reservation.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-semibold">Room {reservation.rooms.room_number}</div>
-                            <div className="text-sm text-slate-600">{reservation.rooms.room_types.name}</div>
-                            <div className="text-sm">
+                      <Card key={reservation.id} className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm sm:text-base">Room {reservation.rooms.room_number}</div>
+                            <div className="text-xs sm:text-sm text-slate-600">{reservation.rooms.room_types.name}</div>
+                            <div className="text-xs sm:text-sm">
                               {new Date(reservation.check_in_date).toLocaleDateString()} - {new Date(reservation.check_out_date).toLocaleDateString()}
                             </div>
                           </div>
@@ -558,8 +558,8 @@ const GuestManagementSystem = () => {
                             <Badge className={getStatusColor(reservation.status)}>
                               {reservation.status}
                             </Badge>
-                            <div className="text-sm font-semibold mt-1">
-                              KES {reservation.total_rate.toLocaleString()}
+                            <div className="text-xs sm:text-sm font-semibold mt-1">
+                              KES {reservation.total_amount.toLocaleString()}
                             </div>
                           </div>
                         </div>
@@ -570,13 +570,13 @@ const GuestManagementSystem = () => {
               <TabsContent value="preferences" className="space-y-4">
                 <div>
                   <Label>Preferences</Label>
-                  <div className="p-3 bg-slate-50 rounded min-h-20">
+                  <div className="p-3 bg-slate-50 rounded min-h-20 text-sm">
                     {selectedGuest.preferences || 'No preferences recorded'}
                   </div>
                 </div>
                 <div>
                   <Label>Notes</Label>
-                  <div className="p-3 bg-slate-50 rounded min-h-20">
+                  <div className="p-3 bg-slate-50 rounded min-h-20 text-sm">
                     {selectedGuest.notes || 'No notes recorded'}
                   </div>
                 </div>

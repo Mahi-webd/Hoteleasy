@@ -26,7 +26,7 @@ interface Reservation {
   check_out_date: string;
   adults: number;
   children: number;
-  total_rate: number;
+  total_amount: number;
   special_requests: string | null;
   status: string;
   created_at: string;
@@ -74,12 +74,12 @@ const ReservationManagementSystem = () => {
   
   const queryClient = useQueryClient();
 
-  // Fetch reservations with related data
+  // Fetch reservations with related data using type assertion
   const { data: reservations = [], isLoading: reservationsLoading } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('reservations')
+        .from('reservations' as any)
         .select(`
           *,
           guests (first_name, last_name, email, phone),
@@ -92,12 +92,12 @@ const ReservationManagementSystem = () => {
     }
   });
 
-  // Fetch guests for the dropdown
+  // Fetch guests for the dropdown using type assertion
   const { data: guests = [] } = useQuery({
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('guests')
+        .from('guests' as any)
         .select('id, first_name, last_name, email, phone')
         .eq('status', 'active')
         .order('first_name');
@@ -129,7 +129,7 @@ const ReservationManagementSystem = () => {
   const createReservationMutation = useMutation({
     mutationFn: async (newReservation: any) => {
       const { data, error } = await supabase
-        .from('reservations')
+        .from('reservations' as any)
         .insert([newReservation])
         .select()
         .single();
@@ -151,7 +151,7 @@ const ReservationManagementSystem = () => {
   const updateReservationMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { data, error } = await supabase
-        .from('reservations')
+        .from('reservations' as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -174,7 +174,7 @@ const ReservationManagementSystem = () => {
   const checkInMutation = useMutation({
     mutationFn: async (reservationId: string) => {
       const { data, error } = await supabase
-        .from('reservations')
+        .from('reservations' as any)
         .update({ status: 'checked_in' })
         .eq('id', reservationId)
         .select()
@@ -221,7 +221,7 @@ const ReservationManagementSystem = () => {
     const room_id = formData.get('room_id') as string;
     const adults = parseInt(formData.get('adults') as string);
     const children = parseInt(formData.get('children') as string) || 0;
-    const total_rate = parseFloat(formData.get('total_rate') as string);
+    const total_amount = parseFloat(formData.get('total_amount') as string);
     const special_requests = formData.get('special_requests') as string;
 
     if (!checkInDate || !checkOutDate) {
@@ -236,28 +236,28 @@ const ReservationManagementSystem = () => {
       check_out_date: checkOutDate.toISOString().split('T')[0],
       adults,
       children,
-      total_rate,
+      total_amount,
       special_requests: special_requests || null,
       status: 'confirmed'
     });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Reservation Management</h2>
-          <p className="text-slate-600 dark:text-slate-400">Manage room bookings and guest reservations</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">Reservation Management</h2>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">Manage room bookings and guest reservations</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               New Reservation
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Reservation</DialogTitle>
               <DialogDescription>Book a new room for a guest</DialogDescription>
@@ -266,7 +266,7 @@ const ReservationManagementSystem = () => {
               e.preventDefault();
               handleCreateReservation(new FormData(e.currentTarget));
             }}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="guest_id">Guest</Label>
                   <Select name="guest_id" required>
@@ -376,15 +376,15 @@ const ReservationManagementSystem = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="total_rate">Total Rate (KES)</Label>
-                  <Input name="total_rate" type="number" step="0.01" required />
+                  <Label htmlFor="total_amount">Total Amount (KES)</Label>
+                  <Input name="total_amount" type="number" step="0.01" required />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Label htmlFor="special_requests">Special Requests</Label>
                   <Textarea name="special_requests" placeholder="Any special requests or notes..." />
                 </div>
               </div>
-              <div className="flex justify-end space-x-2 mt-6">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
@@ -399,10 +399,10 @@ const ReservationManagementSystem = () => {
 
       {/* Search and Filters */}
       <Card className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-slate-200 dark:border-slate-700">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center space-x-2 flex-1">
-              <Search className="h-4 w-4 text-slate-500" />
+              <Search className="h-4 w-4 text-slate-500 flex-shrink-0" />
               <Input
                 placeholder="Search reservations by guest name, email, room number, or ID..."
                 value={searchTerm}
@@ -411,7 +411,7 @@ const ReservationManagementSystem = () => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -429,9 +429,9 @@ const ReservationManagementSystem = () => {
 
       {/* Reservations Tabs */}
       <Tabs defaultValue="list" className="w-full">
-        <TabsList>
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="list" className="flex-1 sm:flex-none">List View</TabsTrigger>
+          <TabsTrigger value="calendar" className="flex-1 sm:flex-none">Calendar View</TabsTrigger>
         </TabsList>
         
         <TabsContent value="list" className="space-y-4">
@@ -441,18 +441,18 @@ const ReservationManagementSystem = () => {
             <div className="space-y-4">
               {filteredReservations.map((reservation) => (
                 <Card key={reservation.id} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                       {/* Guest Info */}
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-slate-500" />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          <User className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
                             {reservation.guests.first_name} {reservation.guests.last_name}
                           </span>
                         </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-                          <div>{reservation.guests.email}</div>
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                          <div className="break-all">{reservation.guests.email}</div>
                           <div>{reservation.guests.phone}</div>
                           <div className="flex items-center">
                             <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
@@ -465,18 +465,18 @@ const ReservationManagementSystem = () => {
                       {/* Booking Details */}
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <MapPin className="h-4 w-4 text-slate-500" />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          <MapPin className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
                             Room {reservation.rooms.room_number} - {reservation.rooms.room_types.name}
                           </span>
                         </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1">
                           <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
+                            <Clock className="h-3 w-3 flex-shrink-0" />
                             <span>{reservation.check_in_date} - {reservation.check_out_date}</span>
                           </div>
                           <div>{reservation.adults} adults • {reservation.children} children</div>
-                          <div>KES {reservation.total_rate.toLocaleString()}</div>
+                          <div>KES {reservation.total_amount.toLocaleString()}</div>
                         </div>
                       </div>
 
@@ -486,7 +486,7 @@ const ReservationManagementSystem = () => {
                           {reservation.status.replace('_', ' ')}
                         </Badge>
                         {reservation.special_requests && (
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
+                          <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                             <strong>Special Requests:</strong>
                             <p className="mt-1">{reservation.special_requests}</p>
                           </div>
@@ -551,42 +551,42 @@ const ReservationManagementSystem = () => {
       </Tabs>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{reservations.length}</div>
-            <div className="text-sm opacity-90">Total Reservations</div>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">{reservations.length}</div>
+            <div className="text-xs sm:text-sm opacity-90">Total Reservations</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {reservations.filter(r => r.status === "confirmed").length}
             </div>
-            <div className="text-sm opacity-90">Confirmed</div>
+            <div className="text-xs sm:text-sm opacity-90">Confirmed</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {reservations.filter(r => r.status === "pending").length}
             </div>
-            <div className="text-sm opacity-90">Pending</div>
+            <div className="text-xs sm:text-sm opacity-90">Pending</div>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className="text-xl sm:text-2xl font-bold">
               {reservations.filter(r => r.status === "checked_in").length}
             </div>
-            <div className="text-sm opacity-90">In-House</div>
+            <div className="text-xs sm:text-sm opacity-90">In-House</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Edit Reservation Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
           {selectedReservation && (
             <>
               <DialogHeader>
@@ -596,16 +596,16 @@ const ReservationManagementSystem = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Guest</Label>
-                    <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded text-sm">
                       {selectedReservation.guests.first_name} {selectedReservation.guests.last_name}
                     </div>
                   </div>
                   <div>
                     <Label>Room</Label>
-                    <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded text-sm">
                       Room {selectedReservation.rooms.room_number}
                     </div>
                   </div>
@@ -642,7 +642,7 @@ const ReservationManagementSystem = () => {
                   />
                 </div>
               </div>
-              <div className="flex justify-end space-x-2 mt-6">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-6">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Close
                 </Button>
