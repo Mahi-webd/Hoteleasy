@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import DatabaseRoomManagement from "@/components/DatabaseRoomManagement";
 import GuestManagementSystem from "@/components/GuestManagementSystem";
+import ReservationManagementSystem from "@/components/ReservationManagementSystem";
 import { useState } from "react";
 
 const Index = () => {
@@ -19,6 +20,8 @@ const Index = () => {
         return <DatabaseRoomManagement />;
       case "guests":
         return <GuestManagementSystem />;
+      case "reservations":
+        return <ReservationManagementSystem />;
       default:
         return <DatabaseRoomManagement />;
     }
@@ -69,6 +72,13 @@ const Index = () => {
                 className="px-4 py-2"
               >
                 Guest Management
+              </Button>
+              <Button
+                variant={activeView === "reservations" ? "default" : "ghost"}
+                onClick={() => setActiveView("reservations")}
+                className="px-4 py-2"
+              >
+                Reservation Management
               </Button>
             </div>
           </div>
