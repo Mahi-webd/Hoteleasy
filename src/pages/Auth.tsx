@@ -86,29 +86,29 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm border-slate-200">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-sm sm:max-w-md bg-white/80 backdrop-blur-sm border-slate-200">
+        <CardHeader className="text-center px-4 sm:px-6">
           <div className="flex justify-center mb-4">
             <img 
               src="/lovable-uploads/398cb7b2-ebc9-4eed-8703-0f2623d53917.png" 
               alt="Olsupat Lodge" 
-              className="h-12 w-12 object-contain"
+              className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold">Olsupat Lodge</CardTitle>
-          <CardDescription>Hotel Management System</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Olsupat Lodge</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Hotel Management System</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin" className="text-xs sm:text-sm">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="text-xs sm:text-sm">Sign Up</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email" className="text-sm">Email</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -116,10 +116,11 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password" className="text-sm">Password</Label>
                   <div className="relative">
                     <Input
                       id="signin-password"
@@ -128,24 +129,25 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="text-sm sm:text-base pr-10"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full text-sm sm:text-base" disabled={isLoading}>
                   {isLoading ? (
                     "Signing in..."
                   ) : (
                     <>
-                      <LogIn className="mr-2 h-4 w-4" />
+                      <LogIn className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                       Sign In
                     </>
                   )}
@@ -155,30 +157,32 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
+                    <Label htmlFor="first-name" className="text-sm">First Name</Label>
                     <Input
                       id="first-name"
                       placeholder="First name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
+                      className="text-sm sm:text-base"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
+                    <Label htmlFor="last-name" className="text-sm">Last Name</Label>
                     <Input
                       id="last-name"
                       placeholder="Last name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
+                      className="text-sm sm:text-base"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email" className="text-sm">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -186,10 +190,11 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password" className="text-sm">Password</Label>
                   <div className="relative">
                     <Input
                       id="signup-password"
@@ -199,24 +204,25 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
+                      className="text-sm sm:text-base pr-10"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full text-sm sm:text-base" disabled={isLoading}>
                   {isLoading ? (
                     "Creating account..."
                   ) : (
                     <>
-                      <UserPlus className="mr-2 h-4 w-4" />
+                      <UserPlus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                       Create Account
                     </>
                   )}
