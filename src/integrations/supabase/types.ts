@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      floors: {
+        Row: {
+          created_at: string
+          description: string | null
+          floor_number: number
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          floor_number: number
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          floor_number?: number
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -38,6 +65,96 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      room_types: {
+        Row: {
+          amenities: string[] | null
+          base_rate: number
+          created_at: string
+          description: string | null
+          id: string
+          max_occupancy: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          base_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_occupancy?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          base_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_occupancy?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          daily_rate: number
+          floor_id: string
+          id: string
+          is_smoking: boolean
+          max_occupancy: number
+          notes: string | null
+          room_number: string
+          room_type_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_rate?: number
+          floor_id: string
+          id?: string
+          is_smoking?: boolean
+          max_occupancy?: number
+          notes?: string | null
+          room_number: string
+          room_type_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_rate?: number
+          floor_id?: string
+          id?: string
+          is_smoking?: boolean
+          max_occupancy?: number
+          notes?: string | null
+          room_number?: string
+          room_type_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

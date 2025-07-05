@@ -41,7 +41,7 @@ interface RoomType {
 interface Floor {
   id: string;
   floor_number: number;
-  name: string;
+  name?: string;
 }
 
 const DatabaseRoomManagement = () => {
@@ -67,7 +67,10 @@ const DatabaseRoomManagement = () => {
         `)
         .order('room_number');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        throw error;
+      }
       return data as Room[];
     }
   });
@@ -81,7 +84,10 @@ const DatabaseRoomManagement = () => {
         .select('*')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching room types:', error);
+        throw error;
+      }
       return data as RoomType[];
     }
   });
@@ -95,7 +101,10 @@ const DatabaseRoomManagement = () => {
         .select('*')
         .order('floor_number');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching floors:', error);
+        throw error;
+      }
       return data as Floor[];
     }
   });
@@ -133,7 +142,10 @@ const DatabaseRoomManagement = () => {
         .update(updateData)
         .eq('id', roomId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating room:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -141,14 +153,15 @@ const DatabaseRoomManagement = () => {
         title: "Room Updated",
         description: "Room status has been updated successfully",
       });
+      setShowManageDialog(false);
     },
     onError: (error) => {
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
         description: "Failed to update room status",
         variant: "destructive",
       });
-      console.error('Error updating room:', error);
     }
   });
 
@@ -166,7 +179,10 @@ const DatabaseRoomManagement = () => {
         .from('rooms')
         .insert([roomData]);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding room:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -177,12 +193,12 @@ const DatabaseRoomManagement = () => {
       });
     },
     onError: (error) => {
+      console.error('Add room error:', error);
       toast({
         title: "Error",
         description: "Failed to add room",
         variant: "destructive",
       });
-      console.error('Error adding room:', error);
     }
   });
 
@@ -198,7 +214,6 @@ const DatabaseRoomManagement = () => {
         status: newStatus,
         notes
       });
-      setShowManageDialog(false);
     }
   };
 
