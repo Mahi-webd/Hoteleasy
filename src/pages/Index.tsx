@@ -8,6 +8,7 @@ import { LogOut } from "lucide-react";
 import DatabaseRoomManagement from "@/components/DatabaseRoomManagement";
 import GuestManagementSystem from "@/components/GuestManagementSystem";
 import ReservationManagementSystem from "@/components/ReservationManagementSystem";
+import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
 import { useState } from "react";
 
 const Index = () => {
@@ -22,6 +23,8 @@ const Index = () => {
         return <GuestManagementSystem />;
       case "reservations":
         return <ReservationManagementSystem />;
+      case "billing":
+        return <EnhancedBillingSystem />;
       default:
         return <DatabaseRoomManagement />;
     }
@@ -79,6 +82,13 @@ const Index = () => {
                 className="px-4 py-2"
               >
                 Reservation Management
+              </Button>
+              <Button
+                variant={activeView === "billing" ? "default" : "ghost"}
+                onClick={() => setActiveView("billing")}
+                className="px-4 py-2"
+              >
+                Billing & Payments
               </Button>
             </div>
           </div>
