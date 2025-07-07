@@ -9,14 +9,17 @@ import DatabaseRoomManagement from "@/components/DatabaseRoomManagement";
 import GuestManagementSystem from "@/components/GuestManagementSystem";
 import ReservationManagementSystem from "@/components/ReservationManagementSystem";
 import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
+import DashboardOverview from "@/components/DashboardOverview";
 import { useState } from "react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const [activeView, setActiveView] = useState("rooms");
+  const [activeView, setActiveView] = useState("dashboard");
 
   const renderActiveView = () => {
     switch (activeView) {
+      case "dashboard":
+        return <DashboardOverview />;
       case "rooms":
         return <DatabaseRoomManagement />;
       case "guests":
@@ -26,14 +29,14 @@ const Index = () => {
       case "billing":
         return <EnhancedBillingSystem />;
       default:
-        return <DatabaseRoomManagement />;
+        return <DashboardOverview />;
     }
   };
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <AppSidebar />
+        <AppSidebar activeView={activeView} setActiveView={setActiveView} />
         <main className="flex-1 p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
             <div className="flex items-center space-x-2 sm:space-x-4">
@@ -64,6 +67,13 @@ const Index = () => {
           {/* Navigation Tabs */}
           <div className="mb-4 sm:mb-6">
             <div className="flex flex-wrap gap-1 sm:gap-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-lg p-1 w-full overflow-x-auto">
+              <Button
+                variant={activeView === "dashboard" ? "default" : "ghost"}
+                onClick={() => setActiveView("dashboard")}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
+              >
+                Dashboard
+              </Button>
               <Button
                 variant={activeView === "rooms" ? "default" : "ghost"}
                 onClick={() => setActiveView("rooms")}
