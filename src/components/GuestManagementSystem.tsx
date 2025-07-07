@@ -69,35 +69,51 @@ const GuestManagementSystem = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch guests with type assertion
+  // Fetch guests
   const { data: guests = [], isLoading: guestsLoading } = useQuery({
     queryKey: ['guests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('guests' as any)
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Guest[];
+      try {
+        const { data, error } = await supabase
+          .from('guests')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching guests:', error);
+          throw error;
+        }
+        return (data || []) as Guest[];
+      } catch (error) {
+        console.error('Failed to fetch guests:', error);
+        return [] as Guest[];
+      }
     }
   });
 
-  // Fetch reservations with type assertion
+  // Fetch reservations
   const { data: reservations = [] } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reservations' as any)
-        .select(`
-          *,
-          guests(first_name, last_name, email),
-          rooms(room_number, room_types(name))
-        `)
-        .order('check_in_date', { ascending: false });
-      
-      if (error) throw error;
-      return data as Reservation[];
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            guests!inner(first_name, last_name, email),
+            rooms!inner(room_number, room_types!inner(name))
+          `)
+          .order('check_in_date', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching reservations:', error);
+          throw error;
+        }
+        return (data || []) as Reservation[];
+      } catch (error) {
+        console.error('Failed to fetch reservations:', error);
+        return [] as Reservation[];
+      }
     }
   });
 
@@ -152,7 +168,7 @@ const GuestManagementSystem = () => {
       notes?: string;
     }) => {
       const { error } = await supabase
-        .from('guests' as any)
+        .from('guests')
         .insert([guestData]);
       
       if (error) throw error;
@@ -179,7 +195,7 @@ const GuestManagementSystem = () => {
   const updateGuestMutation = useMutation({
     mutationFn: async ({ guestId, updates }: { guestId: string; updates: Partial<Guest> }) => {
       const { error } = await supabase
-        .from('guests' as any)
+        .from('guests')
         .update(updates)
         .eq('id', guestId);
       

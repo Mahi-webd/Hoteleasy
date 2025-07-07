@@ -1,6 +1,6 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import AppSidebar from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";

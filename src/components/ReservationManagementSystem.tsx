@@ -74,36 +74,52 @@ const ReservationManagementSystem = () => {
   
   const queryClient = useQueryClient();
 
-  // Fetch reservations with related data using type assertion
+  // Fetch reservations with related data
   const { data: reservations = [], isLoading: reservationsLoading } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reservations' as any)
-        .select(`
-          *,
-          guests (first_name, last_name, email, phone),
-          rooms (room_number, room_types (name))
-        `)
-        .order('check_in_date', { ascending: true });
-      
-      if (error) throw error;
-      return data as Reservation[];
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            guests!inner (first_name, last_name, email, phone),
+            rooms!inner (room_number, room_types!inner (name))
+          `)
+          .order('check_in_date', { ascending: true });
+        
+        if (error) {
+          console.error('Error fetching reservations:', error);
+          throw error;
+        }
+        return (data || []) as Reservation[];
+      } catch (error) {
+        console.error('Failed to fetch reservations:', error);
+        return [] as Reservation[];
+      }
     }
   });
 
-  // Fetch guests for the dropdown using type assertion
+  // Fetch guests for the dropdown
   const { data: guests = [] } = useQuery({
     queryKey: ['guests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('guests' as any)
-        .select('id, first_name, last_name, email, phone')
-        .eq('status', 'active')
-        .order('first_name');
-      
-      if (error) throw error;
-      return data as Guest[];
+      try {
+        const { data, error } = await supabase
+          .from('guests')
+          .select('id, first_name, last_name, email, phone')
+          .eq('status', 'active')
+          .order('first_name');
+        
+        if (error) {
+          console.error('Error fetching guests:', error);
+          throw error;
+        }
+        return (data || []) as Guest[];
+      } catch (error) {
+        console.error('Failed to fetch guests:', error);
+        return [] as Guest[];
+      }
     }
   });
 
@@ -111,17 +127,25 @@ const ReservationManagementSystem = () => {
   const { data: rooms = [] } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select(`
-          *,
-          room_types (name)
-        `)
-        .eq('status', 'available')
-        .order('room_number');
-      
-      if (error) throw error;
-      return data as Room[];
+      try {
+        const { data, error } = await supabase
+          .from('rooms')
+          .select(`
+            *,
+            room_types (name)
+          `)
+          .eq('status', 'available')
+          .order('room_number');
+        
+        if (error) {
+          console.error('Error fetching rooms:', error);
+          throw error;
+        }
+        return (data || []) as Room[];
+      } catch (error) {
+        console.error('Failed to fetch rooms:', error);
+        return [] as Room[];
+      }
     }
   });
 
@@ -129,7 +153,7 @@ const ReservationManagementSystem = () => {
   const createReservationMutation = useMutation({
     mutationFn: async (newReservation: any) => {
       const { data, error } = await supabase
-        .from('reservations' as any)
+        .from('reservations')
         .insert([newReservation])
         .select()
         .single();
@@ -151,7 +175,7 @@ const ReservationManagementSystem = () => {
   const updateReservationMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { data, error } = await supabase
-        .from('reservations' as any)
+        .from('reservations')
         .update(updates)
         .eq('id', id)
         .select()
@@ -174,7 +198,7 @@ const ReservationManagementSystem = () => {
   const checkInMutation = useMutation({
     mutationFn: async (reservationId: string) => {
       const { data, error } = await supabase
-        .from('reservations' as any)
+        .from('reservations')
         .update({ status: 'checked_in' })
         .eq('id', reservationId)
         .select()
