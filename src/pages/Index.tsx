@@ -10,6 +10,10 @@ import GuestManagementSystem from "@/components/GuestManagementSystem";
 import ReservationManagementSystem from "@/components/ReservationManagementSystem";
 import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
 import DashboardOverview from "@/components/DashboardOverview";
+import RevenueAnalytics from "@/components/RevenueAnalytics";
+import RoomManagement from "@/components/RoomManagement";
+import TaskAutomation from "@/components/TaskAutomation";
+import StaffScheduling from "@/components/StaffScheduling";
 import { useState } from "react";
 
 const Index = () => {
@@ -28,6 +32,14 @@ const Index = () => {
         return <ReservationManagementSystem />;
       case "billing":
         return <EnhancedBillingSystem />;
+      case "revenue-analytics":
+        return <RevenueAnalytics />;
+      case "room-management-alt":
+        return <RoomManagement />;
+      case "task-automation":
+        return <TaskAutomation />;
+      case "staff-scheduling":
+        return <StaffScheduling />;
       default:
         return <DashboardOverview />;
     }
@@ -101,6 +113,34 @@ const Index = () => {
                 className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
               >
                 Billing & Payments
+              </Button>
+              <Button
+                variant={activeView === "revenue-analytics" ? "default" : "ghost"}
+                onClick={() => setActiveView("revenue-analytics")}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
+              >
+                Revenue Analytics
+              </Button>
+              <Button
+                variant={activeView === "room-management-alt" ? "default" : "ghost"}
+                onClick={() => setActiveView("room-management-alt")}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
+              >
+                Enhanced Rooms
+              </Button>
+              <Button
+                variant={activeView === "task-automation" ? "default" : "ghost"}
+                onClick={() => setActiveView("task-automation")}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
+              >
+                Task Automation
+              </Button>
+              <Button
+                variant={activeView === "staff-scheduling" ? "default" : "ghost"}
+                onClick={() => setActiveView("staff-scheduling")}
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
+              >
+                Staff Scheduling
               </Button>
             </div>
           </div>

@@ -1,6 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Home, MapPin, Users, Calendar, CreditCard } from "lucide-react";
+import { 
+  Home, MapPin, Users, Calendar, CreditCard, 
+  BarChart3, Bot, UserCheck, Wrench, ClipboardList,
+  TrendingUp, Settings
+} from "lucide-react";
 
 interface AppSidebarProps {
   activeView?: string;
@@ -62,6 +66,38 @@ const AppSidebar = ({ activeView = "dashboard", setActiveView }: AppSidebarProps
         >
           <CreditCard className="mr-2 h-4 w-4" />
           Billing & Payments
+        </Button>
+        <Button 
+          variant={activeView === "revenue-analytics" ? "default" : "ghost"} 
+          className="w-full justify-start" 
+          onClick={() => handleTabClick("revenue-analytics")}
+        >
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Revenue Analytics
+        </Button>
+        <Button 
+          variant={activeView === "room-management-alt" ? "default" : "ghost"} 
+          className="w-full justify-start" 
+          onClick={() => handleTabClick("room-management-alt")}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Enhanced Rooms
+        </Button>
+        <Button 
+          variant={activeView === "task-automation" ? "default" : "ghost"} 
+          className="w-full justify-start" 
+          onClick={() => handleTabClick("task-automation")}
+        >
+          <Bot className="mr-2 h-4 w-4" />
+          Task Automation
+        </Button>
+        <Button 
+          variant={activeView === "staff-scheduling" ? "default" : "ghost"} 
+          className="w-full justify-start" 
+          onClick={() => handleTabClick("staff-scheduling")}
+        >
+          <UserCheck className="mr-2 h-4 w-4" />
+          Staff Scheduling
         </Button>
       </nav>
     </aside>
