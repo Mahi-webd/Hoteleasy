@@ -13,7 +13,40 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+  activeView: string;
+  setActiveView: (view: string) => void;
+}
+
+const AppSidebar = ({ activeView, setActiveView }: AppSidebarProps) => {
+  const mainMenuItems = [
+    { id: "dashboard", label: "Dashboard", icon: Home },
+    { id: "rooms", label: "Room Management", icon: MapPin },
+    { id: "guests", label: "Guest Management", icon: Users },
+    { id: "reservations", label: "Reservations", icon: Calendar },
+    { id: "billing", label: "Billing & Payments", icon: CreditCard },
+    { id: "reports", label: "Reports", icon: BarChart3 },
+  ];
+
+  const operationsItems = [
+    { id: "housekeeping", label: "Housekeeping", icon: UserCheck },
+    { id: "maintenance", label: "Maintenance", icon: Wrench },
+    { id: "scheduling", label: "Staff Scheduling", icon: Clock },
+  ];
+
+  const guestExperienceItems = [
+    { id: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone },
+    { id: "feedback", label: "Guest Feedback", icon: Star },
+    { id: "concierge", label: "Digital Concierge", icon: MessageCircle },
+  ];
+
+  const toolsItems = [
+    { id: "quick-actions", label: "Quick Actions", icon: Zap },
+    { id: "automation", label: "Automation", icon: Bot },
+    { id: "inventory", label: "Inventory", icon: Package },
+    { id: "analytics", label: "Analytics", icon: Target },
+  ];
+
   return (
     <Sidebar className="border-r bg-sidebar">
       <SidebarHeader className="border-b">
@@ -40,42 +73,21 @@ const AppSidebar = () => {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Home className="mr-3 h-4 w-4" />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <MapPin className="mr-3 h-4 w-4" />
-                  <span>Room Management</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Users className="mr-3 h-4 w-4" />
-                  <span>Guest Management</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Calendar className="mr-3 h-4 w-4" />
-                  <span>Reservations</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <CreditCard className="mr-3 h-4 w-4" />
-                  <span>Billing & Payments</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <BarChart3 className="mr-3 h-4 w-4" />
-                  <span>Reports</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {mainMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    className={`w-full justify-start px-3 py-2 text-sm ${
+                      activeView === item.id 
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                        : "hover:bg-sidebar-accent/50"
+                    }`}
+                    onClick={() => setActiveView(item.id)}
+                  >
+                    <item.icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -87,24 +99,21 @@ const AppSidebar = () => {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <UserCheck className="mr-3 h-4 w-4" />
-                  <span>Housekeeping</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Wrench className="mr-3 h-4 w-4" />
-                  <span>Maintenance</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Clock className="mr-3 h-4 w-4" />
-                  <span>Staff Scheduling</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {operationsItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    className={`w-full justify-start px-3 py-2 text-sm ${
+                      activeView === item.id 
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                        : "hover:bg-sidebar-accent/50"
+                    }`}
+                    onClick={() => setActiveView(item.id)}
+                  >
+                    <item.icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -116,24 +125,21 @@ const AppSidebar = () => {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Smartphone className="mr-3 h-4 w-4" />
-                  <span>Mobile Check-in</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Star className="mr-3 h-4 w-4" />
-                  <span>Guest Feedback</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <MessageCircle className="mr-3 h-4 w-4" />
-                  <span>Digital Concierge</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {guestExperienceItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    className={`w-full justify-start px-3 py-2 text-sm ${
+                      activeView === item.id 
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                        : "hover:bg-sidebar-accent/50"
+                    }`}
+                    onClick={() => setActiveView(item.id)}
+                  >
+                    <item.icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -145,30 +151,21 @@ const AppSidebar = () => {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Zap className="mr-3 h-4 w-4" />
-                  <span>Quick Actions</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Bot className="mr-3 h-4 w-4" />
-                  <span>Automation</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Package className="mr-3 h-4 w-4" />
-                  <span>Inventory</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
-                  <Target className="mr-3 h-4 w-4" />
-                  <span>Analytics</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {toolsItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton 
+                    className={`w-full justify-start px-3 py-2 text-sm ${
+                      activeView === item.id 
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                        : "hover:bg-sidebar-accent/50"
+                    }`}
+                    onClick={() => setActiveView(item.id)}
+                  >
+                    <item.icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
