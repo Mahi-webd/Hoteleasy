@@ -32,21 +32,27 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <main className="flex-1 p-3 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <SidebarTrigger />
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">
-                Hotel Management System
-              </h1>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-              <span className="text-sm text-slate-600 dark:text-slate-400 truncate max-w-[200px] sm:max-w-none">
-                Welcome, {user?.email}
-              </span>
-              <div className="flex items-center space-x-2">
+        <main className="flex-1">
+          {/* Header */}
+          <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <SidebarTrigger className="h-8 w-8" />
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    Hotel Management System
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Manage your hotel operations efficiently
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-muted-foreground hidden sm:block">
+                  Welcome, {user?.email}
+                </span>
                 <ThemeToggle />
                 <Button
                   variant="outline"
@@ -59,43 +65,52 @@ const Index = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </header>
           
           {/* Navigation Tabs */}
-          <div className="mb-4 sm:mb-6">
-            <div className="flex flex-wrap gap-1 sm:gap-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-lg p-1 w-full overflow-x-auto">
-              <Button
-                variant={activeView === "rooms" ? "default" : "ghost"}
-                onClick={() => setActiveView("rooms")}
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
-              >
-                Room Management
-              </Button>
-              <Button
-                variant={activeView === "guests" ? "default" : "ghost"}
-                onClick={() => setActiveView("guests")}
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
-              >
-                Guest Management
-              </Button>
-              <Button
-                variant={activeView === "reservations" ? "default" : "ghost"}
-                onClick={() => setActiveView("reservations")}
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
-              >
-                Reservations
-              </Button>
-              <Button
-                variant={activeView === "billing" ? "default" : "ghost"}
-                onClick={() => setActiveView("billing")}
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm flex-shrink-0"
-              >
-                Billing & Payments
-              </Button>
+          <div className="bg-card/30 border-b">
+            <div className="px-6 py-3">
+              <div className="flex space-x-1 bg-muted/50 rounded-lg p-1 max-w-fit">
+                <Button
+                  variant={activeView === "rooms" ? "default" : "ghost"}
+                  onClick={() => setActiveView("rooms")}
+                  className="px-4 py-2 text-sm font-medium"
+                  size="sm"
+                >
+                  Room Management
+                </Button>
+                <Button
+                  variant={activeView === "guests" ? "default" : "ghost"}
+                  onClick={() => setActiveView("guests")}
+                  className="px-4 py-2 text-sm font-medium"
+                  size="sm"
+                >
+                  Guest Management
+                </Button>
+                <Button
+                  variant={activeView === "reservations" ? "default" : "ghost"}
+                  onClick={() => setActiveView("reservations")}
+                  className="px-4 py-2 text-sm font-medium"
+                  size="sm"
+                >
+                  Reservations
+                </Button>
+                <Button
+                  variant={activeView === "billing" ? "default" : "ghost"}
+                  onClick={() => setActiveView("billing")}
+                  className="px-4 py-2 text-sm font-medium"
+                  size="sm"
+                >
+                  Billing & Payments
+                </Button>
+              </div>
             </div>
           </div>
           
-          {renderActiveView()}
+          {/* Main Content */}
+          <div className="p-6">
+            {renderActiveView()}
+          </div>
         </main>
       </div>
     </SidebarProvider>

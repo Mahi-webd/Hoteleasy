@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Users, Home, Bell, Search, Settings, User, Plus, MapPin, Phone, Mail, CreditCard, ShoppingCart, BarChart3, Smartphone, MessageCircle, Star, Wrench, UserCheck, Clock, Target, Zap, Bot, Package } from "lucide-react";
+import { Calendar, Users, Home, CreditCard, MapPin, BarChart3, UserCheck, Wrench, Clock, Smartphone, Star, MessageCircle, Zap, Bot, Package, Target } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,57 +15,65 @@ import {
 
 const AppSidebar = () => {
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="text-sm font-medium text-slate-600 dark:text-slate-400 p-4">
-          Hotel Management
+    <Sidebar className="border-r bg-sidebar">
+      <SidebarHeader className="border-b">
+        <div className="flex items-center space-x-3 px-4 py-4">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <Home className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+              Olsupat Lodge
+            </h2>
+            <p className="text-xs text-sidebar-foreground/70">
+              Management System
+            </p>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
+        {/* Main Navigation */}
         <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 px-3 py-2">
+            MAIN MENU
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Home className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Home className="mr-3 h-4 w-4" />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <MapPin className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <MapPin className="mr-3 h-4 w-4" />
                   <span>Room Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Users className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Users className="mr-3 h-4 w-4" />
                   <span>Guest Management</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Calendar className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Calendar className="mr-3 h-4 w-4" />
                   <span>Reservations</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <CreditCard className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <CreditCard className="mr-3 h-4 w-4" />
                   <span>Billing & Payments</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  <span>POS Orders</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  <span>MIS Reports</span>
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <BarChart3 className="mr-3 h-4 w-4" />
+                  <span>Reports</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -74,25 +81,27 @@ const AppSidebar = () => {
         </SidebarGroup>
         
         {/* Operations Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>OPERATIONS</SidebarGroupLabel>
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 px-3 py-2">
+            OPERATIONS
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <UserCheck className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <UserCheck className="mr-3 h-4 w-4" />
                   <span>Housekeeping</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Wrench className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Wrench className="mr-3 h-4 w-4" />
                   <span>Maintenance</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Clock className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Clock className="mr-3 h-4 w-4" />
                   <span>Staff Scheduling</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -101,25 +110,27 @@ const AppSidebar = () => {
         </SidebarGroup>
         
         {/* Guest Experience Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>GUEST EXPERIENCE</SidebarGroupLabel>
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 px-3 py-2">
+            GUEST EXPERIENCE
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Smartphone className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Smartphone className="mr-3 h-4 w-4" />
                   <span>Mobile Check-in</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Star className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Star className="mr-3 h-4 w-4" />
                   <span>Guest Feedback</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <MessageCircle className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <MessageCircle className="mr-3 h-4 w-4" />
                   <span>Digital Concierge</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -127,54 +138,35 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {/* Efficiency Tools Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>EFFICIENCY TOOLS</SidebarGroupLabel>
+        {/* Tools Section */}
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 px-3 py-2">
+            TOOLS
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Zap className="mr-2 h-4 w-4" />
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Zap className="mr-3 h-4 w-4" />
                   <span>Quick Actions</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Bot className="mr-2 h-4 w-4" />
-                  <span>Task Automation</span>
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Bot className="mr-3 h-4 w-4" />
+                  <span>Automation</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Package className="mr-2 h-4 w-4" />
-                  <span>Inventory Alerts</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        {/* Revenue & Analytics Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>REVENUE & ANALYTICS</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  <span>Revenue Analytics</span>
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Package className="mr-3 h-4 w-4" />
+                  <span>Inventory</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Financial Reports</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Target className="mr-2 h-4 w-4" />
-                  <span>Budget Management</span>
+                <SidebarMenuButton className="w-full justify-start px-3 py-2 text-sm">
+                  <Target className="mr-3 h-4 w-4" />
+                  <span>Analytics</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
