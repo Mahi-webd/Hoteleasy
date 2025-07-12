@@ -128,16 +128,16 @@ const FinancialReporting = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">Financial Reporting</h2>
-          <p className="text-sm sm:text-base text-slate-600">Financial statements, tax reports, and compliance management</p>
+          <h2 className="text-3xl font-bold text-slate-800">Financial Reporting</h2>
+          <p className="text-slate-600">Financial statements, tax reports, and compliance management</p>
         </div>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+        <div className="flex space-x-2">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-full sm:w-32">
+            <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -146,51 +146,50 @@ const FinancialReporting = () => {
               <SelectItem value="yearly">Yearly</SelectItem>
             </SelectContent>
           </Select>
-          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 w-full sm:w-auto">
+          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
             <FileText className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Generate Report</span>
-            <span className="sm:hidden">Generate</span>
+            Generate Report
           </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="statements" className="text-xs sm:text-sm">Statements</TabsTrigger>
-          <TabsTrigger value="tax" className="text-xs sm:text-sm">Tax Reports</TabsTrigger>
-          <TabsTrigger value="compliance" className="text-xs sm:text-sm">Compliance</TabsTrigger>
-          <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="statements">Financial Statements</TabsTrigger>
+          <TabsTrigger value="tax">Tax Reports</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="analytics">Financial Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="statements" className="space-y-4 sm:space-y-6">
+        <TabsContent value="statements" className="space-y-6">
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-3 sm:p-6 text-center">
-                <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1 text-sm sm:text-base">P&L Statement</h3>
-                <p className="text-xs sm:text-sm text-slate-600">Generate profit & loss</p>
+              <CardContent className="p-6 text-center">
+                <FileText className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">P&L Statement</h3>
+                <p className="text-sm text-slate-600">Generate profit & loss</p>
               </CardContent>
             </Card>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-3 sm:p-6 text-center">
-                <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1 text-sm sm:text-base">Balance Sheet</h3>
-                <p className="text-xs sm:text-sm text-slate-600">Assets & liabilities</p>
+              <CardContent className="p-6 text-center">
+                <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Balance Sheet</h3>
+                <p className="text-sm text-slate-600">Assets & liabilities</p>
               </CardContent>
             </Card>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-3 sm:p-6 text-center">
-                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1 text-sm sm:text-base">Cash Flow</h3>
-                <p className="text-xs sm:text-sm text-slate-600">Cash movement analysis</p>
+              <CardContent className="p-6 text-center">
+                <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Cash Flow</h3>
+                <p className="text-sm text-slate-600">Cash movement analysis</p>
               </CardContent>
             </Card>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-3 sm:p-6 text-center">
-                <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1 text-sm sm:text-base">Trial Balance</h3>
-                <p className="text-xs sm:text-sm text-slate-600">Account balances</p>
+              <CardContent className="p-6 text-center">
+                <Calendar className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Trial Balance</h3>
+                <p className="text-sm text-slate-600">Account balances</p>
               </CardContent>
             </Card>
           </div>
@@ -198,33 +197,30 @@ const FinancialReporting = () => {
           {/* Generated Statements */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Recent Financial Statements</CardTitle>
-              <CardDescription className="text-sm sm:text-base">Generated financial reports and statements</CardDescription>
+              <CardTitle>Recent Financial Statements</CardTitle>
+              <CardDescription>Generated financial reports and statements</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {financialStatements.map((statement, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-slate-50 space-y-3 sm:space-y-0">
-                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
-                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0 mt-1 sm:mt-0" />
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-medium text-slate-800 text-sm sm:text-base truncate">{statement.name}</h4>
-                        <p className="text-xs sm:text-sm text-slate-600">
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
+                    <div className="flex items-center space-x-4">
+                      <FileText className="h-8 w-8 text-blue-600" />
+                      <div>
+                        <h4 className="font-medium text-slate-800">{statement.name}</h4>
+                        <p className="text-sm text-slate-600">
                           {statement.period} • Last updated: {statement.lastUpdated}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getStatusColor(statement.status)}>
-                          {statement.status}
-                        </Badge>
-                        <span className="text-xs sm:text-sm text-slate-500">{statement.size}</span>
-                      </div>
+                    <div className="flex items-center space-x-4">
+                      <Badge className={getStatusColor(statement.status)}>
+                        {statement.status}
+                      </Badge>
+                      <span className="text-sm text-slate-500">{statement.size}</span>
                       {statement.status === 'Generated' && (
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                          <Download className="h-4 w-4 sm:mr-2" />
-                          <span className="hidden sm:inline">Download</span>
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -235,31 +231,31 @@ const FinancialReporting = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tax" className="space-y-4 sm:space-y-6">
+        <TabsContent value="tax" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Tax Reports & Returns</CardTitle>
-              <CardDescription className="text-sm sm:text-base">KRA tax compliance and reporting</CardDescription>
+              <CardTitle>Tax Reports & Returns</CardTitle>
+              <CardDescription>KRA tax compliance and reporting</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {taxReports.map((report, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-0">
-                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
                       {getStatusIcon(report.status)}
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-medium text-slate-800 text-sm sm:text-base">{report.name}</h4>
-                        <p className="text-xs sm:text-sm text-slate-600">Due: {report.dueDate}</p>
+                      <div>
+                        <h4 className="font-medium text-slate-800">{report.name}</h4>
+                        <p className="text-sm text-slate-600">Due: {report.dueDate}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-                      <div className="text-left sm:text-right">
-                        <p className="font-medium text-sm sm:text-base">{report.amount}</p>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="font-medium">{report.amount}</p>
                         <Badge className={getStatusColor(report.status)}>
                           {report.status}
                         </Badge>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm">
                         View Details
                       </Button>
                     </div>
@@ -270,27 +266,27 @@ const FinancialReporting = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="compliance" className="space-y-4 sm:space-y-6">
+        <TabsContent value="compliance" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Compliance Dashboard</CardTitle>
-              <CardDescription className="text-sm sm:text-base">Track regulatory compliance requirements</CardDescription>
+              <CardTitle>Compliance Dashboard</CardTitle>
+              <CardDescription>Track regulatory compliance requirements</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {complianceItems.map((item, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-0">
-                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
                       {getStatusIcon(item.status)}
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-medium text-slate-800 text-sm sm:text-base">{item.requirement}</h4>
-                        <p className="text-xs sm:text-sm text-slate-600">{item.description}</p>
+                      <div>
+                        <h4 className="font-medium text-slate-800">{item.requirement}</h4>
+                        <p className="text-sm text-slate-600">{item.description}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className="text-left sm:text-right">
-                        <p className="text-xs sm:text-sm text-slate-600">Next Due:</p>
-                        <p className="font-medium text-sm">{item.nextDue}</p>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600">Next Due:</p>
+                        <p className="font-medium">{item.nextDue}</p>
                       </div>
                       <Badge className={getStatusColor(item.status)}>
                         {item.status}
@@ -303,17 +299,17 @@ const FinancialReporting = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+        <TabsContent value="analytics" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Financial Analytics</CardTitle>
-              <CardDescription className="text-sm sm:text-base">Advanced financial performance analysis</CardDescription>
+              <CardTitle>Financial Analytics</CardTitle>
+              <CardDescription>Advanced financial performance analysis</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 sm:py-12">
-                <TrendingUp className="h-12 w-12 sm:h-16 sm:w-16 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-2">Advanced Financial Analytics</h3>
-                <p className="text-sm sm:text-base text-slate-600">Detailed financial analysis and performance metrics coming soon</p>
+              <div className="text-center py-12">
+                <TrendingUp className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">Advanced Financial Analytics</h3>
+                <p className="text-slate-600">Detailed financial analysis and performance metrics coming soon</p>
               </div>
             </CardContent>
           </Card>
