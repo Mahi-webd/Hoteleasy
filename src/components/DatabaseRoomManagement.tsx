@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -258,11 +257,11 @@ const DatabaseRoomManagement = () => {
   };
 
   const filteredRooms = rooms.filter(room => {
-    const matchesFloor = selectedFloor === "all" || room.floors.floor_number.toString() === selectedFloor;
+    const matchesFloor = selectedFloor === "all" || (room.floors && room.floors.floor_number.toString() === selectedFloor);
     const matchesStatus = selectedStatus === "all" || room.status === selectedStatus;
     const matchesSearch = searchTerm === "" || 
       room.room_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.room_types.name.toLowerCase().includes(searchTerm.toLowerCase());
+      (room.room_types && room.room_types.name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     return matchesFloor && matchesStatus && matchesSearch;
   });
@@ -409,7 +408,7 @@ const DatabaseRoomManagement = () => {
                 <div className="text-xl">{getStatusIcon(room.status)}</div>
               </div>
               <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
-                {room.room_types.name} • Floor {room.floors.floor_number}
+                {room.room_types?.name || 'Unknown Type'} • Floor {room.floors?.floor_number || 'Unknown'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
