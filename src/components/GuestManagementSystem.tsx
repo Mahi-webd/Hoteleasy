@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +43,7 @@ interface Reservation {
   check_out_date: string;
   adults: number;
   children: number;
-  total_rate: number;
+  total_amount: number;
   special_requests?: string;
   status: string;
   guests: {
@@ -559,7 +558,7 @@ const GuestManagementSystem = () => {
                               {reservation.status}
                             </Badge>
                             <div className="text-sm font-semibold mt-1">
-                              KES {reservation.total_rate.toLocaleString()}
+                              KES {reservation.total_amount.toLocaleString()}
                             </div>
                           </div>
                         </div>
