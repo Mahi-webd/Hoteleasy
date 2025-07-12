@@ -7,16 +7,20 @@ import DatabaseRoomManagement from "@/components/DatabaseRoomManagement";
 import GuestManagementSystem from "@/components/GuestManagementSystem";
 import ReservationManagementSystem from "@/components/ReservationManagementSystem";
 import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
+import DashboardOverview from "@/components/DashboardOverview";
+import MISReports from "@/components/MISReports";
 import AppSidebar from "@/components/AppSidebar";
 import { useState } from "react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const [activeView, setActiveView] = useState("rooms");
+  const [activeView, setActiveView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderActiveView = () => {
     switch (activeView) {
+      case "dashboard":
+        return <DashboardOverview />;
       case "rooms":
         return <DatabaseRoomManagement />;
       case "guests":
@@ -25,8 +29,10 @@ const Index = () => {
         return <ReservationManagementSystem />;
       case "billing":
         return <EnhancedBillingSystem />;
+      case "reports":
+        return <MISReports />;
       default:
-        return <DatabaseRoomManagement />;
+        return <DashboardOverview />;
     }
   };
 
@@ -79,6 +85,13 @@ const Index = () => {
         <div className="mb-6 hidden md:block">
           <div className="flex space-x-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-lg p-1 w-fit">
             <Button
+              variant={activeView === "dashboard" ? "default" : "ghost"}
+              onClick={() => setActiveView("dashboard")}
+              className="px-4 py-2"
+            >
+              Dashboard
+            </Button>
+            <Button
               variant={activeView === "rooms" ? "default" : "ghost"}
               onClick={() => setActiveView("rooms")}
               className="px-4 py-2"
@@ -105,6 +118,13 @@ const Index = () => {
               className="px-4 py-2"
             >
               Billing & Payments
+            </Button>
+            <Button
+              variant={activeView === "reports" ? "default" : "ghost"}
+              onClick={() => setActiveView("reports")}
+              className="px-4 py-2"
+            >
+              MIS Reports
             </Button>
           </div>
         </div>
