@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,7 @@ interface Reservation {
   check_out_date: string;
   adults: number;
   children: number;
-  total_rate: number;
+  total_amount: number;
   special_requests: string | null;
   status: string;
   created_at: string;
@@ -221,7 +220,7 @@ const ReservationManagementSystem = () => {
     const room_id = formData.get('room_id') as string;
     const adults = parseInt(formData.get('adults') as string);
     const children = parseInt(formData.get('children') as string) || 0;
-    const total_rate = parseFloat(formData.get('total_rate') as string);
+    const total_amount = parseFloat(formData.get('total_amount') as string);
     const special_requests = formData.get('special_requests') as string;
 
     if (!checkInDate || !checkOutDate) {
@@ -236,7 +235,7 @@ const ReservationManagementSystem = () => {
       check_out_date: checkOutDate.toISOString().split('T')[0],
       adults,
       children,
-      total_rate,
+      total_amount,
       special_requests: special_requests || null,
       status: 'confirmed'
     });
@@ -376,8 +375,8 @@ const ReservationManagementSystem = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="total_rate">Total Rate (KES)</Label>
-                  <Input name="total_rate" type="number" step="0.01" required />
+                  <Label htmlFor="total_amount">Total Amount (KES)</Label>
+                  <Input name="total_amount" type="number" step="0.01" required />
                 </div>
                 <div className="col-span-2">
                   <Label htmlFor="special_requests">Special Requests</Label>
@@ -476,7 +475,7 @@ const ReservationManagementSystem = () => {
                             <span>{reservation.check_in_date} - {reservation.check_out_date}</span>
                           </div>
                           <div>{reservation.adults} adults • {reservation.children} children</div>
-                          <div>KES {reservation.total_rate.toLocaleString()}</div>
+                          <div>KES {reservation.total_amount.toLocaleString()}</div>
                         </div>
                       </div>
 
