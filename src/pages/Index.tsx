@@ -16,6 +16,7 @@ import GuestManagement from "@/components/GuestManagement";
 import EnhancedReservationSystem from "@/components/EnhancedReservationSystem";
 import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
 import EnhancedPOSOrders from "@/components/EnhancedPOSOrders";
+import POSScreen from "@/components/POSScreen";
 import MISReports from "@/components/MISReports";
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import GuestFeedback from "@/components/GuestFeedback";
@@ -113,6 +114,9 @@ const Index = () => {
             </TabsContent>
             <TabsContent value="pos">
               <EnhancedPOSOrders />
+            </TabsContent>
+            <TabsContent value="pos-screen">
+              <POSScreen />
             </TabsContent>
             <TabsContent value="reports">
               <MISReports />
