@@ -1,792 +1,797 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Minus, CreditCard, DollarSign, Clock, Users, ArrowLeft, MoreHorizontal, Search, Grid, List } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Plus, 
+  Minus, 
+  Users, 
+  Clock, 
+  CreditCard, 
+  Check,
+  Edit,
+  Trash2,
+  Coffee,
+  UtensilsCrossed,
+  Wine,
+  Monitor,
+  Search,
+  ShoppingCart,
+  ArrowLeft,
+  RefreshCw
+} from 'lucide-react';
+
+// Define interfaces for our data structures
+interface MenuCategory {
+  id: string;
+  name: string;
+  display_order: number;
+  is_active: boolean;
+}
 
 interface MenuItem {
   id: string;
+  category_id: string;
   name: string;
+  description: string | null;
   price: number;
-  category: string;
-  image?: string;
-  available: boolean;
-  options?: Array<{
-    name: string;
-    choices: Array<{ name: string; price: number }>;
-  }>;
+  image_url: string | null;
+  is_available: boolean;
+  display_order: number;
 }
 
 interface OrderItem {
   id: string;
-  menuItemId: string;
+  menu_item_id: string;
   name: string;
   price: number;
   quantity: number;
-  options?: Array<{ name: string; choice: string; price: number }>;
-  special_instructions?: string;
+  total_price: number;
+  notes?: string;
 }
 
 interface Order {
   id: string;
-  tableNumber?: string;
-  roomNumber?: string;
-  customerName?: string;
-  items: OrderItem[];
-  status: 'new' | 'preparing' | 'ready' | 'completed';
-  orderTime: Date;
-  estimatedTime?: number;
+  order_number: number;
+  table_id: string | null;
+  customer_name: string | null;
+  status: 'new' | 'preparing' | 'ready' | 'served' | 'paid' | 'cancelled';
+  subtotal: number;
+  tax: number;
   total: number;
-  type: 'dine-in' | 'room-service' | 'takeaway';
+  notes: string | null;
+  created_at: string;
+  pos_order_items?: any[];
 }
 
 interface Table {
   id: string;
-  number: string;
-  seats: number;
-  status: 'available' | 'occupied' | 'reserved';
-  currentOrder?: string;
+  table_number: number;
+  capacity: number;
   area: string;
+  status: 'available' | 'occupied' | 'reserved' | 'cleaning';
 }
 
-const POSScreen = () => {
-  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'checkout'>('tables');
+export default function POSScreen() {
+  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'new-order'>('tables');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrderForCheckout, setSelectedOrderForCheckout] = useState<Order | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
-  const [tip, setTip] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [tables, setTables] = useState<Table[]>([]);
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [customerName, setCustomerName] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Sample data
-  const tables: Table[] = [
-    { id: "1", number: "101", seats: 4, status: "available", area: "Restaurant" },
-    { id: "2", number: "102", seats: 4, status: "occupied", currentOrder: "ord-1", area: "Restaurant" },
-    { id: "3", number: "103", seats: 4, status: "available", area: "Restaurant" },
-    { id: "4", number: "104", seats: 4, status: "available", area: "Restaurant" },
-    { id: "5", number: "105", seats: 6, status: "occupied", currentOrder: "ord-2", area: "Restaurant" },
-    { id: "6", number: "106", seats: 4, status: "occupied", currentOrder: "ord-3", area: "Restaurant" },
-    { id: "7", number: "107", seats: 4, status: "available", area: "Restaurant" },
-    { id: "8", number: "108", seats: 4, status: "occupied", currentOrder: "ord-4", area: "Restaurant" },
-    { id: "9", number: "109", seats: 4, status: "available", area: "Restaurant" },
-    { id: "10", number: "110", seats: 4, status: "available", area: "Restaurant" },
-    { id: "11", number: "111", seats: 4, status: "occupied", currentOrder: "ord-5", area: "Terrace" },
-    { id: "12", number: "112", seats: 3, status: "occupied", currentOrder: "ord-6", area: "Terrace" },
-    { id: "13", number: "113", seats: 10, status: "occupied", currentOrder: "ord-7", area: "Terrace" },
-    { id: "14", number: "114", seats: 6, status: "occupied", currentOrder: "ord-8", area: "Terrace" },
-    { id: "15", number: "115", seats: 6, status: "occupied", currentOrder: "ord-9", area: "Terrace" },
-  ];
-
-  const menuItems: MenuItem[] = [
-    { id: "1", name: "Burger", price: 10.00, category: "Main", available: true },
-    { id: "2", name: "Big Burger", price: 15.00, category: "Main", available: true },
-    { id: "3", name: "Salad", price: 8.00, category: "Main", available: true },
-    { id: "4", name: "Pumpkin Soup", price: 6.50, category: "Appetizer", available: true },
-    { id: "5", name: "Standard Breakfast", price: 12.00, category: "Breakfast", available: true },
-    { id: "6", name: "American Breakfast", price: 17.00, category: "Breakfast", available: true },
-    { id: "7", name: "Tea", price: 3.00, category: "Beverage", available: true },
-    { id: "8", name: "Coffee", price: 4.00, category: "Beverage", available: true },
-    { id: "9", name: "Marble Steak", price: 25.00, category: "Main", available: true,
-      options: [
-        {
-          name: "Cooking Style",
-          choices: [
-            { name: "Rare", price: 0 },
-            { name: "Medium Rare", price: 0 },
-            { name: "Medium", price: 0 },
-            { name: "Well Done", price: 0 }
-          ]
-        },
-        {
-          name: "Sauce",
-          choices: [
-            { name: "Tomato Sauce", price: 3.00 },
-            { name: "Cheese Sauce", price: 2.00 },
-            { name: "Garlic Sauce", price: 2.00 }
-          ]
-        }
-      ]
-    }
-  ];
-
-  // Initialize sample orders
+  // Load data on component mount
   useEffect(() => {
-    const sampleOrders: Order[] = [
-      {
-        id: "ord-1",
-        tableNumber: "102",
-        items: [
-          { id: "1", menuItemId: "1", name: "Burger", price: 10.00, quantity: 1 },
-          { id: "2", menuItemId: "3", name: "Salad", price: 8.00, quantity: 1, options: [{ name: "Extra", choice: "Cheese", price: 2.00 }] }
-        ],
-        status: "preparing",
-        orderTime: new Date(Date.now() - 15 * 60000),
-        estimatedTime: 15,
-        total: 20.00,
-        type: "dine-in"
-      },
-      {
-        id: "ord-2",
-        tableNumber: "105",
-        items: [
-          { id: "3", menuItemId: "2", name: "Big Burger", price: 15.00, quantity: 3, options: [{ name: "Extra", choice: "Double Meat", price: 3.00 }] },
-          { id: "4", menuItemId: "4", name: "Pumpkin Soup", price: 6.50, quantity: 1, options: [{ name: "Extra", choice: "Double Cheese", price: 2.00 }, { name: "Extra", choice: "Double Pepper", price: 1.50 }] }
-        ],
-        status: "preparing",
-        orderTime: new Date(Date.now() - 4 * 60000),
-        estimatedTime: 4,
-        total: 300.00,
-        type: "dine-in"
-      },
-      {
-        id: "ord-3",
-        roomNumber: "101",
-        customerName: "Herman Hubanov",
-        items: [
-          { id: "5", menuItemId: "5", name: "Standard Breakfast", price: 12.00, quantity: 1 },
-          { id: "6", menuItemId: "3", name: "Salad", price: 8.00, quantity: 1 }
-        ],
-        status: "new",
-        orderTime: new Date(),
-        estimatedTime: 0,
-        total: 20.00,
-        type: "room-service"
-      }
-    ];
-    setOrders(sampleOrders);
+    loadData();
   }, []);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load tables
+      const { data: tablesData, error: tablesError } = await supabase
+        .from('restaurant_tables')
+        .select('*')
+        .order('table_number');
+      
+      if (tablesError) throw tablesError;
+      setTables(tablesData || []);
+
+      // Load menu categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (categoriesError) throw categoriesError;
+      setMenuCategories(categoriesData || []);
+      
+      if (categoriesData && categoriesData.length > 0) {
+        setSelectedCategory(categoriesData[0].id);
+      }
+
+      // Load menu items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('is_available', true)
+        .order('display_order');
+      
+      if (itemsError) throw itemsError;
+      setMenuItems(itemsData || []);
+
+      // Load current orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('pos_orders')
+        .select(`
+          *,
+          pos_order_items (
+            id,
+            menu_item_id,
+            quantity,
+            unit_price,
+            total_price,
+            notes,
+            menu_items (name)
+          )
+        `)
+        .in('status', ['new', 'preparing', 'ready'])
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) throw ordersError;
+      setOrders(ordersData || []);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load POS data. Please refresh the page.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add item to current order
+  const addToOrder = (item: MenuItem) => {
+    setCurrentOrder(prev => {
+      const existingItem = prev.find(orderItem => orderItem.menu_item_id === item.id);
+      if (existingItem) {
+        return prev.map(orderItem =>
+          orderItem.menu_item_id === item.id
+            ? { 
+                ...orderItem, 
+                quantity: orderItem.quantity + 1, 
+                total_price: (orderItem.quantity + 1) * orderItem.price 
+              }
+            : orderItem
+        );
+      } else {
+        return [...prev, {
+          id: `temp-${Date.now()}`,
+          menu_item_id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          total_price: item.price
+        }];
+      }
+    });
+  };
+
+  // Update order item quantity
+  const updateOrderItemQuantity = (menuItemId: string, change: number) => {
+    setCurrentOrder(prev => {
+      return prev.map(item => {
+        if (item.menu_item_id === menuItemId) {
+          const newQuantity = Math.max(0, item.quantity + change);
+          if (newQuantity === 0) {
+            return null;
+          }
+          return { ...item, quantity: newQuantity, total_price: newQuantity * item.price };
+        }
+        return item;
+      }).filter(Boolean) as OrderItem[];
+    });
+  };
+
+  // Remove item from order
+  const removeFromOrder = (menuItemId: string) => {
+    setCurrentOrder(prev => prev.filter(item => item.menu_item_id !== menuItemId));
+  };
+
+  // Calculate order total
+  const getOrderTotal = () => {
+    return currentOrder.reduce((sum, item) => sum + item.total_price, 0);
+  };
+
+  // Submit order
+  const submitOrder = async () => {
+    if (!selectedTable || currentOrder.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a table and add items to the order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create the order
+      const { data: orderData, error: orderError } = await supabase
+        .from('pos_orders')
+        .insert({
+          table_id: selectedTable.id,
+          customer_name: customerName || null,
+          notes: orderNotes || null,
+          status: 'new'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Add order items
+      const orderItems = currentOrder.map(item => ({
+        order_id: orderData.id,
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.total_price,
+        notes: item.notes || null
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('pos_order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Update table status
+      await supabase
+        .from('restaurant_tables')
+        .update({ status: 'occupied' })
+        .eq('id', selectedTable.id);
+
+      // Reset form
+      setCurrentOrder([]);
+      setCustomerName('');
+      setOrderNotes('');
+      setSelectedTable(null);
+      setCurrentView('tables');
+
+      // Reload data
+      loadData();
+
+      toast({
+        title: "Order Submitted",
+        description: `Order for table ${selectedTable.table_number} has been submitted successfully.`,
+      });
+
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit order. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update order status
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('pos_orders')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // If order is served, make table available
+      if (newStatus === 'served') {
+        const order = orders.find(o => o.id === orderId);
+        if (order && order.table_id) {
+          await supabase
+            .from('restaurant_tables')
+            .update({ status: 'available' })
+            .eq('id', order.table_id);
+        }
+      }
+
+      loadData();
+
+      toast({
+        title: "Status Updated",
+        description: "Order status has been updated successfully.",
+      });
+
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update order status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Helper functions for display
   const getTableStatus = (table: Table) => {
-    if (table.status === 'occupied' && table.currentOrder) {
-      const order = orders.find(o => o.id === table.currentOrder);
-      return order ? order.total : 0;
-    }
-    return 0;
-  };
-
-  const getTableOrderCount = (table: Table) => {
-    if (table.status === 'occupied' && table.currentOrder) {
-      const order = orders.find(o => o.id === table.currentOrder);
-      return order ? order.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-    }
-    return 0;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 border-green-300 text-green-800';
-      case 'occupied': return 'bg-blue-100 border-blue-300 text-blue-800';
-      case 'reserved': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      default: return 'bg-gray-100 border-gray-300 text-gray-800';
+    switch (table.status) {
+      case 'available':
+        return { color: 'bg-green-500', text: 'Available', bgClass: 'bg-green-50 border-green-200' };
+      case 'occupied':
+        return { color: 'bg-red-500', text: 'Occupied', bgClass: 'bg-red-50 border-red-200' };
+      case 'reserved':
+        return { color: 'bg-yellow-500', text: 'Reserved', bgClass: 'bg-yellow-50 border-yellow-200' };
+      case 'cleaning':
+        return { color: 'bg-blue-500', text: 'Cleaning', bgClass: 'bg-blue-50 border-blue-200' };
+      default:
+        return { color: 'bg-gray-500', text: 'Unknown', bgClass: 'bg-gray-50 border-gray-200' };
     }
   };
 
   const getOrderStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-green-500';
-      case 'preparing': return 'bg-yellow-500';
-      case 'ready': return 'bg-blue-500';
-      case 'completed': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+      case 'new':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'preparing':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'ready':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'served':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const addToOrder = (menuItem: MenuItem, options?: Array<{ name: string; choice: string; price: number }>) => {
-    const existingItem = currentOrder.find(item => 
-      item.menuItemId === menuItem.id && 
-      JSON.stringify(item.options) === JSON.stringify(options)
-    );
-
-    if (existingItem) {
-      setCurrentOrder(prev => prev.map(item =>
-        item.id === existingItem.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      const newItem: OrderItem = {
-        id: Date.now().toString(),
-        menuItemId: menuItem.id,
-        name: menuItem.name,
-        price: menuItem.price,
-        quantity: 1,
-        options
-      };
-      setCurrentOrder(prev => [...prev, newItem]);
+  const getCategoryIcon = (categoryName: string) => {
+    switch (categoryName.toLowerCase()) {
+      case 'food':
+        return <UtensilsCrossed className="w-4 h-4" />;
+      case 'bar':
+        return <Wine className="w-4 h-4" />;
+      case 'conference':
+        return <Monitor className="w-4 h-4" />;
+      default:
+        return <Coffee className="w-4 h-4" />;
     }
   };
 
-  const updateOrderItemQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setCurrentOrder(prev => prev.filter(item => item.id !== itemId));
-    } else {
-      setCurrentOrder(prev => prev.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      ));
-    }
+  // Filter menu items based on search term and category
+  const filteredMenuItems = menuItems.filter(item =>
+    item.category_id === selectedCategory &&
+    (searchTerm === '' || 
+     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())))
+  );
+
+  // Group tables by area
+  const tablesByArea = tables.reduce((acc, table) => {
+    if (!acc[table.area]) acc[table.area] = [];
+    acc[table.area].push(table);
+    return acc;
+  }, {} as Record<string, Table[]>);
+
+  // Get active orders for a table
+  const getTableOrder = (tableId: string) => {
+    return orders.find(order => order.table_id === tableId && ['new', 'preparing', 'ready'].includes(order.status));
   };
 
-  const getOrderTotal = () => {
-    return currentOrder.reduce((total, item) => {
-      const itemTotal = item.price * item.quantity;
-      const optionsTotal = (item.options || []).reduce((sum, option) => sum + option.price, 0) * item.quantity;
-      return total + itemTotal + optionsTotal;
-    }, 0);
-  };
-
-  const submitOrder = () => {
-    if (currentOrder.length === 0 || !selectedTable) return;
-
-    const newOrder: Order = {
-      id: `ord-${Date.now()}`,
-      tableNumber: selectedTable.number,
-      items: [...currentOrder],
-      status: 'new',
-      orderTime: new Date(),
-      total: getOrderTotal(),
-      type: 'dine-in'
-    };
-
-    setOrders(prev => [...prev, newOrder]);
-    setCurrentOrder([]);
-    setSelectedTable(null);
-    setCurrentView('orders');
-    toast.success("Order submitted successfully!");
-  };
-
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(prev => prev.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-  };
-
-  const renderTablesView = () => {
-    const restaurantTables = tables.filter(table => table.area === "Restaurant");
-    const terraceTables = tables.filter(table => table.area === "Terrace");
-
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
-            <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">All</Badge>
-              <Badge variant="secondary" className="bg-green-500 text-white">● Open</Badge>
-              <Badge variant="secondary" className="bg-orange-500 text-white">● Online</Badge>
-              <Badge variant="secondary" className="bg-yellow-500 text-white">● Reserved</Badge>
-              <Badge variant="secondary" className="bg-gray-500 text-white">● Closed</Badge>
+  // Render tables view
+  const renderTablesView = () => (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Tables Overview</h1>
+        <div className="flex items-center gap-4">
+          <Button onClick={loadData} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-sm">Available</span>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">Order List</Button>
-            <Button variant="outline" size="sm">Archive</Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Order
-            </Button>
-          </div>
-        </div>
-
-        {/* Restaurant Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Restaurant</h2>
-          <div className="grid grid-cols-5 gap-4">
-            {restaurantTables.map((table) => (
-              <Card
-                key={table.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${getStatusColor(table.status)} border-2`}
-                onClick={() => {
-                  setSelectedTable(table);
-                  if (table.status === 'available') {
-                    setCurrentView('checkout');
-                  }
-                }}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{table.number}</span>
-                    <span className="text-sm text-gray-600">👥 {table.seats}</span>
-                  </div>
-                  {table.status === 'occupied' && (
-                    <>
-                      <div className="text-xs text-gray-500 mb-1">
-                        {new Date().toLocaleDateString()}, {new Date().toLocaleTimeString().slice(0, 5)}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        {getTableOrderCount(table)} Orders
-                      </div>
-                      <div className="text-lg font-bold">
-                        ${getTableStatus(table).toFixed(2)}
-                      </div>
-                    </>
-                  )}
-                  {table.status === 'available' && (
-                    <div className="text-lg font-bold text-center">$0.00</div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Terrace Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Terrace</h2>
-          <div className="grid grid-cols-5 gap-4">
-            {terraceTables.map((table) => (
-              <Card
-                key={table.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${getStatusColor(table.status)} border-2`}
-                onClick={() => {
-                  setSelectedTable(table);
-                  if (table.status === 'available') {
-                    setCurrentView('checkout');
-                  }
-                }}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{table.number}</span>
-                    <span className="text-sm text-gray-600">👥 {table.seats}</span>
-                  </div>
-                  {table.status === 'occupied' && (
-                    <>
-                      <div className="text-xs text-gray-500 mb-1">
-                        {new Date().toLocaleDateString()}, {new Date().toLocaleTimeString().slice(0, 5)}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        {getTableOrderCount(table)} Orders
-                      </div>
-                      <div className="text-lg font-bold">
-                        ${getTableStatus(table).toFixed(2)}
-                      </div>
-                    </>
-                  )}
-                  {table.status === 'available' && (
-                    <div className="text-lg font-bold text-center">$0.00</div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span className="text-sm">Occupied</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <span className="text-sm">Reserved</span>
+            </div>
           </div>
         </div>
       </div>
-    );
-  };
 
-  const renderOrdersView = () => {
-    const activeOrders = orders.filter(order => order.status !== 'completed');
-
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold">Current Orders ({activeOrders.length})</h2>
-            <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-green-500 text-white">● New</Badge>
-              <Badge variant="secondary" className="bg-yellow-500 text-white">● In Progress</Badge>
-              <Badge variant="secondary" className="bg-gray-500 text-white">● Closed</Badge>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline">All</Badge>
-            <Badge variant="outline">In Restaurant</Badge>
-            <Badge variant="outline">Delivery</Badge>
-            <Badge variant="outline">Pick Up</Badge>
+      {Object.entries(tablesByArea).map(([area, areaTables]) => (
+        <div key={area} className="space-y-4">
+          <h2 className="text-xl font-semibold capitalize">{area}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            {areaTables.map(table => {
+              const status = getTableStatus(table);
+              const tableOrder = getTableOrder(table.id);
+              
+              return (
+                <Card 
+                  key={table.id} 
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${status.bgClass} ${
+                    selectedTable?.id === table.id ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedTable(table);
+                    if (table.status === 'available') {
+                      setCurrentView('new-order');
+                    }
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="text-center space-y-2">
+                      <div className={`w-4 h-4 rounded-full ${status.color} mx-auto`}></div>
+                      <div className="font-bold text-lg">T{table.table_number}</div>
+                      <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {table.capacity}
+                      </div>
+                      <Badge variant="outline" className={`text-xs ${getOrderStatusColor(table.status)}`}>
+                        {status.text}
+                      </Badge>
+                      {tableOrder && (
+                        <div className="space-y-1">
+                          <div className="text-xs text-muted-foreground">
+                            Order #{tableOrder.order_number}
+                          </div>
+                          <div className="text-sm font-semibold">
+                            ${tableOrder.total.toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
+      ))}
+    </div>
+  );
 
-        {/* Orders Grid */}
-        <div className="grid grid-cols-3 gap-6">
-          {activeOrders.map((order) => (
-            <Card key={order.id} className="border-2">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className={`w-3 h-6 rounded ${getOrderStatusColor(order.status)}`}></div>
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant="secondary" 
-                      className={`${order.status === 'new' ? 'bg-green-500' : order.status === 'preparing' ? 'bg-yellow-500' : 'bg-gray-500'} text-white`}
-                    >
-                      {order.estimatedTime ? `${order.estimatedTime} min` : '0 min'}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold">
-                    {order.tableNumber ? `Table ${order.tableNumber}` : `Room ${order.roomNumber}`}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {order.customerName ? order.customerName : `${order.items.reduce((sum, item) => sum + item.quantity, 0)} Person`}
-                  </p>
-                  <p className="text-xs text-gray-500">#{order.id.slice(-3)}</p>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-md flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">x{item.quantity} {item.name}</p>
-                      {item.options && item.options.map((option, idx) => (
-                        <p key={idx} className="text-sm text-blue-600">+ {option.choice}</p>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                
-                {order.status === 'new' && (
-                  <div className="pt-3 border-t">
-                    <p className="text-sm text-gray-600 mb-2">Submit as soon as possible</p>
-                    <div className="flex space-x-2">
-                      <Button 
-                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                      >
-                        Start
-                      </Button>
-                      <Button variant="outline" className="flex-1">
-                        Finish
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {order.status === 'preparing' && (
-                  <div className="pt-3 border-t">
-                    <div className="flex space-x-2">
-                      <Button variant="outline" className="flex-1">
-                        Start
-                      </Button>
-                      <Button 
-                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
-                      >
-                        Finish
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {order.status === 'ready' && (
-                  <div className="pt-3 border-t">
-                    <div className="flex space-x-2">
-                      <Button variant="outline" className="flex-1">
-                        Start
-                      </Button>
-                      <Button variant="outline" className="flex-1">
-                        Finish
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+  // Render orders view
+  const renderOrdersView = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Active Orders ({orders.length})</h1>
+        <Button onClick={loadData} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
-    );
-  };
-
-  const renderCheckoutView = () => {
-    if (selectedOrderForCheckout) {
-      return (
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => {
-              setSelectedOrderForCheckout(null);
-              setCurrentView('orders');
-            }}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <h2 className="text-2xl font-bold">Check Out</h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            {/* Order Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {selectedOrderForCheckout.tableNumber ? `Table ${selectedOrderForCheckout.tableNumber}` : `Room ${selectedOrderForCheckout.roomNumber}`}
-                </CardTitle>
-                <div className="flex items-center justify-between">
-                  <span>Order: #{selectedOrderForCheckout.id.slice(-3)}</span>
-                  <Button variant="outline" size="sm">Split Bill</Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {selectedOrderForCheckout.items.map((item) => (
-                  <div key={item.id} className="flex justify-between">
+      
+      <ScrollArea className="h-[calc(100vh-200px)]">
+        <div className="grid gap-6 pr-4">
+          {orders.map(order => {
+            const table = tables.find(t => t.id === order.table_id);
+            
+            return (
+              <Card key={order.id} className="border-l-4 border-l-primary">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.quantity} Units
-                        {item.options && item.options.length > 0 && (
-                          <span>, Extras: {item.options.map(opt => opt.choice).join(', ')}</span>
-                        )}
+                      <CardTitle className="text-xl flex items-center gap-3">
+                        <span>Order #{order.order_number}</span>
+                        <Badge className={getOrderStatusColor(order.status)}>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </Badge>
+                      </CardTitle>
+                      {table && (
+                        <p className="text-muted-foreground mt-1">
+                          Table {table.table_number} • {table.area}
+                        </p>
+                      )}
+                      {order.customer_name && (
+                        <p className="text-sm text-muted-foreground">
+                          Customer: {order.customer_name}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(order.created_at).toLocaleTimeString()}
                       </p>
                     </div>
-                    <span className="font-medium">${(item.price * item.quantity + (item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0) * item.quantity).toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        className="text-sm border rounded px-3 py-2 bg-background"
+                      >
+                        <option value="new">New</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="served">Served</option>
+                      </select>
+                    </div>
                   </div>
-                ))}
-                
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total</span>
-                    <span>${selectedOrderForCheckout.total.toFixed(2)}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {order.pos_order_items?.map((item: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                        <div className="flex-1">
+                          <span className="font-medium">
+                            {item.quantity}× {item.menu_items?.name || 'Unknown Item'}
+                          </span>
+                          <div className="text-sm text-muted-foreground">
+                            ${item.unit_price.toFixed(2)} each
+                          </div>
+                        </div>
+                        <span className="font-semibold">${item.total_price.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    
+                    <div className="border-t pt-3 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal</span>
+                        <span>${order.subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Tax</span>
+                        <span>${order.tax.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center font-bold text-lg border-t pt-2">
+                        <span>Total</span>
+                        <span>${order.total.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tips</span>
-                    <span>${tip.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Paid</span>
-                    <span>$0.00</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Amount due</span>
-                    <span>${(selectedOrderForCheckout.total + tip).toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Payment */}
+                  
+                  {order.notes && (
+                    <div className="mt-4 p-3 bg-muted rounded-md">
+                      <p className="text-sm"><strong>Notes:</strong> {order.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+          
+          {orders.length === 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Total to Pay: ${(selectedOrderForCheckout.total + tip).toFixed(2)}</span>
-                  <Button variant="outline" size="sm">Print Check</Button>
-                </CardTitle>
-                <div className="text-sm text-gray-600">
-                  Including Tips: ${tip.toFixed(2)}
-                </div>
-                <div className="text-sm text-gray-600">
-                  Discount: %0
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Tips
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Discount
-                  </Button>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-3">Pay with:</h4>
-                  <div className="space-y-2">
-                    <Button 
-                      variant={paymentMethod === 'card' ? 'default' : 'outline'} 
-                      className="w-full justify-start"
-                      onClick={() => setPaymentMethod('card')}
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Credit Card
-                    </Button>
-                    <Button 
-                      variant={paymentMethod === 'cash' ? 'default' : 'outline'} 
-                      className="w-full justify-start"
-                      onClick={() => setPaymentMethod('cash')}
-                    >
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Cash
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2 pt-4">
-                  <Button variant="outline" className="flex-1 text-red-600 border-red-600">
-                    Close without payment
-                  </Button>
-                  <Button className="flex-1 bg-green-500 hover:bg-green-600 text-white">
-                    Pay Now
-                  </Button>
-                </div>
+              <CardContent className="p-12 text-center text-muted-foreground">
+                <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">No Active Orders</h3>
+                <p>New orders will appear here when customers place them</p>
               </CardContent>
             </Card>
-          </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
+  // Render new order view
+  const renderNewOrderView = () => {
+    if (!selectedTable) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-lg text-muted-foreground mb-4">Please select a table first</p>
+          <Button onClick={() => setCurrentView('tables')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Tables
+          </Button>
         </div>
       );
     }
 
-    // New order creation view
+    const subtotal = getOrderTotal();
+    const tax = subtotal * 0.085; // 8.5% tax
+    const total = subtotal + tax;
+
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => setCurrentView('tables')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Menu Categories and Items */}
+        <div className="xl:col-span-3 space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">
+              New Order - Table {selectedTable.table_number}
+            </h1>
+            <Button variant="outline" onClick={() => {
+              setCurrentView('tables');
+              setSelectedTable(null);
+              setCurrentOrder([]);
+            }}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tables
             </Button>
-            <h2 className="text-2xl font-bold">
-              {selectedTable ? `Table ${selectedTable.number}` : 'New Order'}
-            </h2>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search menu items..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Category Tabs */}
+          <div className="flex flex-wrap gap-2">
+            {menuCategories.map(category => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                onClick={() => setSelectedCategory(category.id)}
+                className="flex items-center gap-2"
+              >
+                {getCategoryIcon(category.name)}
+                {category.name}
+              </Button>
+            ))}
+          </div>
+
+          {/* Menu Items Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredMenuItems.map(item => {
+              const itemInOrder = currentOrder.find(orderItem => orderItem.menu_item_id === item.id);
+              
+              return (
+                <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-lg">{item.name}</h3>
+                      <span className="font-bold text-lg text-primary">${item.price.toFixed(2)}</span>
+                    </div>
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      {itemInOrder ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateOrderItemQuantity(item.id, -1)}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="font-bold min-w-[2rem] text-center">
+                            {itemInOrder.quantity}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateOrderItemQuantity(item.id, 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button onClick={() => addToOrder(item)} className="flex-1">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add to Order
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          {/* Menu Items */}
-          <div className="col-span-2 space-y-4">
-            <div className="flex items-center space-x-4">
-              <Input 
-                placeholder="Search menu items..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Breakfast">Breakfast</SelectItem>
-                  <SelectItem value="Main">Main Course</SelectItem>
-                  <SelectItem value="Appetizer">Appetizers</SelectItem>
-                  <SelectItem value="Beverage">Beverages</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={`grid ${viewMode === 'grid' ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-2'}`}>
-              {menuItems
-                .filter(item => 
-                  (selectedCategory === 'all' || item.category === selectedCategory) &&
-                  item.name.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((item) => (
-                  <Card key={item.id} className={`cursor-pointer hover:shadow-md ${!item.available ? 'opacity-50' : ''}`}>
-                    <CardContent className={`${viewMode === 'grid' ? 'p-4' : 'p-3'}`}>
-                      <div className={`flex ${viewMode === 'grid' ? 'flex-col' : 'items-center'} space-y-2`}>
-                        <div className={`w-full ${viewMode === 'grid' ? 'h-32' : 'w-16 h-16'} bg-gray-200 rounded-md flex-shrink-0`}></div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-sm text-gray-600">{item.category}</p>
-                          <p className="font-bold text-lg">${item.price.toFixed(2)}</p>
-                        </div>
-                        {item.available && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              if (item.options && item.options.length > 0) {
-                                // For items with options, you'd open a modal here
-                                // For now, just add without options
-                                addToOrder(item);
-                              } else {
-                                addToOrder(item);
-                              }
-                            }}
-                            className="w-full mt-2"
-                          >
-                            Add to Order
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-          </div>
-
-          {/* Current Order */}
-          <Card className="h-fit">
+        {/* Order Summary Sidebar */}
+        <div className="xl:col-span-1">
+          <Card className="sticky top-6">
             <CardHeader>
-              <CardTitle>Current Order</CardTitle>
-              {selectedTable && (
-                <p className="text-sm text-gray-600">Table {selectedTable.number}</p>
-              )}
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                Order Summary
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {currentOrder.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No items added yet</p>
-              ) : (
-                <>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {currentOrder.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-600">${item.price.toFixed(2)} each</p>
-                          {item.options && item.options.map((option, idx) => (
-                            <p key={idx} className="text-xs text-blue-600">+ {option.choice} (+${option.price.toFixed(2)})</p>
-                          ))}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateOrderItemQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateOrderItemQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
+              <div className="space-y-2">
+                <Label htmlFor="customer-name">Customer Name</Label>
+                <Input
+                  id="customer-name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <ScrollArea className="max-h-[300px]">
+                <div className="space-y-3">
+                  {currentOrder.map(item => (
+                    <div key={item.menu_item_id} className="flex justify-between items-start p-3 border rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{item.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          ${item.price.toFixed(2)} × {item.quantity}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span>Total:</span>
-                      <span>${getOrderTotal().toFixed(2)}</span>
+                      <div className="flex items-center gap-2 ml-2">
+                        <div className="font-bold text-right">
+                          ${item.total_price.toFixed(2)}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeFromOrder(item.menu_item_id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button 
-                      className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white"
-                      onClick={submitOrder}
-                      disabled={currentOrder.length === 0}
-                    >
-                      Submit Order
-                    </Button>
-                  </div>
-                </>
-              )}
+                  ))}
+
+                  {currentOrder.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      No items in order
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+
+              <div className="space-y-2">
+                <Label htmlFor="order-notes">Special Instructions</Label>
+                <Textarea
+                  id="order-notes"
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  placeholder="Any special requests..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Tax (8.5%)</span>
+                  <span>${tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <Button 
+                onClick={submitOrder} 
+                className="w-full" 
+                disabled={currentOrder.length === 0}
+                size="lg"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Submit Order
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -794,37 +799,36 @@ const POSScreen = () => {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Navigation Tabs */}
-      <div className="mb-6">
-        <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as any)}>
-          <TabsList>
-            <TabsTrigger value="tables">Tables</TabsTrigger>
-            <TabsTrigger value="orders">Current Orders</TabsTrigger>
-          </TabsList>
-        </Tabs>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading POS system...</div>
       </div>
+    );
+  }
 
-      {/* Content */}
-      {currentView === 'tables' && renderTablesView()}
-      {currentView === 'orders' && renderOrdersView()}
-      {currentView === 'checkout' && renderCheckoutView()}
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6">
+        {/* Header Navigation */}
+        <div className="mb-6">
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as any)}>
+            <TabsList className="grid w-full grid-cols-2 max-w-lg">
+              <TabsTrigger value="tables" className="text-base">
+                Tables
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="text-base">
+                Active Orders ({orders.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-      {/* Order Details Modal for Checkout */}
-      {orders.map((order) => (
-        <Dialog key={order.id}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="ghost" 
-              className="hidden"
-              onClick={() => setSelectedOrderForCheckout(order)}
-            />
-          </DialogTrigger>
-        </Dialog>
-      ))}
+        {/* Main Content */}
+        {currentView === 'tables' && renderTablesView()}
+        {currentView === 'orders' && renderOrdersView()}
+        {currentView === 'new-order' && renderNewOrderView()}
+      </div>
     </div>
   );
-};
-
-export default POSScreen;
+}
