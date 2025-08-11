@@ -80,7 +80,10 @@ interface Table {
 }
 
 export default function POSScreen() {
-  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'new-order'>('tables');
+  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'new-order' | 'table-bills'>('tables');
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mpesa' | 'room'>('card');
+  const [roomNumber, setRoomNumber] = useState('');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -151,7 +154,7 @@ export default function POSScreen() {
             menu_items (name)
           )
         `)
-        .in('status', ['new', 'preparing', 'ready'])
+        .in('status', ['new', 'preparing', 'ready', 'served'])
         .order('created_at', { ascending: false });
       
       if (ordersError) throw ordersError;
@@ -392,9 +395,136 @@ export default function POSScreen() {
     return acc;
   }, {} as Record<string, Table[]>);
 
-  // Get active orders for a table
-  const getTableOrder = (tableId: string) => {
-    return orders.find(order => order.table_id === tableId && ['new', 'preparing', 'ready'].includes(order.status));
+  // Get active orders for a table (now supports multiple orders)
+  const getTableOrders = (tableId: string) => {
+    return orders.filter(order => order.table_id === tableId && ['new', 'preparing', 'ready', 'served'].includes(order.status));
+  };
+
+  // Get total amount for all orders on a table
+  const getTableTotal = (tableId: string) => {
+    const tableOrders = getTableOrders(tableId);
+    return tableOrders.reduce((sum, order) => sum + order.total, 0);
+  };
+
+  // Payment processing function
+  const processPayment = async (orderIds: string[], paymentMethod: 'card' | 'mpesa' | 'room', roomNumber?: string) => {
+    try {
+      // Update orders to paid status
+      const { error } = await supabase
+        .from('pos_orders')
+        .update({ 
+          status: 'paid',
+          notes: paymentMethod === 'room' ? `Room: ${roomNumber}` : `Payment: ${paymentMethod}`
+        })
+        .in('id', orderIds);
+
+      if (error) throw error;
+
+      // Get table id from first order to make table available
+      const firstOrder = orders.find(o => orderIds.includes(o.id));
+      if (firstOrder?.table_id) {
+        await supabase
+          .from('restaurant_tables')
+          .update({ status: 'available' })
+          .eq('id', firstOrder.table_id);
+      }
+
+      loadData();
+
+      toast({
+        title: "Payment Processed",
+        description: `Payment via ${paymentMethod} completed successfully.`,
+      });
+
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast({
+        title: "Payment Error",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Merge multiple orders into one bill
+  const mergeOrders = async (orderIds: string[], tableName: string) => {
+    try {
+      if (orderIds.length < 2) {
+        toast({
+          title: "Error",
+          description: "Select at least 2 orders to merge.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get all order items from the orders to merge
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('pos_order_items')
+        .select('*')
+        .in('order_id', orderIds);
+
+      if (itemsError) throw itemsError;
+
+      // Create a new merged order
+      const { data: newOrder, error: orderError } = await supabase
+        .from('pos_orders')
+        .insert({
+          table_id: orders.find(o => orderIds.includes(o.id))?.table_id,
+          customer_name: `Merged Bill - ${tableName}`,
+          status: 'served',
+          notes: `Merged from orders: ${orderIds.join(', ')}`
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Move all items to the new order
+      if (orderItems) {
+        const updatedItems = orderItems.map(item => ({
+          ...item,
+          id: undefined, // Let database generate new ID
+          order_id: newOrder.id
+        }));
+
+        const { error: insertItemsError } = await supabase
+          .from('pos_order_items')
+          .insert(updatedItems);
+
+        if (insertItemsError) throw insertItemsError;
+      }
+
+      // Delete old orders and their items
+      const { error: deleteItemsError } = await supabase
+        .from('pos_order_items')
+        .delete()
+        .in('order_id', orderIds);
+
+      if (deleteItemsError) throw deleteItemsError;
+
+      const { error: deleteOrdersError } = await supabase
+        .from('pos_orders')
+        .delete()
+        .in('id', orderIds);
+
+      if (deleteOrdersError) throw deleteOrdersError;
+
+      loadData();
+
+      toast({
+        title: "Orders Merged",
+        description: `Successfully merged ${orderIds.length} orders into one bill.`,
+      });
+
+    } catch (error) {
+      console.error('Error merging orders:', error);
+      toast({
+        title: "Merge Error", 
+        description: "Failed to merge orders. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Render tables view
@@ -430,7 +560,7 @@ export default function POSScreen() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
             {areaTables.map(table => {
               const status = getTableStatus(table);
-              const tableOrder = getTableOrder(table.id);
+              
               
               return (
                 <Card 
@@ -442,6 +572,8 @@ export default function POSScreen() {
                     setSelectedTable(table);
                     if (table.status === 'available') {
                       setCurrentView('new-order');
+                    } else {
+                      setCurrentView('table-bills');
                     }
                   }}
                 >
@@ -453,19 +585,30 @@ export default function POSScreen() {
                         <Users className="w-3 h-3" />
                         {table.capacity}
                       </div>
-                      <Badge variant="outline" className={`text-xs ${getOrderStatusColor(table.status)}`}>
+                       <Badge variant="outline" className={`text-xs ${getOrderStatusColor(table.status)}`}>
                         {status.text}
                       </Badge>
-                      {tableOrder && (
-                        <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">
-                            Order #{tableOrder.order_number}
-                          </div>
-                          <div className="text-sm font-semibold">
-                            ${tableOrder.total.toFixed(2)}
-                          </div>
-                        </div>
-                      )}
+                      {(() => {
+                        const tableOrders = getTableOrders(table.id);
+                        if (tableOrders.length > 0) {
+                          return (
+                            <div className="space-y-1">
+                              <div className="text-xs text-muted-foreground">
+                                {tableOrders.length} Bill{tableOrders.length > 1 ? 's' : ''}
+                              </div>
+                              <div className="text-sm font-semibold">
+                                ${getTableTotal(table.id).toFixed(2)}
+                              </div>
+                              {tableOrders.length > 1 && (
+                                <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
+                                  Multiple Bills
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -588,6 +731,213 @@ export default function POSScreen() {
       </ScrollArea>
     </div>
   );
+
+  // Render table bills view
+  const renderTableBillsView = () => {
+    if (!selectedTable) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-lg text-muted-foreground mb-4">Please select a table first</p>
+          <Button onClick={() => setCurrentView('tables')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Tables
+          </Button>
+        </div>
+      );
+    }
+
+    const tableOrders = getTableOrders(selectedTable.id);
+    const totalAmount = getTableTotal(selectedTable.id);
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">
+            Table {selectedTable.table_number} Bills
+          </h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCurrentView('new-order')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Order
+            </Button>
+            <Button variant="outline" onClick={() => {
+              setCurrentView('tables');
+              setSelectedTable(null);
+              setSelectedOrders([]);
+            }}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tables
+            </Button>
+          </div>
+        </div>
+
+        {tableOrders.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center text-muted-foreground">
+              <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No Bills for This Table</h3>
+              <p>Click "Add New Order" to create the first order</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {/* Summary Card */}
+            <Card className="border-2 border-primary">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>Table Summary</span>
+                  <Badge variant="outline" className="text-lg px-3 py-1">
+                    {tableOrders.length} Bill{tableOrders.length > 1 ? 's' : ''}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center text-2xl font-bold">
+                  <span>Total Amount:</span>
+                  <span>${totalAmount.toFixed(2)}</span>
+                </div>
+                
+                {tableOrders.length > 1 && (
+                  <div className="mt-4 flex gap-2">
+                    <Button 
+                      onClick={() => mergeOrders(selectedOrders.length > 0 ? selectedOrders : tableOrders.map(o => o.id), `T${selectedTable.table_number}`)}
+                      variant="outline"
+                      disabled={selectedOrders.length === 0 && tableOrders.length < 2}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Merge {selectedOrders.length > 0 ? 'Selected' : 'All'} Bills
+                    </Button>
+                  </div>
+                )}
+
+                {/* Payment Section */}
+                <div className="mt-6 p-4 border rounded-lg bg-muted/30">
+                  <h3 className="font-semibold mb-3">Process Payment</h3>
+                  <div className="grid gap-4">
+                    <div className="flex gap-2">
+                      <Button
+                        variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('card')}
+                        className="flex-1"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Card
+                      </Button>
+                      <Button
+                        variant={paymentMethod === 'mpesa' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('mpesa')}
+                        className="flex-1"
+                      >
+                        📱 M-Pesa
+                      </Button>
+                      <Button
+                        variant={paymentMethod === 'room' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('room')}
+                        className="flex-1"
+                      >
+                        🏨 Room
+                      </Button>
+                    </div>
+                    
+                    {paymentMethod === 'room' && (
+                      <Input
+                        placeholder="Enter room number"
+                        value={roomNumber}
+                        onChange={(e) => setRoomNumber(e.target.value)}
+                      />
+                    )}
+                    
+                    <Button 
+                      onClick={() => processPayment(
+                        selectedOrders.length > 0 ? selectedOrders : tableOrders.map(o => o.id), 
+                        paymentMethod, 
+                        roomNumber
+                      )}
+                      disabled={paymentMethod === 'room' && !roomNumber}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Process Payment (${selectedOrders.length > 0 ? 
+                        tableOrders.filter(o => selectedOrders.includes(o.id)).reduce((sum, o) => sum + o.total, 0).toFixed(2) : 
+                        totalAmount.toFixed(2)})
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Individual Bills */}
+            <div className="grid gap-4">
+              <h3 className="text-xl font-semibold">Individual Bills</h3>
+              {tableOrders.map(order => {
+                const isSelected = selectedOrders.includes(order.id);
+                
+                return (
+                  <Card 
+                    key={order.id} 
+                    className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+                    onClick={() => {
+                      setSelectedOrders(prev => 
+                        isSelected 
+                          ? prev.filter(id => id !== order.id)
+                          : [...prev, order.id]
+                      );
+                    }}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg flex items-center gap-3">
+                            <span>Order #{order.order_number}</span>
+                            <Badge className={getOrderStatusColor(order.status)}>
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+                            {isSelected && <Badge variant="default">Selected</Badge>}
+                          </CardTitle>
+                          {order.customer_name && (
+                            <p className="text-sm text-muted-foreground">
+                              Customer: {order.customer_name}
+                            </p>
+                          )}
+                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(order.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">${order.total.toFixed(2)}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Tax: ${order.tax.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {order.pos_order_items?.map((item: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center text-sm">
+                            <span>{item.quantity}× {item.menu_items?.name || 'Unknown Item'}</span>
+                            <span>${item.total_price.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {order.notes && (
+                        <div className="mt-3 p-2 bg-muted rounded text-sm">
+                          <strong>Notes:</strong> {order.notes}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Render new order view
   const renderNewOrderView = () => {
@@ -828,6 +1178,7 @@ export default function POSScreen() {
         {currentView === 'tables' && renderTablesView()}
         {currentView === 'orders' && renderOrdersView()}
         {currentView === 'new-order' && renderNewOrderView()}
+        {currentView === 'table-bills' && renderTableBillsView()}
       </div>
     </div>
   );
