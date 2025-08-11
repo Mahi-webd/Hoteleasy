@@ -308,17 +308,6 @@ export default function POSScreen() {
 
       if (error) throw error;
 
-      // If order is served, make table available
-      if (newStatus === 'served') {
-        const order = orders.find(o => o.id === orderId);
-        if (order && order.table_id) {
-          await supabase
-            .from('restaurant_tables')
-            .update({ status: 'available' })
-            .eq('id', order.table_id);
-        }
-      }
-
       loadData();
 
       toast({
@@ -331,6 +320,34 @@ export default function POSScreen() {
       toast({
         title: "Error",
         description: "Failed to update order status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Clear table (mark as available after all bills are processed)
+  const clearTable = async (tableId: string, tableName: string) => {
+    try {
+      await supabase
+        .from('restaurant_tables')
+        .update({ status: 'available' })
+        .eq('id', tableId);
+
+      loadData();
+      setCurrentView('tables');
+      setSelectedTable(null);
+      setSelectedOrders([]);
+
+      toast({
+        title: "Table Cleared",
+        description: `Table ${tableName} has been marked as available.`,
+      });
+
+    } catch (error) {
+      console.error('Error clearing table:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear table.",
         variant: "destructive",
       });
     }
@@ -847,21 +864,32 @@ export default function POSScreen() {
                       />
                     )}
                     
-                    <Button 
-                      onClick={() => processPayment(
-                        selectedOrders.length > 0 ? selectedOrders : tableOrders.map(o => o.id), 
-                        paymentMethod, 
-                        roomNumber
-                      )}
-                      disabled={paymentMethod === 'room' && !roomNumber}
-                      className="w-full"
-                      size="lg"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Process Payment (${selectedOrders.length > 0 ? 
-                        tableOrders.filter(o => selectedOrders.includes(o.id)).reduce((sum, o) => sum + o.total, 0).toFixed(2) : 
-                        totalAmount.toFixed(2)})
-                    </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Button 
+                        onClick={() => processPayment(
+                          selectedOrders.length > 0 ? selectedOrders : tableOrders.map(o => o.id), 
+                          paymentMethod, 
+                          roomNumber
+                        )}
+                        disabled={paymentMethod === 'room' && !roomNumber}
+                        size="lg"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Pay (${selectedOrders.length > 0 ? 
+                          tableOrders.filter(o => selectedOrders.includes(o.id)).reduce((sum, o) => sum + o.total, 0).toFixed(2) : 
+                          totalAmount.toFixed(2)})
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => clearTable(selectedTable.id, selectedTable.table_number.toString())}
+                        variant="outline"
+                        size="lg"
+                        className="border-green-500 text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Clear Table
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

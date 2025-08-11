@@ -64,11 +64,7 @@ const AppSidebar = ({ isOpen, onToggle, activeTab, setActiveTab }: AppSidebarPro
           </Button>
           <Button variant={activeTab === "pos" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("pos")}>
             <ShoppingCart className="mr-2 h-4 w-4" />
-            POS Orders
-          </Button>
-          <Button variant={activeTab === "pos-screen" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("pos-screen")}>
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            POS Screen
+            POS System
           </Button>
           <Button variant={activeTab === "reports" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("reports")}>
             <BarChart3 className="mr-2 h-4 w-4" />
