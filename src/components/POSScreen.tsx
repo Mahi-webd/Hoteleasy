@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -25,7 +27,10 @@ import {
   Search,
   ShoppingCart,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  Printer,
+  X,
+  Settings
 } from 'lucide-react';
 
 // Define interfaces for our data structures
@@ -68,6 +73,8 @@ interface Order {
   total: number;
   notes: string | null;
   created_at: string;
+  tips?: number;
+  discount?: number;
   pos_order_items?: any[];
 }
 
@@ -80,7 +87,7 @@ interface Table {
 }
 
 export default function POSScreen() {
-  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'new-order' | 'table-bills'>('tables');
+  const [currentView, setCurrentView] = useState<'tables' | 'orders' | 'new-order' | 'table-bills' | 'checkout'>('tables');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mpesa' | 'room'>('card');
   const [roomNumber, setRoomNumber] = useState('');
@@ -95,6 +102,12 @@ export default function POSScreen() {
   const [orderNotes, setOrderNotes] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [checkoutOrder, setCheckoutOrder] = useState<Order | null>(null);
+  const [tips, setTips] = useState<number>(0);
+  const [discount, setDiscount] = useState<number>(0);
+  const [printCheck, setPrintCheck] = useState<boolean>(false);
+  const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItem | null>(null);
+  const [customizationOptions, setCustomizationOptions] = useState<{[key: string]: any}>({});
   const { toast } = useToast();
 
   // Load data on component mount
@@ -637,99 +650,124 @@ export default function POSScreen() {
     </div>
   );
 
+  // Calculate time elapsed since order creation
+  const getTimeElapsed = (createdAt: string) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
+    return diffInMinutes;
+  };
+
+  // Get time badge color based on elapsed time
+  const getTimeBadgeColor = (minutes: number, status: string) => {
+    if (status === 'served' || status === 'paid') return 'bg-gray-500';
+    if (minutes <= 4) return 'bg-green-500';
+    if (minutes <= 15) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
   // Render orders view
   const renderOrdersView = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Active Orders ({orders.length})</h1>
-        <Button onClick={loadData} variant="outline">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
+        <h1 className="text-3xl font-bold">Current Orders ({orders.length})</h1>
+        <div className="flex gap-4">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">All</Button>
+            <Button variant="outline" size="sm">In Restaurant</Button>
+            <Button variant="outline" size="sm">Delivery</Button>
+            <Button variant="outline" size="sm">Pick Up</Button>
+          </div>
+          <Button onClick={loadData} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
       
       <ScrollArea className="h-[calc(100vh-200px)]">
-        <div className="grid gap-6 pr-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pr-4">
           {orders.map(order => {
             const table = tables.find(t => t.id === order.table_id);
+            const timeElapsed = getTimeElapsed(order.created_at);
+            const timeBadgeColor = getTimeBadgeColor(timeElapsed, order.status);
             
             return (
-              <Card key={order.id} className="border-l-4 border-l-primary">
+              <Card key={order.id} className="border border-border">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-3">
-                        <span>Order #{order.order_number}</span>
-                        <Badge className={getOrderStatusColor(order.status)}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                      </CardTitle>
-                      {table && (
-                        <p className="text-muted-foreground mt-1">
-                          Table {table.table_number} • {table.area}
-                        </p>
-                      )}
-                      {order.customer_name && (
-                        <p className="text-sm text-muted-foreground">
-                          Customer: {order.customer_name}
-                        </p>
-                      )}
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(order.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
                     <div className="flex items-center gap-2">
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="text-sm border rounded px-3 py-2 bg-background"
-                      >
-                        <option value="new">New</option>
-                        <option value="preparing">Preparing</option>
-                        <option value="ready">Ready</option>
-                        <option value="served">Served</option>
-                      </select>
+                      <Badge className={`${timeBadgeColor} text-white flex items-center gap-1`}>
+                        {order.status === 'served' ? (
+                          <Check className="w-3 h-3" />
+                        ) : order.status === 'preparing' ? (
+                          '🍳'
+                        ) : (
+                          <Clock className="w-3 h-3" />
+                        )}
+                        {timeElapsed} min
+                      </Badge>
+                      <Button variant="ghost" size="sm">
+                        •••
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <CardTitle className="text-lg">
+                      {table ? `Table ${table.table_number}` : order.customer_name || 'Room 101'}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {table ? `${table.capacity} Person` : 'Herman Hubanov'}
+                    </p>
+                    <div className="text-right text-sm text-muted-foreground">
+                      #{order.order_number}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {order.pos_order_items?.map((item: any, index: number) => (
-                      <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                        <div className="flex-1">
-                          <span className="font-medium">
-                            {item.quantity}× {item.menu_items?.name || 'Unknown Item'}
-                          </span>
-                          <div className="text-sm text-muted-foreground">
-                            ${item.unit_price.toFixed(2)} each
-                          </div>
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                          🍔
                         </div>
-                        <span className="font-semibold">${item.total_price.toFixed(2)}</span>
+                        <div className="flex-1">
+                          <div className="font-medium">x{item.quantity} {item.menu_items?.name || 'Unknown Item'}</div>
+                          {item.notes && (
+                            <div className="text-sm text-blue-600 flex items-center gap-1">
+                              <Plus className="w-3 h-3" />
+                              {item.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                     
-                    <div className="border-t pt-3 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>Subtotal</span>
-                        <span>${order.subtotal.toFixed(2)}</span>
+                    {order.notes && (
+                      <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 text-sm">
+                        {order.notes}
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Tax</span>
-                        <span>${order.tax.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between items-center font-bold text-lg border-t pt-2">
-                        <span>Total</span>
-                        <span>${order.total.toFixed(2)}</span>
-                      </div>
+                    )}
+                    
+                    <div className="flex gap-2 pt-4">
+                      <Button 
+                        onClick={() => updateOrderStatus(order.id, order.status === 'new' ? 'preparing' : 'ready')}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                        disabled={order.status === 'served'}
+                      >
+                        {order.status === 'new' ? 'Start' : order.status === 'preparing' ? 'Finish' : 'Ready'}
+                      </Button>
+                      <Button 
+                        onClick={() => updateOrderStatus(order.id, 'served')}
+                        variant="outline" 
+                        className="flex-1"
+                        disabled={order.status !== 'ready'}
+                      >
+                        {order.status === 'served' ? 'Served' : 'Finish'}
+                      </Button>
                     </div>
                   </div>
-                  
-                  {order.notes && (
-                    <div className="mt-4 p-3 bg-muted rounded-md">
-                      <p className="text-sm"><strong>Notes:</strong> {order.notes}</p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             );
@@ -864,20 +902,18 @@ export default function POSScreen() {
                       />
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <Button 
-                        onClick={() => processPayment(
-                          selectedOrders.length > 0 ? selectedOrders : tableOrders.map(o => o.id), 
-                          paymentMethod, 
-                          roomNumber
-                        )}
-                        disabled={paymentMethod === 'room' && !roomNumber}
+                        onClick={() => {
+                          const orderToCheckout = tableOrders.find(o => selectedOrders.includes(o.id)) || tableOrders[0];
+                          setCheckoutOrder(orderToCheckout);
+                          setCurrentView('checkout');
+                        }}
+                        disabled={tableOrders.length === 0}
                         size="lg"
                       >
-                        <Check className="w-4 h-4 mr-2" />
-                        Pay (${selectedOrders.length > 0 ? 
-                          tableOrders.filter(o => selectedOrders.includes(o.id)).reduce((sum, o) => sum + o.total, 0).toFixed(2) : 
-                          totalAmount.toFixed(2)})
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Checkout
                       </Button>
                       
                       <Button 
@@ -1068,10 +1104,19 @@ export default function POSScreen() {
                           </Button>
                         </div>
                       ) : (
-                        <Button onClick={() => addToOrder(item)} className="flex-1">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add to Order
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button onClick={() => addToOrder(item)} className="flex-1">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add to Order
+                          </Button>
+                          <Button 
+                            onClick={() => setSelectedItemForCustomization(item)} 
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Settings className="w-3 h-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </CardContent>
@@ -1177,6 +1222,294 @@ export default function POSScreen() {
     );
   };
 
+  // Render checkout screen
+  const renderCheckoutView = () => {
+    if (!checkoutOrder || !selectedTable) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-lg text-muted-foreground mb-4">No order selected for checkout</p>
+          <Button onClick={() => setCurrentView('table-bills')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Bills
+          </Button>
+        </div>
+      );
+    }
+
+    const orderSubtotal = checkoutOrder.subtotal;
+    const orderTax = checkoutOrder.tax;
+    const finalTotal = orderSubtotal + orderTax + tips - discount;
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Check Out</h1>
+          <Button variant="outline" onClick={() => setCurrentView('table-bills')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Order Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Table {selectedTable.table_number}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-b pb-4">
+                <div className="font-semibold mb-2">Order: #{checkoutOrder.order_number}</div>
+                {checkoutOrder.pos_order_items?.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center py-2">
+                    <div>
+                      <div className="font-medium">{item.menu_items?.name || 'Unknown Item'}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.quantity} Units{item.notes && `, Extras: ${item.notes}`}
+                      </div>
+                    </div>
+                    <div className="text-right font-bold">
+                      ${item.total_price.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Total</span>
+                  <span>${orderSubtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tips</span>
+                  <span>${tips.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Paid</span>
+                  <span>$0.00</span>
+                </div>
+                <div className="flex justify-between font-bold text-xl pt-2 border-t">
+                  <span>Amount due</span>
+                  <span>${finalTotal.toFixed(2)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment Options */}
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total to Pay:</span>
+                  <span className="text-3xl font-bold">${finalTotal.toFixed(2)}</span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Including Tips: ${tips.toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Discount: %{((discount / orderSubtotal) * 100).toFixed(0)}
+                </div>
+                
+                <div className="flex items-center justify-end space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">Print Check</span>
+                    <Switch 
+                      checked={printCheck} 
+                      onCheckedChange={setPrintCheck}
+                    />
+                  </div>
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    setTips(tips + 10);
+                  }}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Add Tips
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setDiscount(discount + 5);
+                  }}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Add Discount
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <span className="font-semibold">Pay with:</span>
+                <div className="space-y-2">
+                  <Button
+                    variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('card')}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Credit Card
+                  </Button>
+                  <Button
+                    variant={paymentMethod === 'mpesa' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('mpesa')}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-[8px] text-white">$</span>
+                    </div>
+                    Cash
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="text-red-600 hover:bg-red-50 border-red-200"
+                >
+                  Close without payment
+                </Button>
+                <Button 
+                  onClick={() => {
+                    processPayment([checkoutOrder.id], paymentMethod, roomNumber);
+                    setCurrentView('tables');
+                    setCheckoutOrder(null);
+                    setTips(0);
+                    setDiscount(0);
+                    if (printCheck) {
+                      toast({
+                        title: "Receipt Printed",
+                        description: "Receipt has been sent to printer.",
+                      });
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Pay Now
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // Render item customization dialog
+  const renderItemCustomizationDialog = (item: MenuItem) => (
+    <Dialog open={selectedItemForCustomization !== null} onOpenChange={() => setSelectedItemForCustomization(null)}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex justify-between items-center">
+            Select Options & Extras — {item?.name}
+            <Button variant="ghost" size="sm" onClick={() => setSelectedItemForCustomization(null)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Options Section */}
+          <div>
+            <h3 className="font-semibold mb-4">Options</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium mb-2">Roasting</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {['Rare', 'Medium Rare', 'Medium Well', 'Medium', 'Well Done'].map((option) => (
+                    <Button
+                      key={option}
+                      variant={customizationOptions.roasting === option ? 'default' : 'outline'}
+                      onClick={() => setCustomizationOptions(prev => ({ ...prev, roasting: option }))}
+                      className="text-left justify-start"
+                    >
+                      {option}
+                      <span className="ml-auto">$0.00</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Bun</h4>
+                <Button variant="outline" className="w-full justify-start">
+                  Regular Bun
+                  <span className="ml-auto">$0.00</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Extras Section */}
+          <div>
+            <h3 className="font-semibold mb-4">Extras</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Button variant="outline" className="justify-start">
+                All
+              </Button>
+              <Button 
+                variant={customizationOptions.sauce === 'cheese' ? 'default' : 'outline'}
+                onClick={() => setCustomizationOptions(prev => ({ ...prev, sauce: 'cheese' }))}
+                className="justify-start flex-col h-auto p-4"
+              >
+                <span>Sauce</span>
+                <span className="text-xs">Cheese Sauce</span>
+                <div className="flex items-center justify-between w-full mt-2">
+                  <span className="text-sm line-through text-muted-foreground">$3.00</span>
+                  <span className="text-sm text-red-600">$2.00</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <span>1</span>
+                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </Button>
+              <Button variant="outline" className="justify-start flex-col h-auto p-4">
+                <span>Tomatoes</span>
+                <span className="text-sm mt-1">$2.00</span>
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Button variant="outline" className="justify-start flex-col h-auto p-4">
+                <span>Tomato Sauce</span>
+                <span className="text-sm mt-1">$3.00</span>
+              </Button>
+              <Button variant="outline" className="justify-start flex-col h-auto p-4">
+                <span>Garlic Sauce</span>
+                <span className="text-sm mt-1">$2.00</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setSelectedItemForCustomization(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (item) {
+                addToOrder(item);
+                setSelectedItemForCustomization(null);
+                setCustomizationOptions({});
+              }
+            }}>
+              Save
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1207,6 +1540,10 @@ export default function POSScreen() {
         {currentView === 'orders' && renderOrdersView()}
         {currentView === 'new-order' && renderNewOrderView()}
         {currentView === 'table-bills' && renderTableBillsView()}
+        {currentView === 'checkout' && renderCheckoutView()}
+        
+        {/* Item Customization Dialog */}
+        {selectedItemForCustomization && renderItemCustomizationDialog(selectedItemForCustomization)}
       </div>
     </div>
   );
