@@ -51,15 +51,11 @@ const Index = () => {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg">
-                <img 
-                  src="/lovable-uploads/398cb7b2-ebc9-4eed-8703-0f2623d53917.png" 
-                  alt="Olsupat Lodge" 
-                  className="h-8 w-8 object-contain"
-                />
+              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                <Home className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Olsupat Lodge</h1>
+                <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">HotelEasy</h1>
               </div>
             </div>
           </div>
