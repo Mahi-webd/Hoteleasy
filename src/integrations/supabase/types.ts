@@ -17,14 +17,21 @@ export type Database = {
       automated_tasks: {
         Row: {
           action_config: Json | null
+          category: string | null
           created_at: string
           description: string | null
+          email_on_failure: boolean | null
+          email_recipients: string[] | null
+          failure_count: number | null
           id: string
           is_active: boolean
+          last_error: string | null
           last_run_at: string | null
           name: string
           next_run_at: string | null
+          priority: string | null
           run_count: number
+          success_count: number | null
           task_type: string
           trigger_config: Json | null
           trigger_type: string
@@ -32,14 +39,21 @@ export type Database = {
         }
         Insert: {
           action_config?: Json | null
+          category?: string | null
           created_at?: string
           description?: string | null
+          email_on_failure?: boolean | null
+          email_recipients?: string[] | null
+          failure_count?: number | null
           id?: string
           is_active?: boolean
+          last_error?: string | null
           last_run_at?: string | null
           name: string
           next_run_at?: string | null
+          priority?: string | null
           run_count?: number
+          success_count?: number | null
           task_type: string
           trigger_config?: Json | null
           trigger_type: string
@@ -47,20 +61,80 @@ export type Database = {
         }
         Update: {
           action_config?: Json | null
+          category?: string | null
           created_at?: string
           description?: string | null
+          email_on_failure?: boolean | null
+          email_recipients?: string[] | null
+          failure_count?: number | null
           id?: string
           is_active?: boolean
+          last_error?: string | null
           last_run_at?: string | null
           name?: string
           next_run_at?: string | null
+          priority?: string | null
           run_count?: number
+          success_count?: number | null
           task_type?: string
           trigger_config?: Json | null
           trigger_type?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      automation_history: {
+        Row: {
+          completed_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          items_failed: number | null
+          items_processed: number | null
+          items_succeeded: number | null
+          result_summary: string | null
+          started_at: string
+          status: string
+          task_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          items_failed?: number | null
+          items_processed?: number | null
+          items_succeeded?: number | null
+          result_summary?: string | null
+          started_at?: string
+          status: string
+          task_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          items_failed?: number | null
+          items_processed?: number | null
+          items_succeeded?: number | null
+          result_summary?: string | null
+          started_at?: string
+          status?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "automated_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_categories: {
         Row: {
@@ -103,44 +177,75 @@ export type Database = {
       budgets: {
         Row: {
           actual_amount: number
+          alert_threshold_percent: number | null
+          approved_at: string | null
+          approved_by: string | null
           budgeted_amount: number
           category_id: string | null
           created_at: string
           department_id: string | null
+          description: string | null
+          end_date: string | null
           fiscal_month: number | null
           fiscal_year: number
           id: string
+          name: string | null
           notes: string | null
+          start_date: string | null
+          status: string | null
           updated_at: string
           variance: number | null
         }
         Insert: {
           actual_amount?: number
+          alert_threshold_percent?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
           budgeted_amount?: number
           category_id?: string | null
           created_at?: string
           department_id?: string | null
+          description?: string | null
+          end_date?: string | null
           fiscal_month?: number | null
           fiscal_year: number
           id?: string
+          name?: string | null
           notes?: string | null
+          start_date?: string | null
+          status?: string | null
           updated_at?: string
           variance?: number | null
         }
         Update: {
           actual_amount?: number
+          alert_threshold_percent?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
           budgeted_amount?: number
           category_id?: string | null
           created_at?: string
           department_id?: string | null
+          description?: string | null
+          end_date?: string | null
           fiscal_month?: number | null
           fiscal_year?: number
           id?: string
+          name?: string | null
           notes?: string | null
+          start_date?: string | null
+          status?: string | null
           updated_at?: string
           variance?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "budgets_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "budgets_category_id_fkey"
             columns: ["category_id"]
@@ -157,57 +262,213 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          ai_generated: boolean | null
+          attachments: Json | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          message_type: string | null
+          read_at: string | null
+          sender_id: string | null
+          sender_type: string
+          session_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          message_type?: string | null
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type: string
+          session_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          message_type?: string | null
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          ai_enabled: boolean | null
+          ai_resolution_rate: number | null
+          assigned_to: string | null
+          channel: string
+          created_at: string
+          ended_at: string | null
+          guest_id: string | null
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          room_id: string | null
+          satisfaction_rating: number | null
+          started_at: string
+          status: string
+          unread_count: number | null
+        }
+        Insert: {
+          ai_enabled?: boolean | null
+          ai_resolution_rate?: number | null
+          assigned_to?: string | null
+          channel?: string
+          created_at?: string
+          ended_at?: string | null
+          guest_id?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          room_id?: string | null
+          satisfaction_rating?: number | null
+          started_at?: string
+          status?: string
+          unread_count?: number | null
+        }
+        Update: {
+          ai_enabled?: boolean | null
+          ai_resolution_rate?: number | null
+          assigned_to?: string | null
+          channel?: string
+          created_at?: string
+          ended_at?: string | null
+          guest_id?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          room_id?: string | null
+          satisfaction_rating?: number | null
+          started_at?: string
+          status?: string
+          unread_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concierge_requests: {
         Row: {
+          actual_cost: number | null
           assigned_to: string | null
           completed_at: string | null
+          confirmation_number: string | null
           created_at: string
           description: string | null
+          dropoff_time: string | null
+          estimated_cost: number | null
+          feedback: string | null
           guest_id: string | null
           id: string
           notes: string | null
+          number_of_guests: number | null
+          pickup_time: string | null
           priority: string
+          rating: number | null
           request_type: string
           reservation_id: string | null
           room_id: string | null
           scheduled_time: string | null
+          special_requirements: string | null
           status: string
           title: string
           updated_at: string
+          vendor_name: string | null
         }
         Insert: {
+          actual_cost?: number | null
           assigned_to?: string | null
           completed_at?: string | null
+          confirmation_number?: string | null
           created_at?: string
           description?: string | null
+          dropoff_time?: string | null
+          estimated_cost?: number | null
+          feedback?: string | null
           guest_id?: string | null
           id?: string
           notes?: string | null
+          number_of_guests?: number | null
+          pickup_time?: string | null
           priority?: string
+          rating?: number | null
           request_type: string
           reservation_id?: string | null
           room_id?: string | null
           scheduled_time?: string | null
+          special_requirements?: string | null
           status?: string
           title: string
           updated_at?: string
+          vendor_name?: string | null
         }
         Update: {
+          actual_cost?: number | null
           assigned_to?: string | null
           completed_at?: string | null
+          confirmation_number?: string | null
           created_at?: string
           description?: string | null
+          dropoff_time?: string | null
+          estimated_cost?: number | null
+          feedback?: string | null
           guest_id?: string | null
           id?: string
           notes?: string | null
+          number_of_guests?: number | null
+          pickup_time?: string | null
           priority?: string
+          rating?: number | null
           request_type?: string
           reservation_id?: string | null
           room_id?: string | null
           scheduled_time?: string | null
+          special_requirements?: string | null
           status?: string
           title?: string
           updated_at?: string
+          vendor_name?: string | null
         }
         Relationships: [
           {
@@ -239,6 +500,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      concierge_services: {
+        Row: {
+          advance_booking_hours: number | null
+          category: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          duration_minutes: number | null
+          icon: string | null
+          id: string
+          is_available: boolean | null
+          name: string
+          price: number | null
+          price_type: string | null
+          requires_advance_booking: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          advance_booking_hours?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          icon?: string | null
+          id?: string
+          is_available?: boolean | null
+          name: string
+          price?: number | null
+          price_type?: string | null
+          requires_advance_booking?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          advance_booking_hours?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          icon?: string | null
+          id?: string
+          is_available?: boolean | null
+          name?: string
+          price?: number | null
+          price_type?: string | null
+          requires_advance_booking?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       departments: {
         Row: {
@@ -350,6 +662,62 @@ export type Database = {
           },
         ]
       }
+      feedback_surveys: {
+        Row: {
+          average_rating: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          published_at: string | null
+          questions: Json | null
+          response_count: number | null
+          status: string
+          survey_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          average_rating?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          published_at?: string | null
+          questions?: Json | null
+          response_count?: number | null
+          status?: string
+          survey_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          average_rating?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          published_at?: string | null
+          questions?: Json | null
+          response_count?: number | null
+          status?: string
+          survey_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_surveys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floors: {
         Row: {
           created_at: string
@@ -379,55 +747,82 @@ export type Database = {
       }
       guest_feedback: {
         Row: {
+          amenities_rating: number | null
           category: string | null
+          cleanliness_rating: number | null
           comment: string | null
           created_at: string
           feedback_type: string
+          food_rating: number | null
           guest_id: string | null
           id: string
           is_public: boolean
+          language: string | null
+          location_rating: number | null
           rating: number | null
           reservation_id: string | null
           responded_at: string | null
           responded_by: string | null
           response: string | null
+          service_rating: number | null
+          source: string | null
           status: string
           title: string | null
           updated_at: string
+          value_rating: number | null
+          would_recommend: boolean | null
         }
         Insert: {
+          amenities_rating?: number | null
           category?: string | null
+          cleanliness_rating?: number | null
           comment?: string | null
           created_at?: string
           feedback_type?: string
+          food_rating?: number | null
           guest_id?: string | null
           id?: string
           is_public?: boolean
+          language?: string | null
+          location_rating?: number | null
           rating?: number | null
           reservation_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           response?: string | null
+          service_rating?: number | null
+          source?: string | null
           status?: string
           title?: string | null
           updated_at?: string
+          value_rating?: number | null
+          would_recommend?: boolean | null
         }
         Update: {
+          amenities_rating?: number | null
           category?: string | null
+          cleanliness_rating?: number | null
           comment?: string | null
           created_at?: string
           feedback_type?: string
+          food_rating?: number | null
           guest_id?: string | null
           id?: string
           is_public?: boolean
+          language?: string | null
+          location_rating?: number | null
           rating?: number | null
           reservation_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           response?: string | null
+          service_rating?: number | null
+          source?: string | null
           status?: string
           title?: string | null
           updated_at?: string
+          value_rating?: number | null
+          would_recommend?: boolean | null
         }
         Relationships: [
           {
@@ -526,9 +921,21 @@ export type Database = {
         Row: {
           assigned_to: string | null
           checklist: Json | null
+          checklist_amenities: boolean | null
+          checklist_bathroom: boolean | null
+          checklist_bedroom: boolean | null
+          checklist_linens: boolean | null
+          checklist_minibar: boolean | null
+          checklist_vacuum: boolean | null
+          checklist_windows: boolean | null
           completed_at: string | null
           created_at: string
           id: string
+          inspected_by: string | null
+          inspection_notes: string | null
+          inspection_rating: number | null
+          last_cleaned: string | null
+          next_service: string | null
           notes: string | null
           priority: string
           room_id: string
@@ -536,14 +943,27 @@ export type Database = {
           started_at: string | null
           status: string
           task_type: string
+          time_spent_minutes: number | null
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
           checklist?: Json | null
+          checklist_amenities?: boolean | null
+          checklist_bathroom?: boolean | null
+          checklist_bedroom?: boolean | null
+          checklist_linens?: boolean | null
+          checklist_minibar?: boolean | null
+          checklist_vacuum?: boolean | null
+          checklist_windows?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
+          inspected_by?: string | null
+          inspection_notes?: string | null
+          inspection_rating?: number | null
+          last_cleaned?: string | null
+          next_service?: string | null
           notes?: string | null
           priority?: string
           room_id: string
@@ -551,14 +971,27 @@ export type Database = {
           started_at?: string | null
           status?: string
           task_type?: string
+          time_spent_minutes?: number | null
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
           checklist?: Json | null
+          checklist_amenities?: boolean | null
+          checklist_bathroom?: boolean | null
+          checklist_bedroom?: boolean | null
+          checklist_linens?: boolean | null
+          checklist_minibar?: boolean | null
+          checklist_vacuum?: boolean | null
+          checklist_windows?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
+          inspected_by?: string | null
+          inspection_notes?: string | null
+          inspection_rating?: number | null
+          last_cleaned?: string | null
+          next_service?: string | null
           notes?: string | null
           priority?: string
           room_id?: string
@@ -566,12 +999,20 @@ export type Database = {
           started_at?: string | null
           status?: string
           task_type?: string
+          time_spent_minutes?: number | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "housekeeping_tasks_assigned_to_fkey"
             columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "housekeeping_tasks_inspected_by_fkey"
+            columns: ["inspected_by"]
             isOneToOne: false
             referencedRelation: "staff"
             referencedColumns: ["id"]
@@ -625,11 +1066,18 @@ export type Database = {
       }
       inventory_items: {
         Row: {
+          average_monthly_usage: number | null
+          barcode: string | null
+          brand: string | null
           category_id: string | null
           created_at: string
           description: string | null
+          expiry_date: string | null
           id: string
+          image_url: string | null
           is_active: boolean
+          last_restock_date: string | null
+          last_restock_quantity: number | null
           location: string | null
           maximum_quantity: number | null
           minimum_quantity: number
@@ -637,6 +1085,7 @@ export type Database = {
           quantity_on_hand: number
           reorder_point: number
           sku: string
+          storage_conditions: string | null
           supplier_contact: string | null
           supplier_name: string | null
           unit: string
@@ -644,11 +1093,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          average_monthly_usage?: number | null
+          barcode?: string | null
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           description?: string | null
+          expiry_date?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          last_restock_date?: string | null
+          last_restock_quantity?: number | null
           location?: string | null
           maximum_quantity?: number | null
           minimum_quantity?: number
@@ -656,6 +1112,7 @@ export type Database = {
           quantity_on_hand?: number
           reorder_point?: number
           sku: string
+          storage_conditions?: string | null
           supplier_contact?: string | null
           supplier_name?: string | null
           unit?: string
@@ -663,11 +1120,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          average_monthly_usage?: number | null
+          barcode?: string | null
+          brand?: string | null
           category_id?: string | null
           created_at?: string
           description?: string | null
+          expiry_date?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
+          last_restock_date?: string | null
+          last_restock_quantity?: number | null
           location?: string | null
           maximum_quantity?: number | null
           minimum_quantity?: number
@@ -675,6 +1139,7 @@ export type Database = {
           quantity_on_hand?: number
           reorder_point?: number
           sku?: string
+          storage_conditions?: string | null
           supplier_contact?: string | null
           supplier_name?: string | null
           unit?: string
@@ -801,60 +1266,90 @@ export type Database = {
       invoices: {
         Row: {
           balance_due: number
+          billing_address: string | null
+          company_name: string | null
           created_at: string
           created_by: string | null
+          currency: string | null
           discount_amount: number
           due_date: string | null
+          exchange_rate: number | null
           guest_id: string | null
           id: string
           invoice_date: string
           invoice_number: number
           notes: string | null
           paid_amount: number
+          payment_terms: string | null
+          po_number: string | null
+          reminder_sent_at: string | null
           reservation_id: string | null
+          sent_at: string | null
           status: string
           subtotal: number
           tax_amount: number
+          tax_id: string | null
           total_amount: number
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           balance_due?: number
+          billing_address?: string | null
+          company_name?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           discount_amount?: number
           due_date?: string | null
+          exchange_rate?: number | null
           guest_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: number
           notes?: string | null
           paid_amount?: number
+          payment_terms?: string | null
+          po_number?: string | null
+          reminder_sent_at?: string | null
           reservation_id?: string | null
+          sent_at?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
+          tax_id?: string | null
           total_amount?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           balance_due?: number
+          billing_address?: string | null
+          company_name?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           discount_amount?: number
           due_date?: string | null
+          exchange_rate?: number | null
           guest_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: number
           notes?: string | null
           paid_amount?: number
+          payment_terms?: string | null
+          po_number?: string | null
+          reminder_sent_at?: string | null
           reservation_id?: string | null
+          sent_at?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
+          tax_id?: string | null
           total_amount?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -891,16 +1386,26 @@ export type Database = {
           estimated_cost: number | null
           id: string
           images: Json | null
+          labor_cost: number | null
           notes: string | null
+          parts_cost: number | null
+          parts_needed: string[] | null
           priority: string
+          rating: number | null
+          rating_notes: string | null
           reported_by: string | null
           request_number: number
+          resolution_notes: string | null
           room_id: string | null
           scheduled_date: string | null
           started_at: string | null
           status: string
           title: string
           updated_at: string
+          vendor_contact: string | null
+          vendor_name: string | null
+          warranty_claim: boolean | null
+          work_order_number: number
         }
         Insert: {
           actual_cost?: number | null
@@ -912,16 +1417,26 @@ export type Database = {
           estimated_cost?: number | null
           id?: string
           images?: Json | null
+          labor_cost?: number | null
           notes?: string | null
+          parts_cost?: number | null
+          parts_needed?: string[] | null
           priority?: string
+          rating?: number | null
+          rating_notes?: string | null
           reported_by?: string | null
           request_number?: number
+          resolution_notes?: string | null
           room_id?: string | null
           scheduled_date?: string | null
           started_at?: string | null
           status?: string
           title: string
           updated_at?: string
+          vendor_contact?: string | null
+          vendor_name?: string | null
+          warranty_claim?: boolean | null
+          work_order_number?: number
         }
         Update: {
           actual_cost?: number | null
@@ -933,16 +1448,26 @@ export type Database = {
           estimated_cost?: number | null
           id?: string
           images?: Json | null
+          labor_cost?: number | null
           notes?: string | null
+          parts_cost?: number | null
+          parts_needed?: string[] | null
           priority?: string
+          rating?: number | null
+          rating_notes?: string | null
           reported_by?: string | null
           request_number?: number
+          resolution_notes?: string | null
           room_id?: string | null
           scheduled_date?: string | null
           started_at?: string | null
           status?: string
           title?: string
           updated_at?: string
+          vendor_contact?: string | null
+          vendor_name?: string | null
+          warranty_claim?: boolean | null
+          work_order_number?: number
         }
         Relationships: [
           {
@@ -1084,45 +1609,75 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          bank_reference: string | null
+          card_last_four: string | null
+          card_type: string | null
           created_at: string
           guest_id: string | null
           id: string
           invoice_id: string | null
+          mpesa_receipt_number: string | null
           notes: string | null
           payment_date: string
           payment_method: string
           payment_number: number
           processed_by: string | null
           reference_number: string | null
+          refund_amount: number | null
+          refund_date: string | null
+          refund_reason: string | null
+          refund_status: string | null
+          room_charge_reference: string | null
           status: string
+          transaction_id: string | null
         }
         Insert: {
           amount: number
+          bank_reference?: string | null
+          card_last_four?: string | null
+          card_type?: string | null
           created_at?: string
           guest_id?: string | null
           id?: string
           invoice_id?: string | null
+          mpesa_receipt_number?: string | null
           notes?: string | null
           payment_date?: string
           payment_method: string
           payment_number?: number
           processed_by?: string | null
           reference_number?: string | null
+          refund_amount?: number | null
+          refund_date?: string | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          room_charge_reference?: string | null
           status?: string
+          transaction_id?: string | null
         }
         Update: {
           amount?: number
+          bank_reference?: string | null
+          card_last_four?: string | null
+          card_type?: string | null
           created_at?: string
           guest_id?: string | null
           id?: string
           invoice_id?: string | null
+          mpesa_receipt_number?: string | null
           notes?: string | null
           payment_date?: string
           payment_method?: string
           payment_number?: number
           processed_by?: string | null
           reference_number?: string | null
+          refund_amount?: number | null
+          refund_date?: string | null
+          refund_reason?: string | null
+          refund_status?: string | null
+          room_charge_reference?: string | null
           status?: string
+          transaction_id?: string | null
         }
         Relationships: [
           {
@@ -1275,6 +1830,148 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_percent: number | null
+          id: string
+          item_id: string | null
+          po_id: string
+          quantity: number
+          received_quantity: number | null
+          tax_rate: number | null
+          total_amount: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          item_id?: string | null
+          po_id: string
+          quantity: number
+          received_quantity?: number | null
+          tax_rate?: number | null
+          total_amount: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          item_id?: string | null
+          po_id?: string
+          quantity?: number
+          received_quantity?: number | null
+          tax_rate?: number | null
+          total_amount?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          actual_delivery: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          payment_status: string | null
+          po_number: number
+          shipping_cost: number | null
+          status: string
+          subtotal: number | null
+          supplier_id: string | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          actual_delivery?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_status?: string | null
+          po_number?: number
+          shipping_cost?: number | null
+          status?: string
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          actual_delivery?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_status?: string | null
+          po_number?: number
+          shipping_cost?: number | null
+          status?: string
+          subtotal?: number | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -1462,7 +2159,12 @@ export type Database = {
       staff: {
         Row: {
           address: string | null
+          assigned_rooms: string[] | null
+          bank_account: string | null
+          bank_name: string | null
+          completed_today: number | null
           created_at: string
+          date_of_birth: string | null
           department_id: string | null
           email: string | null
           emergency_contact_name: string | null
@@ -1470,20 +2172,32 @@ export type Database = {
           employee_code: string
           employment_type: string
           first_name: string
+          gender: string | null
           hire_date: string
           id: string
           last_name: string
+          marital_status: string | null
+          national_id: string | null
           notes: string | null
           phone: string | null
+          photo_url: string | null
           position: string
+          rating: number | null
           salary: number | null
+          specialties: string[] | null
           status: string
+          tax_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           address?: string | null
+          assigned_rooms?: string[] | null
+          bank_account?: string | null
+          bank_name?: string | null
+          completed_today?: number | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
           emergency_contact_name?: string | null
@@ -1491,20 +2205,32 @@ export type Database = {
           employee_code: string
           employment_type?: string
           first_name: string
+          gender?: string | null
           hire_date?: string
           id?: string
           last_name: string
+          marital_status?: string | null
+          national_id?: string | null
           notes?: string | null
           phone?: string | null
+          photo_url?: string | null
           position: string
+          rating?: number | null
           salary?: number | null
+          specialties?: string[] | null
           status?: string
+          tax_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           address?: string | null
+          assigned_rooms?: string[] | null
+          bank_account?: string | null
+          bank_name?: string | null
+          completed_today?: number | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
           emergency_contact_name?: string | null
@@ -1512,14 +2238,21 @@ export type Database = {
           employee_code?: string
           employment_type?: string
           first_name?: string
+          gender?: string | null
           hire_date?: string
           id?: string
           last_name?: string
+          marital_status?: string | null
+          national_id?: string | null
           notes?: string | null
           phone?: string | null
+          photo_url?: string | null
           position?: string
+          rating?: number | null
           salary?: number | null
+          specialties?: string[] | null
           status?: string
+          tax_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1529,6 +2262,85 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_attendance: {
+        Row: {
+          approved_by: string | null
+          attendance_date: string
+          break_end: string | null
+          break_start: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          early_leave_minutes: number | null
+          hours_worked: number | null
+          id: string
+          late_minutes: number | null
+          notes: string | null
+          overtime_hours: number | null
+          schedule_id: string | null
+          staff_id: string
+          status: string
+        }
+        Insert: {
+          approved_by?: string | null
+          attendance_date?: string
+          break_end?: string | null
+          break_start?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          early_leave_minutes?: number | null
+          hours_worked?: number | null
+          id?: string
+          late_minutes?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          schedule_id?: string | null
+          staff_id: string
+          status?: string
+        }
+        Update: {
+          approved_by?: string | null
+          attendance_date?: string
+          break_end?: string | null
+          break_start?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          early_leave_minutes?: number | null
+          hours_worked?: number | null
+          id?: string
+          late_minutes?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          schedule_id?: string | null
+          staff_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_attendance_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_attendance_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "staff_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_attendance_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -1576,6 +2388,132 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_schedules_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          categories: string[] | null
+          city: string | null
+          contact_person: string | null
+          country: string | null
+          created_at: string
+          credit_limit: number | null
+          current_balance: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          rating: number | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          categories?: string[] | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          rating?: number | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          categories?: string[] | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          current_balance?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          rating?: number | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      time_off_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          reason: string | null
+          rejection_reason: string | null
+          request_type: string
+          staff_id: string
+          start_date: string
+          status: string
+          total_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          rejection_reason?: string | null
+          request_type: string
+          staff_id: string
+          start_date: string
+          status?: string
+          total_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          rejection_reason?: string | null
+          request_type?: string
+          staff_id?: string
+          start_date?: string
+          status?: string
+          total_days?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
