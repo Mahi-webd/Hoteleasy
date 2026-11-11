@@ -1,5 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { BedDouble, MoreVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { BedDouble, MoreVertical, Pencil, Plus, Search, Trash2, Wrench } from "lucide-react";
+import { ReportIssueDialog } from "../maintenance/ReportIssueDialog";
+import { useTickets } from "@/hooks/useOperations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,14 @@ const RoomsPage = () => {
   const [typeId, setTypeId] = useState<string>("all");
   const [editingRoom, setEditingRoom] = useState<Partial<Room> | null>(null);
   const [editingType, setEditingType] = useState<Partial<RoomType> | null>(null);
+  const [reportRoom, setReportRoom] = useState<string | null>(null);
+  const tickets = useTickets();
+  const openIssues = useMemo(() => {
+    const m = new Map<string, string[]>();
+    tickets.data?.filter((t) => t.room_id && ["open", "in_progress", "on_hold"].includes(t.status))
+      .forEach((t) => m.set(t.room_id!, [...(m.get(t.room_id!) ?? []), t.title]));
+    return m;
+  }, [tickets.data]);
 
   const guestByRoom = useMemo(() => {
     const m = new Map<string, { name: string; until: string }>();
@@ -164,13 +174,13 @@ const RoomsPage = () => {
                               <div className="text-xl font-bold">{room.room_number}</div>
                               <div className="text-xs text-slate-500">{room.room_types?.name}</div>
                             </div>
-                            {(canSetStatus || canManage) && (
+                            {(
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 -mr-1"><MoreVertical className="h-4 w-4" /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {canSetStatus && room.status !== "occupied" && (
+                                  {canSetStatus && room.status !== "occupied" && room.status !== "maintenance" && (
                                     <>
                                       <DropdownMenuLabel>Set status</DropdownMenuLabel>
                                       {MANUAL_STATUSES.filter((s) => s !== room.status).map((s) => (
@@ -180,11 +190,18 @@ const RoomsPage = () => {
                                       ))}
                                     </>
                                   )}
+                                  {room.status === "maintenance" && (
+                                    <DropdownMenuLabel className="font-normal text-xs text-slate-500 max-w-[200px]">
+                                      Back in service when its maintenance issue is marked fixed.
+                                    </DropdownMenuLabel>
+                                  )}
                                   {room.status === "occupied" && (
                                     <DropdownMenuLabel className="font-normal text-xs text-slate-500 max-w-[200px]">
                                       Occupied rooms free up when the guest is checked out.
                                     </DropdownMenuLabel>
                                   )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setReportRoom(room.id)}><Wrench className="mr-2 h-4 w-4" />Report a problem</DropdownMenuItem>
                                   {canManage && (
                                     <>
                                       <DropdownMenuSeparator />
@@ -204,6 +221,11 @@ const RoomsPage = () => {
                             )}
                           </div>
                           <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                          {openIssues.get(room.id) && (
+                            <div className="text-xs text-orange-700 flex items-center gap-1 truncate" title={openIssues.get(room.id)!.join(", ")}>
+                              <Wrench className="h-3 w-3 shrink-0" />{openIssues.get(room.id)![0]}{openIssues.get(room.id)!.length > 1 ? ` +${openIssues.get(room.id)!.length - 1}` : ""}
+                            </div>
+                          )}
                           {g ? (
                             <div className="text-xs text-slate-600 dark:text-slate-300 truncate">
                               {g.name}<br />
@@ -232,6 +254,7 @@ const RoomsPage = () => {
 
       {editingRoom && <RoomDialog room={editingRoom} types={types.data ?? []} onClose={() => setEditingRoom(null)} />}
       {editingType && <RoomTypeDialog type={editingType} onClose={() => setEditingType(null)} />}
+      {reportRoom && <ReportIssueDialog roomId={reportRoom} onClose={() => setReportRoom(null)} />}
     </div>
   );
 };

@@ -19,13 +19,14 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { ROLE_LABELS, formatDate } from "@/lib/format";
 import type { HotelRole } from "@/lib/db-types";
 
-const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "restaurant", "accountant"];
+const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "maintenance", "restaurant", "accountant"];
 
 const ROLE_HELP: Record<HotelRole, string> = {
   owner: "Everything, including managing the team",
   manager: "Everything except changing roles",
   front_desk: "Reservations, guests, check-in/out, room status",
-  housekeeping: "Room status and arrivals/departures",
+  housekeeping: "Cleaning tasks, room status, reporting problems (no guest details or money)",
+  maintenance: "Repair tickets and taking rooms out of service (no guest details or money)",
   restaurant: "Restaurant POS and guest lookup",
   accountant: "Billing, payments and reports",
 };

@@ -20,6 +20,8 @@ const ACTIVITY_DOT: Record<string, string> = {
   payment: "bg-emerald-500",
   invoice: "bg-indigo-500",
   billing: "bg-slate-500",
+  housekeeping: "bg-teal-500",
+  maintenance: "bg-orange-600",
 };
 
 const useClock = () => {

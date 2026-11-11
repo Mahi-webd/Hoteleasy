@@ -20,14 +20,14 @@ import GuestsPage from "@/features/guests/GuestsPage";
 import ReservationsPage from "@/features/reservations/ReservationsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import BillingPage from "@/features/billing/BillingPage";
+import HousekeepingPage from "@/features/housekeeping/HousekeepingPage";
+import MaintenancePage from "@/features/maintenance/MaintenancePage";
 
 // Demo modules (still showing sample data)
 import MISReports from "@/components/MISReports";
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import GuestFeedback from "@/components/GuestFeedback";
 import DigitalConcierge from "@/components/DigitalConcierge";
-import HousekeepingManagement from "@/components/HousekeepingManagement";
-import MaintenanceRequests from "@/components/MaintenanceRequests";
 import StaffScheduling from "@/components/StaffScheduling";
 import RevenueAnalytics from "@/components/RevenueAnalytics";
 import FinancialReporting from "@/components/FinancialReporting";
@@ -57,8 +57,8 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   billing: BillingPage,
   pos: PosComingSoon,
   reports: MISReports,
-  housekeeping: HousekeepingManagement,
-  maintenance: MaintenanceRequests,
+  housekeeping: HousekeepingPage,
+  maintenance: MaintenancePage,
   staff: StaffScheduling,
   "mobile-checkin": GuestMobileCheckin,
   feedback: GuestFeedback,

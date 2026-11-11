@@ -32,10 +32,15 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Operations",
+    items: [
+      { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
+      { key: "maintenance", label: "Maintenance", icon: Wrench },
+    ],
+  },
+  {
     title: "Coming next",
     items: [
-      { key: "housekeeping", label: "Housekeeping", icon: UserCheck, preview: true },
-      { key: "maintenance", label: "Maintenance", icon: Wrench, preview: true },
       { key: "pos", label: "Restaurant POS", icon: ShoppingCart, roles: [...MGMT, "restaurant"], preview: true },
       { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
       { key: "inventory-alerts", label: "Inventory", icon: Package, roles: MGMT, preview: true },

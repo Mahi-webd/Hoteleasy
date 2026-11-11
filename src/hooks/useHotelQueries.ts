@@ -55,6 +55,23 @@ export const useRealtimeSync = () => {
         qc.invalidateQueries({ queryKey: ["reservations"] });
         qc.invalidateQueries({ queryKey: ["dashboard"] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "housekeeping_tasks", filter }, () => {
+        qc.invalidateQueries({ queryKey: ["housekeeping"] });
+        qc.invalidateQueries({ queryKey: ["rooms"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "maintenance_tickets", filter }, () => {
+        qc.invalidateQueries({ queryKey: ["maintenance"] });
+        qc.invalidateQueries({ queryKey: ["rooms"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter }, () => {
+        qc.invalidateQueries({ queryKey: ["folio"] });
+        qc.invalidateQueries({ queryKey: ["balances"] });
+        qc.invalidateQueries({ queryKey: ["payments"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "folio_charges", filter }, () => {
+        qc.invalidateQueries({ queryKey: ["folio"] });
+        qc.invalidateQueries({ queryKey: ["balances"] });
+      })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "activity_log", filter }, () =>
         qc.invalidateQueries({ queryKey: ["activity"] }),
       )

@@ -67,7 +67,7 @@ select pg_temp.expect_fail($$select public.check_out_reservation((select id from
 select pg_temp.expect_fail($$insert into guests(hotel_id,first_name) select h1,'X' from ids$$, 'housekeeping add guest');
 -- Carol checks out; room becomes dirty; Dan cleans
 select pg_temp.as_user('cccccccc-0000-0000-0000-000000000003');
-select status from public.check_out_reservation((select id from reservations where status='checked_in'));
+select status from public.check_out_reservation((select id from reservations where status='checked_in'), true);
 select pg_temp.expect_fail($$update reservations set check_out = check_out + 1 where status='checked_out'$$, 'edit closed reservation');
 update hotel_members set role='owner';
 select role as carol_role_after_tamper from hotel_members where user_id=auth.uid();

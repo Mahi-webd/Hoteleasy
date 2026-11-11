@@ -1,5 +1,5 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import type { BookingSource, ChargeKind, HotelRole, PaymentMethod, ReservationStatus, RoomStatus } from "./db-types";
+import type { BookingSource, ChargeKind, HkStatus, HkTaskType, HotelRole, MtCategory, MtStatus, PaymentMethod, Priority, ReservationStatus, RoomStatus } from "./db-types";
 
 export const formatMoney = (amount: number | null | undefined, currency = "KES") =>
   `${currency} ${Number(amount ?? 0).toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -28,6 +28,50 @@ export const ROLE_LABELS: Record<HotelRole, string> = {
   housekeeping: "Housekeeping",
   restaurant: "Restaurant",
   accountant: "Accountant",
+  maintenance: "Maintenance",
+};
+
+export const PRIORITY: Record<Priority, { label: string; className: string }> = {
+  low: { label: "Low", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  normal: { label: "Normal", className: "bg-blue-50 text-blue-700 border-blue-200" },
+  high: { label: "High", className: "bg-orange-100 text-orange-800 border-orange-200" },
+  urgent: { label: "Urgent", className: "bg-red-600 text-white border-red-600" },
+};
+
+export const HK_TYPES: Record<HkTaskType, string> = {
+  checkout_clean: "Check-out clean",
+  stayover_clean: "Daily service",
+  deep_clean: "Deep clean",
+  turndown: "Turndown",
+  inspection: "Inspection",
+};
+
+export const HK_STATUS: Record<HkStatus, { label: string; className: string }> = {
+  pending: { label: "To do", className: "bg-amber-100 text-amber-800 border-amber-200" },
+  in_progress: { label: "Cleaning", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  done: { label: "Done", className: "bg-green-100 text-green-800 border-green-200" },
+  cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-500 border-slate-200" },
+};
+
+export const MT_CATEGORIES: Record<MtCategory, string> = {
+  plumbing: "Plumbing / water",
+  electrical: "Electrical / lights",
+  air_con: "Air con / fan",
+  furniture: "Furniture / fittings",
+  appliance: "Appliance (TV, fridge, kettle)",
+  internet_tv: "WiFi / DSTV",
+  locks_keys: "Locks / keys / safe",
+  painting: "Walls / painting",
+  pest: "Pests",
+  other: "Other",
+};
+
+export const MT_STATUS: Record<MtStatus, { label: string; className: string }> = {
+  open: { label: "Open", className: "bg-red-50 text-red-700 border-red-200" },
+  in_progress: { label: "Being fixed", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  on_hold: { label: "On hold", className: "bg-slate-100 text-slate-700 border-slate-300" },
+  resolved: { label: "Fixed", className: "bg-green-100 text-green-800 border-green-200" },
+  cancelled: { label: "Cancelled", className: "bg-slate-100 text-slate-500 border-slate-200" },
 };
 
 export const ROOM_STATUS: Record<RoomStatus, { label: string; className: string; dot: string }> = {

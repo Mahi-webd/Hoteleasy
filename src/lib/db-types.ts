@@ -6,7 +6,8 @@ export type HotelRole =
   | "front_desk"
   | "housekeeping"
   | "restaurant"
-  | "accountant";
+  | "accountant"
+  | "maintenance";
 
 export type RoomStatus =
   | "available"
@@ -234,4 +235,53 @@ export interface Invoice {
   levy_total: number;
   total: number;
   superseded_at: string | null;
+}
+
+export type Priority = "low" | "normal" | "high" | "urgent";
+export type HkTaskType = "checkout_clean" | "stayover_clean" | "deep_clean" | "turndown" | "inspection";
+export type HkStatus = "pending" | "in_progress" | "done" | "cancelled";
+
+export interface HkTask {
+  id: string;
+  hotel_id: string;
+  room_id: string;
+  task_type: HkTaskType;
+  status: HkStatus;
+  priority: Priority;
+  due_date: string;
+  assigned_to: string | null;
+  notes: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
+  updated_at: string;
+  rooms?: Pick<Room, "id" | "room_number" | "status" | "floor"> & { room_types?: { name: string } | null };
+}
+
+export type MtCategory =
+  | "plumbing" | "electrical" | "air_con" | "furniture" | "appliance" | "internet_tv" | "locks_keys" | "painting" | "pest" | "other";
+export type MtStatus = "open" | "in_progress" | "on_hold" | "resolved" | "cancelled";
+
+export interface MtTicket {
+  id: string;
+  hotel_id: string;
+  number: number;
+  room_id: string | null;
+  location: string | null;
+  title: string;
+  description: string | null;
+  category: MtCategory;
+  priority: Priority;
+  status: MtStatus;
+  blocks_room: boolean;
+  assigned_to: string | null;
+  reported_by: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  resolution_notes: string | null;
+  cost: number | null;
+  rooms?: Pick<Room, "id" | "room_number" | "status"> | null;
 }
