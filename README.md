@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# HotelEasy
 
-## Project info
+Hotel management for Kenyan hotels and lodges. One account can run several hotels, and each hotel's
+staff only see their own hotel's data.
 
-**URL**: https://lovable.dev/projects/ef3bcf22-f9f7-49fc-ae39-6ba141679e74
+## What works today
 
-## How can I edit this code?
+| Area | Status |
+|---|---|
+| Sign up, sign in, password reset | ✅ Live |
+| Create a hotel (optionally with sample rooms), switch between hotels | ✅ Live |
+| Team: invite staff by email with a role, change roles, remove people | ✅ Live |
+| Rooms & room types: add / edit / delete, live status, per-floor board | ✅ Live |
+| Guests: search, profiles, ID details, VIP, stay history | ✅ Live |
+| Reservations: create / edit / extend, live availability, no double bookings | ✅ Live |
+| Arrivals, in-house, departures lists; check-in, check-out, cancel, no-show | ✅ Live |
+| Booking calendar (rooms × 14 days) | ✅ Live |
+| Dashboard: occupancy, arrivals, departures, room revenue, 7-night forecast, activity | ✅ Live |
+| Billing, housekeeping, maintenance, POS, staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
-There are several ways of editing your application.
+### Roles
 
-**Use Lovable**
+| Role | Can do |
+|---|---|
+| Owner | Everything, including changing roles and removing staff |
+| Manager | Everything except changing roles; can invite staff |
+| Front desk | Guests, reservations, check-in/out, room status |
+| Housekeeping | See rooms and bookings, change room status (no guest details) |
+| Restaurant | Look up guests (POS comes later) |
+| Accountant | Guests and money screens |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ef3bcf22-f9f7-49fc-ae39-6ba141679e74) and start prompting.
+These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup
 
-**Use your preferred IDE**
+### 1. Supabase
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Create a project at <https://supabase.com/dashboard>.
+2. Open **SQL Editor → New query**, paste the whole of
+   `supabase/migrations/20261111000000_core_multi_hotel.sql`, and click **Run**.
+3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
+   (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
+   **Redirect URLs**, plus `<that address>/reset-password`.
+4. Optional: **Authentication → Providers → Email**. Leave "Confirm email" on for production. Turn it
+   off while testing if you don't want to click email links.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### 2. The app
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+cp .env.example .env      # then fill in the two values from Project Settings → API
+npm install
+npm run dev               # http://localhost:8080
 ```
 
-**Edit a file directly in GitHub**
+Open the app, create an account, and set up your hotel.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project layout
 
-**Use GitHub Codespaces**
+```
+src/
+  contexts/       AuthContext (session) and HotelContext (current hotel + role)
+  hooks/useHotelQueries.ts   all database reads/writes (React Query)
+  features/       live screens: dashboard, rooms, guests, reservations, settings
+  components/     shared UI + the older demo screens still to be rebuilt
+supabase/
+  migrations/     database schema, security rules and functions
+  tests/          SQL tests for security and booking rules (run on any Postgres 15+)
+  legacy_migrations/  the old Lovable schema, kept for reference only
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Running the database tests
 
-## What technologies are used for this project?
+```sh
+createdb he_test
+psql -d he_test -f supabase/tests/00_local_supabase_stub.sql \
+                -f supabase/migrations/20261111000000_core_multi_hotel.sql \
+                -f supabase/tests/01_security_and_booking_tests.sql
+```
 
-This project is built with:
+Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Roadmap
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/ef3bcf22-f9f7-49fc-ae39-6ba141679e74) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. ~~Foundation: login, roles, secure database~~
+2. ~~Front desk: rooms, guests, reservations, check-in/out, dashboard~~
+3. Money: guest folios, invoices with 16% VAT, payments (cash, card, M-Pesa via Daraja), receipts
+4. Operations: housekeeping tasks linked to room status, maintenance tickets, POS charging to rooms
+5. Reports, staff scheduling, inventory, channel managers (Booking.com etc.)

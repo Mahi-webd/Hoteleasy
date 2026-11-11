@@ -1,6 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = 'https://fmqmgzmvtutsblbevcap.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtcW1nem12dHV0c2JsYmV2Y2FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NzE0OTcsImV4cCI6MjA2NzE0NzQ5N30.G4Gw64qkyGr9zfV6XmNqSrk96QNI2nkuOJYOArp55_Q'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+/** False when the .env file has not been filled in yet. */
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
+
+export const supabase = createClient(
+  supabaseUrl || "http://localhost:54321",
+  supabaseKey || "missing-key",
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  },
+);
