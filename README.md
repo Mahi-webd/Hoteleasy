@@ -16,7 +16,12 @@ staff only see their own hotel's data.
 | Arrivals, in-house, departures lists; check-in, check-out, cancel, no-show | ✅ Live |
 | Booking calendar (rooms × 14 days) | ✅ Live |
 | Dashboard: occupancy, arrivals, departures, room revenue, 7-night forecast, activity | ✅ Live |
-| Billing, housekeeping, maintenance, POS, staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
+| Guest bills: automatic room nights, extras, discounts, voids with reasons | ✅ Live |
+| Payments: cash, M-Pesa (code checked, duplicates blocked), card, bank; deposits & refunds | ✅ Live |
+| Check-out with settlement, early departure billing, company accounts (balance owing) | ✅ Live |
+| Tax invoices: sequential numbers, VAT 16% + optional tourism levy, KRA PIN, Paybill; print / PDF | ✅ Live |
+| Daily cash-up by payment method and staff member; open bills and refunds due | ✅ Live |
+| Housekeeping, maintenance, POS, staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -36,8 +41,10 @@ These rules are enforced in the database (Row Level Security), not just hidden i
 ### 1. Supabase
 
 1. Create a project at <https://supabase.com/dashboard>.
-2. Open **SQL Editor → New query**, paste the whole of
-   `supabase/migrations/20261111000000_core_multi_hotel.sql`, and click **Run**.
+2. Open **SQL Editor → New query** and run each file in `supabase/migrations/` in order
+   (paste the whole file, click **Run**):
+   1. `20261111000000_core_multi_hotel.sql`
+   2. `20261111120000_billing.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -74,7 +81,9 @@ supabase/
 createdb he_test
 psql -d he_test -f supabase/tests/00_local_supabase_stub.sql \
                 -f supabase/migrations/20261111000000_core_multi_hotel.sql \
-                -f supabase/tests/01_security_and_booking_tests.sql
+                -f supabase/migrations/20261111120000_billing.sql \
+                -f supabase/tests/01_security_and_booking_tests.sql \
+                -f supabase/tests/02_billing_tests.sql
 ```
 
 Every check prints `PASS (blocked)`; any `FAIL` stops the script.
@@ -83,6 +92,6 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 
 1. ~~Foundation: login, roles, secure database~~
 2. ~~Front desk: rooms, guests, reservations, check-in/out, dashboard~~
-3. Money: guest folios, invoices with 16% VAT, payments (cash, card, M-Pesa via Daraja), receipts
+3. ~~Money: guest folios, invoices with VAT, payments, cash-up~~ (M-Pesa STK push via Daraja still to come)
 4. Operations: housekeeping tasks linked to room status, maintenance tickets, POS charging to rooms
 5. Reports, staff scheduling, inventory, channel managers (Booking.com etc.)

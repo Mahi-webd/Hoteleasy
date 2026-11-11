@@ -17,6 +17,9 @@ const ACTIVITY_DOT: Record<string, string> = {
   checkout: "bg-green-500",
   cancel: "bg-red-500",
   staff: "bg-purple-500",
+  payment: "bg-emerald-500",
+  invoice: "bg-indigo-500",
+  billing: "bg-slate-500",
 };
 
 const useClock = () => {

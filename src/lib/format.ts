@@ -1,5 +1,5 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import type { BookingSource, HotelRole, ReservationStatus, RoomStatus } from "./db-types";
+import type { BookingSource, ChargeKind, HotelRole, PaymentMethod, ReservationStatus, RoomStatus } from "./db-types";
 
 export const formatMoney = (amount: number | null | undefined, currency = "KES") =>
   `${currency} ${Number(amount ?? 0).toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -59,6 +59,33 @@ export const SOURCE_LABELS: Record<BookingSource, string> = {
   other: "Other",
 };
 
+export const CHARGE_KINDS: Record<ChargeKind, string> = {
+  room: "Room",
+  food: "Food",
+  drinks: "Drinks / bar",
+  laundry: "Laundry",
+  minibar: "Minibar",
+  transport: "Transport",
+  spa: "Spa",
+  conference: "Conference / hall",
+  service: "Other service",
+  other: "Other",
+  discount: "Discount",
+};
+
+export const PAYMENT_METHODS: Record<PaymentMethod, string> = {
+  cash: "Cash",
+  mpesa: "M-Pesa",
+  card: "Card",
+  bank_transfer: "Bank transfer",
+  cheque: "Cheque",
+  other: "Other",
+};
+
+/** 2 decimal places, for bills and invoices. */
+export const formatMoney2 = (amount: number | null | undefined, currency = "KES") =>
+  `${currency} ${Number(amount ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export const guestName = (g?: { first_name: string; last_name: string } | null) =>
   g ? `${g.first_name} ${g.last_name}`.trim() : "Unknown guest";
 
@@ -74,6 +101,10 @@ export const friendlyError = (err: unknown): string => {
     return "This room type is still used by rooms or reservations.";
   if (msg.includes("violates foreign key") && msg.includes("guests"))
     return "This guest has reservations and can't be deleted.";
+  if (msg.includes("BALANCE_DUE:")) return msg.replace(/^.*BALANCE_DUE:\s*/, "") + ". Take payment or choose \u201ccheck out with balance owing\u201d.";
+  if (msg.includes("payments_mpesa_once")) return "That M-Pesa code has already been recorded.";
+  if (msg.includes("payments_mpesa_code")) return "M-Pesa codes are 10 letters/numbers, e.g. TK45ABC1XY.";
+  if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("row-level security")) return "You don't have permission to do that.";
   if (msg.includes("Failed to fetch")) return "Can't reach the server. Check your internet connection.";
   return msg;

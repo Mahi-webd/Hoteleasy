@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
@@ -123,6 +125,8 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
+      <BillingSettings />
+
       <Card>
         <CardHeader>
           <CardTitle>Team</CardTitle>
@@ -224,6 +228,108 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const BillingSettings = () => {
+  const { hotel, can } = useCurrentHotel();
+  const canManage = can("owner", "manager");
+  const updateHotel = useUpdateHotel();
+  const [inclusive, setInclusive] = useState(hotel.prices_include_vat);
+
+  const save = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const s = (k: string) => String(f.get(k) ?? "").trim() || null;
+    updateHotel.mutate({
+      kra_pin: s("kra_pin")?.toUpperCase() ?? null,
+      prices_include_vat: inclusive,
+      tourism_levy_rate: Number(f.get("levy") || 0) / 100,
+      invoice_prefix: s("invoice_prefix") ?? "INV",
+      next_invoice_number: Number(f.get("next_invoice_number")),
+      mpesa_paybill: s("mpesa_paybill"),
+      mpesa_account: s("mpesa_account"),
+      mpesa_till: s("mpesa_till"),
+      bank_details: s("bank_details"),
+      invoice_footer: s("invoice_footer"),
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Billing & invoices</CardTitle>
+        <CardDescription>Tax settings apply to new charges; existing charges keep the rates they were posted with.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
+          <fieldset disabled={!canManage} className="contents">
+            <div className="space-y-2">
+              <Label>KRA PIN (shown on invoices)</Label>
+              <Input name="kra_pin" defaultValue={hotel.kra_pin ?? ""} placeholder="P051234567X" maxLength={11} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tourism / catering levy %</Label>
+              <Input name="levy" type="number" step="0.01" min={0} max={19} defaultValue={Number(hotel.tourism_levy_rate) * 100} />
+              <p className="text-xs text-slate-500">Usually 2% for hotels registered with the Tourism Fund; 0 if not applicable.</p>
+            </div>
+            <label className="md:col-span-2 flex items-start gap-3 rounded-md border p-3">
+              <Switch checked={inclusive} onCheckedChange={setInclusive} className="mt-0.5" />
+              <span className="text-sm">
+                <strong>Prices include VAT{Number(hotel.tourism_levy_rate) ? " and levy" : ""}</strong>
+                <br />
+                <span className="text-slate-500">
+                  {inclusive
+                    ? "A KES 10,000 room rate means the guest pays KES 10,000; tax is worked out from inside it."
+                    : "A KES 10,000 room rate means the guest pays KES 10,000 plus VAT on top."}
+                </span>
+              </span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Invoice prefix</Label>
+                <Input name="invoice_prefix" defaultValue={hotel.invoice_prefix} pattern="[A-Za-z0-9\-]{1,12}" />
+              </div>
+              <div className="space-y-2">
+                <Label>Next invoice number</Label>
+                <Input name="next_invoice_number" type="number" min={hotel.next_invoice_number} defaultValue={hotel.next_invoice_number} />
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 self-end">
+              Next invoice: <span className="font-mono">{hotel.invoice_prefix}-{new Date().getFullYear()}-{String(hotel.next_invoice_number).padStart(5, "0")}</span>.
+              Numbers can be moved forward (e.g. to continue from your old system) but never back.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>M-Pesa Paybill</Label>
+                <Input name="mpesa_paybill" defaultValue={hotel.mpesa_paybill ?? ""} inputMode="numeric" />
+              </div>
+              <div className="space-y-2">
+                <Label>Paybill account no.</Label>
+                <Input name="mpesa_account" defaultValue={hotel.mpesa_account ?? ""} placeholder="e.g. booking code" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>M-Pesa Till (Buy Goods)</Label>
+              <Input name="mpesa_till" defaultValue={hotel.mpesa_till ?? ""} inputMode="numeric" />
+            </div>
+            <div className="space-y-2">
+              <Label>Bank details</Label>
+              <Textarea name="bank_details" rows={2} defaultValue={hotel.bank_details ?? ""} placeholder="Bank, branch, account name & number" />
+            </div>
+            <div className="space-y-2">
+              <Label>Invoice footer</Label>
+              <Textarea name="invoice_footer" rows={2} defaultValue={hotel.invoice_footer ?? ""} placeholder="e.g. Asante sana! Check-out time is 11:00." />
+            </div>
+            {canManage && (
+              <div className="md:col-span-2">
+                <Button type="submit" disabled={updateHotel.isPending}>Save billing settings</Button>
+              </div>
+            )}
+          </fieldset>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

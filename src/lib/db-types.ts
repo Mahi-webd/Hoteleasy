@@ -48,6 +48,16 @@ export interface Hotel {
   checkin_time: string;
   checkout_time: string;
   created_at: string;
+  kra_pin: string | null;
+  prices_include_vat: boolean;
+  tourism_levy_rate: number;
+  invoice_prefix: string;
+  next_invoice_number: number;
+  mpesa_paybill: string | null;
+  mpesa_account: string | null;
+  mpesa_till: string | null;
+  bank_details: string | null;
+  invoice_footer: string | null;
 }
 
 export interface Membership {
@@ -144,4 +154,84 @@ export interface ActivityItem {
   kind: string;
   message: string;
   created_at: string;
+}
+
+export type ChargeKind =
+  | "room" | "food" | "drinks" | "laundry" | "minibar" | "transport" | "spa" | "conference" | "service" | "other" | "discount";
+
+export type PaymentMethod = "cash" | "mpesa" | "card" | "bank_transfer" | "cheque" | "other";
+
+export interface FolioCharge {
+  id: string;
+  hotel_id: string;
+  reservation_id: string;
+  kind: ChargeKind;
+  description: string;
+  stay_date: string | null;
+  quantity: number;
+  unit_price: number;
+  net_amount: number;
+  vat_amount: number;
+  levy_amount: number;
+  amount: number;
+  posted_by: string | null;
+  posted_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+}
+
+export interface Payment {
+  id: string;
+  hotel_id: string;
+  reservation_id: string;
+  method: PaymentMethod;
+  amount: number;
+  reference: string | null;
+  payer_phone: string | null;
+  notes: string | null;
+  received_by: string | null;
+  received_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+  reservations?: Pick<Reservation, "id" | "code"> & { guests?: Pick<Guest, "first_name" | "last_name"> | null; rooms?: Pick<Room, "room_number"> | null };
+}
+
+export interface Balance {
+  reservation_id: string;
+  charges_total: number;
+  payments_total: number;
+  balance: number;
+}
+
+export interface InvoiceLine {
+  kind: ChargeKind;
+  description: string;
+  date: string;
+  quantity: number;
+  unit_price: number;
+  net: number;
+  vat: number;
+  levy: number;
+  amount: number;
+}
+
+export interface Invoice {
+  id: string;
+  hotel_id: string;
+  reservation_id: string;
+  number: string;
+  issued_at: string;
+  hotel: {
+    name: string; address: string | null; city: string | null; country: string; phone: string | null; email: string | null;
+    kra_pin: string | null; currency: string; mpesa_paybill: string | null; mpesa_account: string | null; mpesa_till: string | null;
+    bank_details: string | null; footer: string | null; vat_rate: number; levy_rate: number;
+  };
+  guest: { name: string; phone: string | null; email: string | null; id_type: string | null; id_number: string | null; address: string | null };
+  stay: { code: string; room: string | null; check_in: string; check_out: string; nights: number; adults: number; children: number };
+  lines: InvoiceLine[];
+  net_total: number;
+  vat_total: number;
+  levy_total: number;
+  total: number;
+  superseded_at: string | null;
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarDays, Receipt, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCurrentHotel } from "@/contexts/HotelContext";
-import { useAvailableRooms, useCancelReservation, useCheckIn, useCheckOut, useReservations, useRooms } from "@/hooks/useHotelQueries";
+import { useAvailableRooms, useCancelReservation, useCheckIn, useReservations, useRooms } from "@/hooks/useHotelQueries";
+import { useBalances } from "@/hooks/useBilling";
+import { FolioDialog } from "../billing/FolioDialog";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
 import { RES_STATUS, ROOM_STATUS, SOURCE_LABELS, addDays, formatMoney, formatShortDate, guestName, todayIn } from "@/lib/format";
 import type { Reservation, ReservationStatus } from "@/lib/db-types";
@@ -30,6 +32,8 @@ const ReservationsPage = () => {
   const [to, setTo] = useState(addDays(today, 60));
   const [editing, setEditing] = useState<{ r?: Reservation; defaults?: { check_in?: string; room_id?: string; room_type_id?: string } } | null>(null);
   const [checkingIn, setCheckingIn] = useState<Reservation | null>(null);
+  const [billing, setBilling] = useState<{ r: Reservation; checkout?: boolean } | null>(null);
+  const seeMoney = can("owner", "manager", "front_desk", "accountant");
 
   // One query covering today's operational views; a ranged one for "all".
   const active = useReservations({ from: addDays(today, -60), to: addDays(today, 365) });
@@ -54,6 +58,8 @@ const ReservationsPage = () => {
         )
       : byView;
   }, [source.data, view, search, today]);
+
+  const balances = useBalances(seeMoney ? rows.map((r) => r.id) : []);
 
   const counts = useMemo(() => {
     const l = active.data ?? [];
@@ -136,7 +142,7 @@ const ReservationsPage = () => {
                       <TableHead>Guest</TableHead>
                       <TableHead>Stay</TableHead>
                       <TableHead>Room</TableHead>
-                      <TableHead className="hidden md:table-cell">Total</TableHead>
+                      <TableHead className="hidden md:table-cell">{seeMoney ? "Total / balance" : "Total"}</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -144,7 +150,9 @@ const ReservationsPage = () => {
                   <TableBody>
                     {rows.map((r) => (
                       <ReservationRow key={r.id} r={r} today={today} currency={hotel.currency} canEdit={canEdit}
-                        onEdit={() => setEditing({ r })} onCheckIn={() => setCheckingIn(r)} />
+                        balance={balances.data?.get(r.id)?.balance}
+                        onEdit={() => setEditing({ r })} onCheckIn={() => setCheckingIn(r)}
+                        onBill={seeMoney ? (checkout) => setBilling({ r, checkout }) : undefined} />
                     ))}
                   </TableBody>
                 </Table>
@@ -156,14 +164,17 @@ const ReservationsPage = () => {
 
       {editing && <ReservationDialog reservation={editing.r} defaults={editing.defaults} onClose={() => setEditing(null)} />}
       {checkingIn && <CheckInDialog reservation={checkingIn} onClose={() => setCheckingIn(null)} />}
+      {billing && <FolioDialog reservation={billing.r} checkout={billing.checkout} onClose={() => setBilling(null)} />}
     </div>
   );
 };
 
 const ReservationRow = ({
-  r, today, currency, canEdit, onEdit, onCheckIn,
-}: { r: Reservation; today: string; currency: string; canEdit: boolean; onEdit: () => void; onCheckIn: () => void }) => {
-  const checkOut = useCheckOut();
+  r, today, currency, canEdit, balance, onEdit, onCheckIn, onBill,
+}: {
+  r: Reservation; today: string; currency: string; canEdit: boolean; balance?: number;
+  onEdit: () => void; onCheckIn: () => void; onBill?: (checkout?: boolean) => void;
+}) => {
   const cancel = useCancelReservation();
   const st = RES_STATUS[r.status];
   const late = r.status === "confirmed" && r.check_in < today;
@@ -185,7 +196,17 @@ const ReservationRow = ({
         {r.rooms ? <span className="font-medium">{r.rooms.room_number}</span> : <span className="text-amber-700 text-sm">Not assigned</span>}
         <div className="text-xs text-slate-500">{r.room_types?.name}</div>
       </TableCell>
-      <TableCell className="hidden md:table-cell whitespace-nowrap">{formatMoney(r.total_amount, currency)}</TableCell>
+      <TableCell className="hidden md:table-cell whitespace-nowrap">
+        {formatMoney(r.total_amount, currency)}
+        {balance !== undefined && Math.abs(Number(balance)) > 0.009 && (
+          <div className={`text-xs ${Number(balance) > 0 ? "text-red-600" : "text-blue-600"}`}>
+            {Number(balance) > 0 ? "Owes " : "Credit "}{formatMoney(Math.abs(Number(balance)), currency)}
+          </div>
+        )}
+        {balance !== undefined && Math.abs(Number(balance)) <= 0.009 && (r.status === "checked_in" || r.status === "checked_out") && (
+          <div className="text-xs text-green-600">Paid</div>
+        )}
+      </TableCell>
       <TableCell>
         <Badge variant="outline" className={st.className}>{st.label}</Badge>
         {late && <div className="text-xs text-red-600 mt-1">Arrival was {formatShortDate(r.check_in)}</div>}
@@ -196,19 +217,20 @@ const ReservationRow = ({
           <Button size="sm" onClick={onCheckIn} className="bg-green-600 hover:bg-green-700"><LogIn className="mr-1 h-4 w-4" />Check in</Button>
         )}
         {canEdit && r.status === "checked_in" && (
-          <Button size="sm" variant={r.check_out <= today ? "default" : "outline"} disabled={checkOut.isPending}
-            onClick={() => {
-              const early = r.check_out > today ? `\n\nNote: they are booked until ${formatShortDate(r.check_out)}. Edit the dates first if the bill should only cover nights stayed.` : "";
-              if (confirm(`Check out ${guestName(r.guests)} from room ${r.rooms?.room_number}?${early}`)) checkOut.mutate(r.id);
-            }}>
+          <Button size="sm" variant={r.check_out <= today ? "default" : "outline"}
+            onClick={() => onBill ? onBill(true) : alert("Ask front desk or a manager to check this guest out.")}>
             <LogOut className="mr-1 h-4 w-4" />Check out
           </Button>
+        )}
+        {!open && onBill && (
+          <Button size="sm" variant="ghost" className="ml-1" onClick={() => onBill()}><Receipt className="mr-1 h-4 w-4" />Bill</Button>
         )}
         {canEdit && open && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8 ml-1"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" />{r.status === "checked_in" ? "Extend / edit stay" : "Edit"}</DropdownMenuItem>
+              {onBill && <DropdownMenuItem onClick={() => onBill()}><Receipt className="mr-2 h-4 w-4" />{r.status === "confirmed" ? "Bill / take deposit" : "Bill"}</DropdownMenuItem>}
               {r.status === "confirmed" && (
                 <>
                   <DropdownMenuSeparator />

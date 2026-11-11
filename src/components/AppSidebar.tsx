@@ -28,12 +28,12 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "reservations", label: "Reservations", icon: Calendar },
       { key: "rooms", label: "Rooms", icon: MapPin },
       { key: "guests", label: "Guests", icon: Users, roles: [...FRONT, "accountant", "restaurant"] },
+      { key: "billing", label: "Billing & Payments", icon: CreditCard, roles: [...FRONT, "accountant"] },
     ],
   },
   {
     title: "Coming next",
     items: [
-      { key: "billing", label: "Billing & Payments", icon: CreditCard, roles: [...FRONT, "accountant"], preview: true },
       { key: "housekeeping", label: "Housekeeping", icon: UserCheck, preview: true },
       { key: "maintenance", label: "Maintenance", icon: Wrench, preview: true },
       { key: "pos", label: "Restaurant POS", icon: ShoppingCart, roles: [...MGMT, "restaurant"], preview: true },

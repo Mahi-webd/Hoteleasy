@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import { AuthPage, ResetPasswordPage } from "./pages/AuthPage";
+import { FolioPrintPage, InvoicePrintPage } from "./features/billing/PrintPages";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
@@ -37,13 +38,13 @@ const NotConfigured = () => (
 );
 
 /** Signed in + belongs to a hotel → the app. Otherwise login or onboarding. */
-const Protected = () => {
+const Protected = ({ children }: { children?: React.ReactNode }) => {
   const { session, loading } = useAuth();
   const { memberships, loading: hotelsLoading } = useHotel();
   if (loading || hotelsLoading) return <FullPageSpinner />;
   if (!session) return <Navigate to="/login" replace />;
   if (memberships.length === 0) return <Onboarding />;
-  return <Index />;
+  return <>{children ?? <Index />}</>;
 };
 
 const App = () => (
@@ -62,6 +63,8 @@ const App = () => (
                   <Route path="/login" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/" element={<Protected />} />
+                  <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
+                  <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>

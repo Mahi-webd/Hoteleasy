@@ -19,9 +19,9 @@ import RoomsPage from "@/features/rooms/RoomsPage";
 import GuestsPage from "@/features/guests/GuestsPage";
 import ReservationsPage from "@/features/reservations/ReservationsPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import BillingPage from "@/features/billing/BillingPage";
 
 // Demo modules (still showing sample data)
-import EnhancedBillingSystem from "@/components/EnhancedBillingSystem";
 import MISReports from "@/components/MISReports";
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import GuestFeedback from "@/components/GuestFeedback";
@@ -54,7 +54,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   guests: GuestsPage,
   reservations: ReservationsPage,
   settings: SettingsPage,
-  billing: EnhancedBillingSystem,
+  billing: BillingPage,
   pos: PosComingSoon,
   reports: MISReports,
   housekeeping: HousekeepingManagement,
@@ -93,7 +93,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 h-[73px]">
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 h-[73px] print:hidden">
         <div className="flex items-center justify-between px-4 md:px-6 h-full">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="md:hidden">
@@ -151,6 +151,7 @@ const Index = () => {
       </header>
 
       <div className="flex">
+        <div className="print:hidden contents">
         <AppSidebar
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -158,6 +159,7 @@ const Index = () => {
           setActiveTab={setActiveTab}
           role={role}
         />
+        </div>
         <main className="flex-1 min-w-0 p-4 md:p-6 space-y-4">
           {item?.preview && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
