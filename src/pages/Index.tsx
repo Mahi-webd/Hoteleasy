@@ -23,15 +23,13 @@ import HousekeepingPage from "@/features/housekeeping/HousekeepingPage";
 import MaintenancePage from "@/features/maintenance/MaintenancePage";
 import PosPage from "@/features/pos/PosPage";
 import KitchenDisplay from "@/features/pos/KitchenDisplay";
+import ReportsPage from "@/features/reports/ReportsPage";
 
 // Demo modules (still showing sample data)
-import MISReports from "@/components/MISReports";
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import GuestFeedback from "@/components/GuestFeedback";
 import DigitalConcierge from "@/components/DigitalConcierge";
 import StaffScheduling from "@/components/StaffScheduling";
-import RevenueAnalytics from "@/components/RevenueAnalytics";
-import FinancialReporting from "@/components/FinancialReporting";
 import BudgetManagement from "@/components/BudgetManagement";
 import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
@@ -46,15 +44,13 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   billing: BillingPage,
   pos: PosPage,
   kds: KitchenDisplay,
-  reports: MISReports,
+  reports: ReportsPage,
   housekeeping: HousekeepingPage,
   maintenance: MaintenancePage,
   staff: StaffScheduling,
   "mobile-checkin": GuestMobileCheckin,
   feedback: GuestFeedback,
   concierge: DigitalConcierge,
-  "revenue-analytics": RevenueAnalytics,
-  "financial-reporting": FinancialReporting,
   "budget-management": BudgetManagement,
   "quick-actions": QuickActionsDashboard,
   "task-automation": TaskAutomation,

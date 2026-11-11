@@ -26,7 +26,8 @@ staff only see their own hotel's data.
 | Restaurant & bar POS: 4 outlets (restaurant, bar, room service, pool bar), tables, menu with options, split / move / discount / service charge, cash · M-Pesa · card · charge to room, receipts | ✅ Live |
 | Kitchen & bar screen (live tickets, timers) plus printable kitchen tickets | ✅ Live |
 | POS controls: manager PIN for voids, comps and discounts; shifts with float and Z report; sales report | ✅ Live |
-| Staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
+| Reports: occupancy, ADR, RevPAR, revenue by department and outlet, VAT & levy by month, payments by method, booking sources, room types, nationalities, balances owing; any date range vs the previous period; CSV export and print | ✅ Live |
+| Staff scheduling, inventory, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -38,7 +39,7 @@ staff only see their own hotel's data.
 | Housekeeping | Cleaning tasks, room status, report problems (no guest details or money) |
 | Restaurant | POS, kitchen & bar screen, open/close own shift, charge checked-in guests' rooms |
 | Maintenance | Repair tickets; no guest details or money |
-| Accountant | Guests and money screens |
+| Accountant | Guests, money screens and reports |
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 
@@ -53,6 +54,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    2. `20261111120000_billing.sql`
    3. `20261111140000_operations.sql`
    4. `20261111160000_pos.sql`
+   5. `20261111180000_reports.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -87,15 +89,9 @@ supabase/
 
 ```sh
 createdb he_test
-psql -d he_test -f supabase/tests/00_local_supabase_stub.sql \
-                -f supabase/migrations/20261111000000_core_multi_hotel.sql \
-                -f supabase/migrations/20261111120000_billing.sql \
-                -f supabase/migrations/20261111140000_operations.sql \
-                -f supabase/migrations/20261111160000_pos.sql \
-                -f supabase/tests/01_security_and_booking_tests.sql \
-                -f supabase/tests/02_billing_tests.sql \
-                -f supabase/tests/03_operations_tests.sql \
-                -f supabase/tests/04_pos_tests.sql
+for f in supabase/tests/00_local_supabase_stub.sql supabase/migrations/*.sql supabase/tests/0[1-9]_*.sql; do
+  psql -q -d he_test -v ON_ERROR_STOP=1 -f "$f" || break    # one session per file
+done
 ```
 
 Every check prints `PASS (blocked)`; any `FAIL` stops the script.
@@ -107,4 +103,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 3. ~~Money: guest folios, invoices with VAT, payments, cash-up~~ (M-Pesa STK push via Daraja still to come)
 4. ~~Operations: housekeeping tasks linked to room status, maintenance tickets~~ 
 5. ~~Restaurant & bar POS (phase 1)~~ (next: stock & recipes, coursing, offline mode, eTIMS)
-6. Reports, staff scheduling, inventory, channel managers (Booking.com etc.)
+6. ~~Reports~~
+7. Staff scheduling, inventory, channel managers (Booking.com etc.)

@@ -39,6 +39,10 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Management",
+    items: [{ key: "reports", label: "Reports", icon: BarChart3, roles: MONEY }],
+  },
+  {
     title: "Operations",
     items: [
       { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
@@ -50,9 +54,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
       { key: "inventory-alerts", label: "Inventory", icon: Package, roles: MGMT, preview: true },
-      { key: "reports", label: "MIS Reports", icon: BarChart3, roles: MONEY, preview: true },
-      { key: "revenue-analytics", label: "Revenue Analytics", icon: BarChart3, roles: MONEY, preview: true },
-      { key: "financial-reporting", label: "Financial Reports", icon: CreditCard, roles: MONEY, preview: true },
       { key: "budget-management", label: "Budget", icon: Target, roles: MONEY, preview: true },
       { key: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone, roles: FRONT, preview: true },
       { key: "feedback", label: "Guest Feedback", icon: Star, roles: FRONT, preview: true },
