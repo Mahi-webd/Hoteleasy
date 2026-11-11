@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart3, Bot, Calendar, Clock, CreditCard, Home, MapPin, MessageCircle, Package, Settings, ShoppingCart,
-  Smartphone, Star, Target, UserCheck, Users, Wrench, X, Zap, type LucideIcon,
+  Smartphone, Star, Target, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon,
 } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
@@ -32,6 +32,13 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Food & beverage",
+    items: [
+      { key: "pos", label: "Restaurant & Bar POS", icon: ShoppingCart, roles: [...FRONT, "restaurant", "accountant"] },
+      { key: "kds", label: "Kitchen & bar screen", icon: ChefHat, roles: [...MGMT, "front_desk", "restaurant"] },
+    ],
+  },
+  {
     title: "Operations",
     items: [
       { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
@@ -41,7 +48,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Coming next",
     items: [
-      { key: "pos", label: "Restaurant POS", icon: ShoppingCart, roles: [...MGMT, "restaurant"], preview: true },
       { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
       { key: "inventory-alerts", label: "Inventory", icon: Package, roles: MGMT, preview: true },
       { key: "reports", label: "MIS Reports", icon: BarChart3, roles: MONEY, preview: true },

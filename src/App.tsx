@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import { AuthPage, ResetPasswordPage } from "./pages/AuthPage";
 import { FolioPrintPage, InvoicePrintPage } from "./features/billing/PrintPages";
+import { PosBillPage, PosTicketPage } from "./features/pos/PosPrint";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
@@ -65,6 +66,8 @@ const App = () => (
                   <Route path="/" element={<Protected />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
+                  <Route path="/pos-bill/:id" element={<Protected><PosBillPage /></Protected>} />
+                  <Route path="/pos-ticket/:id" element={<Protected><PosTicketPage /></Protected>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>

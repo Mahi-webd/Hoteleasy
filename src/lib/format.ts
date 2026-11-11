@@ -1,5 +1,5 @@
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import type { BookingSource, ChargeKind, HkStatus, HkTaskType, HotelRole, MtCategory, MtStatus, PaymentMethod, Priority, ReservationStatus, RoomStatus } from "./db-types";
+import type { BookingSource, ChargeKind, HkStatus, HkTaskType, HotelRole, MtCategory, MtStatus, OutletKind, PaymentMethod, PosItemStatus, PosPaymentMethod, Priority, ReservationStatus, RoomStatus } from "./db-types";
 
 export const formatMoney = (amount: number | null | undefined, currency = "KES") =>
   `${currency} ${Number(amount ?? 0).toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -149,7 +149,27 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("payments_mpesa_once")) return "That M-Pesa code has already been recorded.";
   if (msg.includes("payments_mpesa_code")) return "M-Pesa codes are 10 letters/numbers, e.g. TK45ABC1XY.";
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
+  if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
+  if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
   if (msg.includes("row-level security")) return "You don't have permission to do that.";
   if (msg.includes("Failed to fetch")) return "Can't reach the server. Check your internet connection.";
   return msg;
 };
+
+export const OUTLET_KINDS: Record<OutletKind, string> = {
+  restaurant: "Restaurant", bar: "Bar", room_service: "Room service", pool_bar: "Pool bar", cafe: "Café", other: "Other",
+};
+export const POS_METHODS: Record<PosPaymentMethod, string> = {
+  cash: "Cash", mpesa: "M-Pesa", card: "Card", room: "Charged to room", other: "Other",
+};
+export const ITEM_STATUS: Record<PosItemStatus, { label: string; className: string }> = {
+  new: { label: "Not sent", className: "bg-slate-100 text-slate-700 border-slate-200" },
+  sent: { label: "Sent", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  preparing: { label: "Preparing", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  ready: { label: "Ready", className: "bg-green-100 text-green-800 border-green-200" },
+  served: { label: "Served", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  void: { label: "Void", className: "bg-red-50 text-red-700 border-red-200" },
+};
+/** Minutes since an ISO time, for kitchen timers. */
+export const minutesSince = (iso: string | null | undefined, now = Date.now()) =>
+  iso ? Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000)) : 0;

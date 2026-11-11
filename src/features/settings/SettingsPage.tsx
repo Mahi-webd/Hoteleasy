@@ -27,7 +27,7 @@ const ROLE_HELP: Record<HotelRole, string> = {
   front_desk: "Reservations, guests, check-in/out, room status",
   housekeeping: "Cleaning tasks, room status, reporting problems (no guest details or money)",
   maintenance: "Repair tickets and taking rooms out of service (no guest details or money)",
-  restaurant: "Restaurant POS and guest lookup",
+  restaurant: "Waiter / cashier: POS orders, bills, payments, room charges, kitchen screen",
   accountant: "Billing, payments and reports",
 };
 

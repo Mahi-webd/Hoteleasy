@@ -285,3 +285,55 @@ export interface MtTicket {
   cost: number | null;
   rooms?: Pick<Room, "id" | "room_number" | "status"> | null;
 }
+
+// ------------------------------------------------------------------ POS
+export type OutletKind = "restaurant" | "bar" | "room_service" | "pool_bar" | "cafe" | "other";
+export type PosStation = "kitchen" | "bar" | "none";
+export type TaxCategory = "standard" | "zero_rated" | "exempt";
+export type PosOrderType = "dine_in" | "takeaway" | "room_service";
+export type PosOrderStatus = "open" | "paid" | "void";
+export type PosItemStatus = "new" | "sent" | "preparing" | "ready" | "served" | "void";
+export type PosPaymentMethod = "cash" | "mpesa" | "card" | "room" | "other";
+
+export interface PosOutlet { id: string; hotel_id: string; name: string; kind: OutletKind; service_charge_rate: number; active: boolean; sort: number }
+export interface PosTable { id: string; hotel_id: string; outlet_id: string; name: string; seats: number; active: boolean; sort: number }
+export interface MenuCategory { id: string; hotel_id: string; name: string; station: PosStation; sort: number }
+export interface MenuItem {
+  id: string; hotel_id: string; category_id: string; name: string; description: string | null; price: number;
+  tax_category: TaxCategory; item_code: string | null; station: PosStation | null; charge_kind: ChargeKind;
+  outlet_ids: string[]; available: boolean; active: boolean; sort: number;
+  menu_item_modifier_groups?: { group_id: string; sort: number }[];
+}
+export interface ModifierOption { id: string; group_id: string; name: string; price_delta: number; sort: number }
+export interface ModifierGroup { id: string; hotel_id: string; name: string; min_choices: number; max_choices: number; sort: number; modifier_options: ModifierOption[] }
+
+export interface PosOrderItem {
+  id: string; order_id: string; hotel_id: string; menu_item_id: string | null; name: string; unit_price: number; quantity: number;
+  modifiers: { id?: string; group: string; name: string; price_delta: number }[]; notes: string | null; station: PosStation;
+  tax_category: TaxCategory; charge_kind: ChargeKind; status: PosItemStatus; comped: boolean; comp_reason: string | null;
+  void_reason: string | null; approved_by: string | null; added_by: string | null; added_at: string; sent_at: string | null;
+  ready_at: string | null; served_at: string | null; gross: number;
+}
+export interface PosPayment {
+  id: string; order_id: string; shift_id: string | null; method: PosPaymentMethod; amount: number; tendered: number | null;
+  change_given: number | null; reference: string | null; reservation_id: string | null; received_by: string | null;
+  received_at: string; voided_at: string | null;
+}
+export interface PosOrder {
+  id: string; hotel_id: string; outlet_id: string; number: number; order_type: PosOrderType; table_id: string | null;
+  reservation_id: string | null; label: string | null; guests: number; status: PosOrderStatus; waiter_id: string | null;
+  discount_kind: "percent" | "amount" | null; discount_value: number; discount_reason: string | null; service_charge_rate: number;
+  items_gross: number; discount_amount: number; net_amount: number; vat_amount: number; levy_amount: number; service_charge: number;
+  total: number; paid_total: number; notes: string | null; opened_at: string; closed_at: string | null; void_reason: string | null;
+  pos_order_items?: PosOrderItem[]; pos_payments?: PosPayment[];
+  pos_tables?: { name: string } | null; pos_outlets?: { name: string; kind: OutletKind } | null;
+  reservations?: { id: string; code: string; rooms?: { room_number: string } | null; guests?: { first_name: string; last_name: string } | null } | null;
+}
+export interface PosShift {
+  id: string; hotel_id: string; user_id: string; opened_at: string; opening_float: number; closed_at: string | null;
+  counted_cash: number | null; expected_cash: number | null; variance: number | null; z_report: ShiftReport | null; notes: string | null;
+}
+export interface ShiftReport {
+  opening_float: number; by_method: Partial<Record<PosPaymentMethod, number>>; payments: number; bills: number;
+  expected_cash: number; voided_payments: number; counted_cash?: number; variance?: number; opened_at: string; closed_at?: string;
+}

@@ -23,7 +23,10 @@ staff only see their own hotel's data.
 | Daily cash-up by payment method and staff member; open bills and refunds due | ✅ Live |
 | Housekeeping: auto cleaning tasks at check-out, urgent when a guest is arriving, start/done from a phone, daily service, assignment | ✅ Live |
 | Maintenance: anyone reports problems, room out of service until fixed, technician role, assignment, notes and repair cost | ✅ Live |
-| POS, staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
+| Restaurant & bar POS: 4 outlets (restaurant, bar, room service, pool bar), tables, menu with options, split / move / discount / service charge, cash · M-Pesa · card · charge to room, receipts | ✅ Live |
+| Kitchen & bar screen (live tickets, timers) plus printable kitchen tickets | ✅ Live |
+| POS controls: manager PIN for voids, comps and discounts; shifts with float and Z report; sales report | ✅ Live |
+| Staff scheduling, inventory, reports, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -33,7 +36,7 @@ staff only see their own hotel's data.
 | Manager | Everything except changing roles; can invite staff |
 | Front desk | Guests, reservations, check-in/out, room status |
 | Housekeeping | Cleaning tasks, room status, report problems (no guest details or money) |
-| Restaurant | Look up guests (POS comes later) |
+| Restaurant | POS, kitchen & bar screen, open/close own shift, charge checked-in guests' rooms |
 | Maintenance | Repair tickets; no guest details or money |
 | Accountant | Guests and money screens |
 
@@ -49,6 +52,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    1. `20261111000000_core_multi_hotel.sql`
    2. `20261111120000_billing.sql`
    3. `20261111140000_operations.sql`
+   4. `20261111160000_pos.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -87,9 +91,11 @@ psql -d he_test -f supabase/tests/00_local_supabase_stub.sql \
                 -f supabase/migrations/20261111000000_core_multi_hotel.sql \
                 -f supabase/migrations/20261111120000_billing.sql \
                 -f supabase/migrations/20261111140000_operations.sql \
+                -f supabase/migrations/20261111160000_pos.sql \
                 -f supabase/tests/01_security_and_booking_tests.sql \
                 -f supabase/tests/02_billing_tests.sql \
-                -f supabase/tests/03_operations_tests.sql
+                -f supabase/tests/03_operations_tests.sql \
+                -f supabase/tests/04_pos_tests.sql
 ```
 
 Every check prints `PASS (blocked)`; any `FAIL` stops the script.
@@ -99,5 +105,6 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 1. ~~Foundation: login, roles, secure database~~
 2. ~~Front desk: rooms, guests, reservations, check-in/out, dashboard~~
 3. ~~Money: guest folios, invoices with VAT, payments, cash-up~~ (M-Pesa STK push via Daraja still to come)
-4. ~~Operations: housekeeping tasks linked to room status, maintenance tickets~~ (POS charging to rooms still to come)
-5. Reports, staff scheduling, inventory, channel managers (Booking.com etc.)
+4. ~~Operations: housekeeping tasks linked to room status, maintenance tickets~~ 
+5. ~~Restaurant & bar POS (phase 1)~~ (next: stock & recipes, coursing, offline mode, eTIMS)
+6. Reports, staff scheduling, inventory, channel managers (Booking.com etc.)

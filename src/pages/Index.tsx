@@ -1,11 +1,10 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { Building2, Check, ChevronDown, Home, Info, LogOut, Menu, ShoppingCart } from "lucide-react";
+import { Building2, Check, ChevronDown, Home, Info, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AppSidebar, { NAV_SECTIONS, canSee } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +21,8 @@ import SettingsPage from "@/features/settings/SettingsPage";
 import BillingPage from "@/features/billing/BillingPage";
 import HousekeepingPage from "@/features/housekeeping/HousekeepingPage";
 import MaintenancePage from "@/features/maintenance/MaintenancePage";
+import PosPage from "@/features/pos/PosPage";
+import KitchenDisplay from "@/features/pos/KitchenDisplay";
 
 // Demo modules (still showing sample data)
 import MISReports from "@/components/MISReports";
@@ -36,18 +37,6 @@ import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
 import InventoryAlerts from "@/components/InventoryAlerts";
 
-const PosComingSoon = () => (
-  <Card>
-    <CardContent className="py-16 text-center space-y-2">
-      <ShoppingCart className="h-10 w-10 mx-auto text-slate-400" />
-      <h2 className="text-xl font-semibold">Restaurant POS is being rebuilt</h2>
-      <p className="text-slate-600 max-w-md mx-auto">
-        It will come back connected to your menu, tables and guest folios so restaurant bills can be charged to a room.
-      </p>
-    </CardContent>
-  </Card>
-);
-
 const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void }>> = {
   dashboard: Dashboard,
   rooms: RoomsPage,
@@ -55,7 +44,8 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   reservations: ReservationsPage,
   settings: SettingsPage,
   billing: BillingPage,
-  pos: PosComingSoon,
+  pos: PosPage,
+  kds: KitchenDisplay,
   reports: MISReports,
   housekeeping: HousekeepingPage,
   maintenance: MaintenancePage,
