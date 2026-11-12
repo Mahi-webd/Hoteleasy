@@ -407,3 +407,22 @@ export interface PublicHotel {
   room_types: PublicRoomType[];
   reviews: { count: number; average: number | null; recent: { name: string; overall: number; comment: string | null; month: string; response: string | null }[] } | null;
 }
+
+// ---------------------------------------------------------------- expenses & P&L
+export type ExpenseGroup = "cost_of_sales" | "payroll" | "utilities" | "repairs" | "marketing" | "admin" | "other" | "stock";
+export type ExpenseMethod = "cash" | "mpesa" | "bank_transfer" | "card" | "cheque" | "other";
+export interface ExpenseCategory { id: string; hotel_id: string; name: string; grp: ExpenseGroup; active: boolean; sort: number }
+export interface Expense {
+  id: string; hotel_id: string; number: number; spent_on: string; category_id: string; supplier_id: string | null; payee: string | null;
+  description: string; amount: number; vat_amount: number; net_amount: number; reference: string | null; due_on: string | null;
+  paid_on: string | null; paid_method: ExpenseMethod | null; paid_reference: string | null; recurring: boolean; receipt_batch: string | null;
+  status: "unpaid" | "paid" | "void"; void_reason: string | null; created_at: string;
+}
+export interface Budget { id: string; hotel_id: string; month: string; category_id: string | null; revenue_grp: "rooms" | "fnb" | "other" | null; amount: number }
+export interface PnlLine { month: string; section: "revenue" | "cost_of_sales" | "expenses"; line: string; category_id: string | null; category: string | null; actual: number; budget: number | null }
+export interface PnlReport {
+  from: string; to: string; lines: PnlLine[];
+  vat: { output: number; levy: number; input: number };
+  paid_out: { method: ExpenseMethod; amount: number; count: number }[];
+  payables: { total: number; count: number; overdue: number; due_7: number; later: number };
+}

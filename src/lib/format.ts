@@ -152,6 +152,12 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("expenses_one_bill_per_receipt")) return "There is already a bill for this delivery.";
+  if (msg.includes("expenses_check2")) return "Give a reason for voiding this expense.";
+  if (msg.includes("expenses_check1")) return "Choose how and when it was paid.";
+  if (msg.includes("expenses_check")) return "Check the amounts: VAT can't be more than the total.";
+  if (msg.includes("expense_categories_hotel_id_name_key")) return "A category with that name already exists.";
+  if (msg.includes("budgets_cat") || msg.includes("budgets_rev")) return "There is already a budget for that month.";
   if (msg.includes("booking_settings_slug_key")) return "That page address is already used by another hotel. Choose another.";
   if (msg.includes("booking_settings_slug_check")) return "The page address can only use lowercase letters, numbers and dashes (3 to 48 characters).";
   if (msg.includes("photo_url_check")) return "Photo links must start with https://";
@@ -203,3 +209,12 @@ export const MOVE_KINDS: Record<import("./db-types").StockMoveKind, string> = {
 export const STOCK_UNITS = ["pcs", "kg", "g", "l", "ml", "btl", "can", "crate", "pkt", "box", "roll", "tray", "bunch"];
 export const formatQty = (n: number | null | undefined, unit?: string) =>
   n == null ? "—" : `${Number(n).toLocaleString("en-KE", { maximumFractionDigits: 3 })}${unit ? ` ${unit}` : ""}`;
+
+// ---------------------------------------------------------------- expenses
+export const EXPENSE_GROUPS: Record<import("./db-types").ExpenseGroup, string> = {
+  cost_of_sales: "Cost of sales", payroll: "Staff costs", utilities: "Utilities", repairs: "Repairs & supplies",
+  marketing: "Marketing", admin: "Rent & admin", other: "Other", stock: "Stock purchases (inventory)",
+};
+export const EXPENSE_METHODS: Record<import("./db-types").ExpenseMethod, string> = {
+  cash: "Cash", mpesa: "M-Pesa", bank_transfer: "Bank transfer", card: "Card", cheque: "Cheque", other: "Other",
+};

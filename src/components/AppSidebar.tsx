@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart3, Bot, Calendar, Clock, CreditCard, Home, MapPin, MessageCircle, Package, Settings, ShoppingCart,
-  Smartphone, Globe, Target, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon,
+  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon,
 } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
@@ -41,7 +41,10 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   },
   {
     title: "Management",
-    items: [{ key: "reports", label: "Reports", icon: BarChart3, roles: MONEY }],
+    items: [
+      { key: "reports", label: "Reports", icon: BarChart3, roles: MONEY },
+      { key: "finance", label: "Expenses & profit", icon: Wallet, roles: MONEY },
+    ],
   },
   {
     title: "Operations",
@@ -55,7 +58,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Coming next",
     items: [
       { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
-      { key: "budget-management", label: "Budget", icon: Target, roles: MONEY, preview: true },
       { key: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone, roles: FRONT, preview: true },
       { key: "concierge", label: "Digital Concierge", icon: MessageCircle, roles: FRONT, preview: true },
       { key: "quick-actions", label: "Quick Actions", icon: Zap, roles: MGMT, preview: true },

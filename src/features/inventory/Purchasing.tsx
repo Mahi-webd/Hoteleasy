@@ -14,6 +14,8 @@ import { ConfirmButton } from "@/components/common/ConfirmButton";
 import { EmptyState, LoadingBlock } from "@/components/common/PageHeader";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useDeletePo, usePoAction, usePurchaseOrders, useReceive, useSavePo } from "@/hooks/useInventory";
+import { useBillFromReceipt } from "@/hooks/useFinance";
+import { addDays, todayIn } from "@/lib/format";
 import { PO_STATUS, formatDate, formatMoney, formatQty } from "@/lib/format";
 import type { PurchaseOrder } from "@/lib/db-types";
 import { LinesEditor, StoreSelect, newLine, toMoveLines, type InvData, type Line } from "./shared";
@@ -33,6 +35,9 @@ export const ReceiveGoods = ({ data, poId, onDone }: { data: InvData; poId: stri
   const [note, setNote] = useState("");
   const [opening, setOpening] = useState(false);
   const [lines, setLines] = useState<Line[]>([newLine()]);
+  const [bill, setBill] = useState(true);
+  const [dueDays, setDueDays] = useState("30");
+  const makeBill = useBillFromReceipt();
 
   // Picking an order fills in what is still to come.
   useEffect(() => {
@@ -47,8 +52,12 @@ export const ReceiveGoods = ({ data, poId, onDone }: { data: InvData; poId: stri
 
   const submit = () => {
     const l = toMoveLines(lines);
+    const withBill = bill && !opening && !!sup && l.some((x) => (x.unit_cost ?? 0) > 0);
     receive.mutate({ locationId: loc, lines: l, supplierId: opening ? null : sup || null, poId: po || null, reference: ref, note, opening }, {
-      onSuccess: () => { setLines([newLine()]); setRef(""); setNote(""); setPo(""); onDone(); },
+      onSuccess: (batch) => {
+        if (withBill) makeBill.mutate({ batch: batch as string, dueOn: dueDays ? addDays(todayIn(hotel.timezone), Number(dueDays) || 0) : null });
+        setLines([newLine()]); setRef(""); setNote(""); setPo(""); onDone();
+      },
     });
   };
   const ready = !!loc && toMoveLines(lines).length > 0;
@@ -89,6 +98,12 @@ export const ReceiveGoods = ({ data, poId, onDone }: { data: InvData; poId: stri
         <LinesEditor lines={lines} setLines={setLines} items={data.items} levels={data.levels} locationId={loc} withCost currency={hotel.currency} />
         <div className="space-y-1"><Label htmlFor="rc-note">Note</Label><Textarea id="rc-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Short delivery, damaged items…" /></div>
         <div className="flex flex-wrap items-center justify-between gap-3">
+          {!opening && sup && (
+            <label className="flex items-center gap-2 text-sm">
+              <Switch checked={bill} onCheckedChange={setBill} />Add the supplier's bill to Bills to pay, due in
+              <Input type="number" min={0} className="w-16 h-8" value={dueDays} onChange={(e) => setDueDays(e.target.value)} aria-label="Bill due in days" disabled={!bill} />days
+            </label>
+          )}
           {can("owner", "manager", "storekeeper") && !po ? (
             <label className="flex items-center gap-2 text-sm"><Switch checked={opening} onCheckedChange={setOpening} />This is opening stock (no supplier)</label>
           ) : <span />}

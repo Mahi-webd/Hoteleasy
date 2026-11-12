@@ -31,6 +31,7 @@ staff only see their own hotel's data.
 | Recipes on menu items: sending an order to the kitchen/bar takes ingredients from the outlet's store; food & drinks cost %, menu margins, waste and purchases report | ✅ Live |
 | Online booking page (`/book/<your-hotel>`): live availability and prices, booking without signing in, booking lookup and free cancellation window, "Book now" button for your website | ✅ Live |
 | Guest feedback: private link per stay after check-out (share by WhatsApp, email or copy), star ratings and recommend score, manager replies, chosen reviews shown on the booking page | ✅ Live |
+| Expenses & profit: expenses and supplier bills (paid or to pay, claimable VAT, monthly repeats, void with reason), bills from goods received, monthly budgets and revenue targets, profit & loss with budget vs actual, VAT estimate, bills to pay | ✅ Live |
 | Staff scheduling, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
@@ -43,7 +44,7 @@ staff only see their own hotel's data.
 | Housekeeping | Cleaning tasks, room status, report problems (no guest details or money) |
 | Restaurant | POS, kitchen & bar screen, open/close own shift, charge checked-in guests' rooms, record kitchen/bar waste |
 | Maintenance | Repair tickets; no guest details or money |
-| Accountant | Guests, money screens, reports and stock costs |
+| Accountant | Guests, money screens, reports, stock costs, expenses and profit & loss (budgets and voiding are for owners/managers) |
 | Storekeeper | Inventory: receiving, purchase orders, transfers, issues, waste and counts (no guest details or money screens) |
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
@@ -62,6 +63,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    5. `20261111180000_reports.sql`
    6. `20261112100000_inventory.sql`
    7. `20261112160000_online_booking.sql`
+   8. `20261112200000_expenses.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -113,4 +115,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 6. ~~Reports~~
 7. ~~Inventory & stock~~ (next: modifier recipes, batch/expiry tracking, supplier invoices & payments)
 8. ~~Online booking & guest feedback~~ (next: online deposits by M-Pesa, booking emails, seasonal rates)
-9. Staff scheduling, inventory, channel managers (Booking.com etc.)
+9. ~~Expenses & profit~~ (next: partial bill payments, petty cash, attachments)
+10. Staff scheduling, inventory, channel managers (Booking.com etc.)

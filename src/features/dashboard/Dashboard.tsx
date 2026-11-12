@@ -26,6 +26,7 @@ const ACTIVITY_DOT: Record<string, string> = {
   inventory: "bg-teal-500",
   online: "bg-sky-500",
   feedback: "bg-amber-500",
+  expense: "bg-rose-500",
 };
 
 const useClock = () => {
