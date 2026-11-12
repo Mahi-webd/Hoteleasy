@@ -27,7 +27,9 @@ staff only see their own hotel's data.
 | Kitchen & bar screen (live tickets, timers) plus printable kitchen tickets | ✅ Live |
 | POS controls: manager PIN for voids, comps and discounts; shifts with float and Z report; sales report | ✅ Live |
 | Reports: occupancy, ADR, RevPAR, revenue by department and outlet, VAT & levy by month, payments by method, booking sources, room types, nationalities, balances owing; any date range vs the previous period; CSV export and print | ✅ Live |
-| Staff scheduling, inventory, etc. | 🟡 Demo screens (marked "demo"), next phases |
+| Inventory: stores (main, kitchen, bar, housekeeping), stock items with reorder levels and average cost, suppliers, purchase orders with manager approval, goods received, transfers, issues to departments, waste, returns, stock counts with manager approval, full stock history | ✅ Live |
+| Recipes on menu items: sending an order to the kitchen/bar takes ingredients from the outlet's store; food & drinks cost %, menu margins, waste and purchases report | ✅ Live |
+| Staff scheduling, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -37,9 +39,10 @@ staff only see their own hotel's data.
 | Manager | Everything except changing roles; can invite staff |
 | Front desk | Guests, reservations, check-in/out, room status |
 | Housekeeping | Cleaning tasks, room status, report problems (no guest details or money) |
-| Restaurant | POS, kitchen & bar screen, open/close own shift, charge checked-in guests' rooms |
+| Restaurant | POS, kitchen & bar screen, open/close own shift, charge checked-in guests' rooms, record kitchen/bar waste |
 | Maintenance | Repair tickets; no guest details or money |
-| Accountant | Guests, money screens and reports |
+| Accountant | Guests, money screens, reports and stock costs |
+| Storekeeper | Inventory: receiving, purchase orders, transfers, issues, waste and counts (no guest details or money screens) |
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 
@@ -55,6 +58,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    3. `20261111140000_operations.sql`
    4. `20261111160000_pos.sql`
    5. `20261111180000_reports.sql`
+   6. `20261112100000_inventory.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -104,4 +108,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 4. ~~Operations: housekeeping tasks linked to room status, maintenance tickets~~ 
 5. ~~Restaurant & bar POS (phase 1)~~ (next: stock & recipes, coursing, offline mode, eTIMS)
 6. ~~Reports~~
-7. Staff scheduling, inventory, channel managers (Booking.com etc.)
+7. ~~Inventory & stock~~ (next: modifier recipes, batch/expiry tracking, supplier invoices & payments)
+8. Staff scheduling, inventory, channel managers (Booking.com etc.)

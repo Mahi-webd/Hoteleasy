@@ -47,13 +47,13 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
       { key: "maintenance", label: "Maintenance", icon: Wrench },
+      { key: "inventory", label: "Inventory", icon: Package, roles: ["owner", "manager", "storekeeper", "accountant", "restaurant"] },
     ],
   },
   {
     title: "Coming next",
     items: [
       { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
-      { key: "inventory-alerts", label: "Inventory", icon: Package, roles: MGMT, preview: true },
       { key: "budget-management", label: "Budget", icon: Target, roles: MONEY, preview: true },
       { key: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone, roles: FRONT, preview: true },
       { key: "feedback", label: "Guest Feedback", icon: Star, roles: FRONT, preview: true },

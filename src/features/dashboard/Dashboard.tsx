@@ -23,6 +23,7 @@ const ACTIVITY_DOT: Record<string, string> = {
   housekeeping: "bg-teal-500",
   maintenance: "bg-orange-600",
   pos: "bg-pink-500",
+  inventory: "bg-teal-500",
 };
 
 const useClock = () => {

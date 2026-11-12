@@ -19,7 +19,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { ROLE_LABELS, formatDate } from "@/lib/format";
 import type { HotelRole } from "@/lib/db-types";
 
-const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "maintenance", "restaurant", "accountant"];
+const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "maintenance", "restaurant", "accountant", "storekeeper"];
 
 const ROLE_HELP: Record<HotelRole, string> = {
   owner: "Everything, including managing the team",
@@ -28,7 +28,8 @@ const ROLE_HELP: Record<HotelRole, string> = {
   housekeeping: "Cleaning tasks, room status, reporting problems (no guest details or money)",
   maintenance: "Repair tickets and taking rooms out of service (no guest details or money)",
   restaurant: "Waiter / cashier: POS orders, bills, payments, room charges, kitchen screen",
-  accountant: "Billing, payments and reports",
+  accountant: "Billing, payments, reports and stock costs",
+  storekeeper: "Stores: receiving, purchase orders, transfers, issues and stock counts (no guest details)",
 };
 
 const SettingsPage = () => {

@@ -29,6 +29,7 @@ export const ROLE_LABELS: Record<HotelRole, string> = {
   restaurant: "Restaurant",
   accountant: "Accountant",
   maintenance: "Maintenance",
+  storekeeper: "Storekeeper",
 };
 
 export const PRIORITY: Record<Priority, { label: string; className: string }> = {
@@ -151,6 +152,13 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("stock_items_name")) return "A stock item with that name already exists.";
+  if (msg.includes("suppliers_hotel_id_name_key")) return "A supplier with that name already exists.";
+  if (msg.includes("stock_locations_hotel_id_name_key")) return "A store with that name already exists.";
+  if (msg.includes("purchase_order_lines_po_id_item_id_key")) return "That item is already on the order; change its quantity instead.";
+  if (msg.includes("stock_counts_one_open")) return "A count is already open for this store.";
+  if (msg.includes("menu_item_recipes_pkey")) return "That ingredient is already in the recipe.";
+  if (msg.includes("violates foreign key") && msg.includes("stock_items")) return "This item has history (orders, recipes or movements). Hide it instead.";
   if (msg.includes("row-level security")) return "You don't have permission to do that.";
   if (msg.includes("Failed to fetch")) return "Can't reach the server. Check your internet connection.";
   return msg;
@@ -173,3 +181,22 @@ export const ITEM_STATUS: Record<PosItemStatus, { label: string; className: stri
 /** Minutes since an ISO time, for kitchen timers. */
 export const minutesSince = (iso: string | null | undefined, now = Date.now()) =>
   iso ? Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000)) : 0;
+
+// ---------------------------------------------------------------- inventory
+export const LOCATION_KINDS: Record<import("./db-types").StockLocationKind, string> = {
+  main: "Main store", kitchen: "Kitchen", bar: "Bar", housekeeping: "Housekeeping", other: "Other",
+};
+export const PO_STATUS: Record<import("./db-types").PoStatus, { label: string; className: string }> = {
+  draft: { label: "Draft", className: "bg-slate-100 text-slate-700 border-slate-200" },
+  approved: { label: "Approved", className: "bg-blue-50 text-blue-700 border-blue-200" },
+  partly_received: { label: "Part received", className: "bg-amber-50 text-amber-800 border-amber-200" },
+  received: { label: "Received", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  cancelled: { label: "Cancelled", className: "bg-slate-50 text-slate-500 border-slate-200 line-through" },
+};
+export const MOVE_KINDS: Record<import("./db-types").StockMoveKind, string> = {
+  opening: "Opening stock", receive: "Received", transfer_out: "Sent to store", transfer_in: "Received from store",
+  issue: "Issued", waste: "Waste", sale: "Sold (recipe)", adjust: "Count adjustment", return: "Returned to supplier",
+};
+export const STOCK_UNITS = ["pcs", "kg", "g", "l", "ml", "btl", "can", "crate", "pkt", "box", "roll", "tray", "bunch"];
+export const formatQty = (n: number | null | undefined, unit?: string) =>
+  n == null ? "—" : `${Number(n).toLocaleString("en-KE", { maximumFractionDigits: 3 })}${unit ? ` ${unit}` : ""}`;

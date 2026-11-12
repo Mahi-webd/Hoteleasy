@@ -7,7 +7,8 @@ export type HotelRole =
   | "housekeeping"
   | "restaurant"
   | "accountant"
-  | "maintenance";
+  | "maintenance"
+  | "storekeeper";
 
 export type RoomStatus =
   | "available"
@@ -295,7 +296,7 @@ export type PosOrderStatus = "open" | "paid" | "void";
 export type PosItemStatus = "new" | "sent" | "preparing" | "ready" | "served" | "void";
 export type PosPaymentMethod = "cash" | "mpesa" | "card" | "room" | "other";
 
-export interface PosOutlet { id: string; hotel_id: string; name: string; kind: OutletKind; service_charge_rate: number; active: boolean; sort: number }
+export interface PosOutlet { id: string; hotel_id: string; name: string; kind: OutletKind; service_charge_rate: number; active: boolean; sort: number; stock_location_id?: string | null }
 export interface PosTable { id: string; hotel_id: string; outlet_id: string; name: string; seats: number; active: boolean; sort: number }
 export interface MenuCategory { id: string; hotel_id: string; name: string; station: PosStation; sort: number }
 export interface MenuItem {
@@ -336,4 +337,46 @@ export interface PosShift {
 export interface ShiftReport {
   opening_float: number; by_method: Partial<Record<PosPaymentMethod, number>>; payments: number; bills: number;
   expected_cash: number; voided_payments: number; counted_cash?: number; variance?: number; opened_at: string; closed_at?: string;
+}
+
+// ---------------------------------------------------------------- inventory
+export type StockLocationKind = "main" | "kitchen" | "bar" | "housekeeping" | "other";
+export type PoStatus = "draft" | "approved" | "partly_received" | "received" | "cancelled";
+export type StockMoveKind = "opening" | "receive" | "transfer_out" | "transfer_in" | "issue" | "waste" | "sale" | "adjust" | "return";
+
+export interface StockLocation { id: string; hotel_id: string; name: string; kind: StockLocationKind; active: boolean; sort: number }
+export interface Supplier {
+  id: string; hotel_id: string; name: string; contact_name: string | null; phone: string | null; email: string | null;
+  kra_pin: string | null; payment_terms: string | null; notes: string | null; active: boolean;
+}
+export interface StockItem {
+  id: string; hotel_id: string; name: string; sku: string | null; category: string; unit: string;
+  reorder_level: number; reorder_qty: number; avg_cost: number; last_cost: number | null;
+  preferred_supplier_id: string | null; active: boolean; notes: string | null;
+}
+export interface StockLevel { item_id: string; location_id: string; hotel_id: string; qty: number }
+export interface PoLine { id: string; po_id: string; item_id: string; qty: number; unit_cost: number; qty_received: number }
+export interface PurchaseOrder {
+  id: string; hotel_id: string; number: number; supplier_id: string; location_id: string; status: PoStatus;
+  expected_on: string | null; notes: string | null; created_by: string | null; approved_by: string | null; approved_at: string | null;
+  created_at: string; purchase_order_lines: PoLine[];
+}
+export interface StockMovement {
+  id: string; item_id: string; location_id: string; kind: StockMoveKind; qty: number; unit_cost: number; value: number;
+  batch_id: string; reference: string | null; note: string | null; department: string | null; supplier_id: string | null;
+  po_id: string | null; created_by: string | null; created_at: string;
+}
+export interface StockCountLine { count_id: string; item_id: string; expected: number | null; counted: number | null; unit_cost: number | null }
+export interface StockCount {
+  id: string; number: number; location_id: string; status: "open" | "posted" | "cancelled"; note: string | null;
+  created_at: string; posted_at: string | null; variance_value: number | null; stock_count_lines?: StockCountLine[];
+}
+export interface Recipe { menu_item_id: string; stock_item_id: string; hotel_id: string; qty: number }
+export interface CostReport {
+  outlets: { outlet: string; kind: string; sales: number; cost: number; lines_without_recipe: number; lines: number }[];
+  items: { item: string; kind: string; qty: number; sales: number; cost: number; price: number | null; portion_cost: number; has_recipe: boolean }[];
+  comps: number;
+  movements: { location: string; kind: StockMoveKind; value: number; lines: number }[];
+  purchases: { supplier: string; value: number; deliveries: number }[];
+  stock_value: { location: string; value: number; items: number }[];
 }

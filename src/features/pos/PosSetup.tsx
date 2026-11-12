@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { CookingPot, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { RecipeDialog } from "@/features/inventory/RecipeDialog";
+import { useRecipes } from "@/hooks/useInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -218,6 +220,9 @@ const Items = ({ items, cats, groups, outlets }: { items: MenuItem[]; cats: Menu
   const del = useDeleteRow("menu_items", "Item");
   const save = useSaveRow("menu_items", "Item");
   const [edit, setEdit] = useState<Partial<MenuItem> | null>(null);
+  const [recipe, setRecipe] = useState<MenuItem | null>(null);
+  const recipes = useRecipes();
+  const withRecipe = new Set((recipes.data ?? []).map((r) => r.menu_item_id));
   const catName = new Map(cats.map((c) => [c.id, c.name]));
   return (
     <Card>
@@ -239,6 +244,9 @@ const Items = ({ items, cats, groups, outlets }: { items: MenuItem[]; cats: Menu
                 <TableCell className="text-xs text-slate-500">{(i.menu_item_modifier_groups ?? []).map((g) => groups.find((x) => x.id === g.group_id)?.name).filter(Boolean).join(", ") || "—"}</TableCell>
                 <TableCell className="text-xs text-slate-500">{i.outlet_ids.length ? i.outlet_ids.map((id) => outlets.find((o) => o.id === id)?.name).join(", ") : "All outlets"}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => setRecipe(i)} aria-label={`Recipe for ${i.name}`} title="Recipe (ingredients for stock and cost)">
+                    <CookingPot className={`h-4 w-4 ${withRecipe.has(i.id) ? "text-emerald-600" : "text-slate-400"}`} />
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEdit(i)} aria-label={`Edit ${i.name}`}><Pencil className="h-4 w-4" /></Button>
                   <ConfirmButton size="sm" variant="ghost" title={`Delete ${i.name}?`} description="Past bills keep their copy. To keep it for later, hide it instead."
                     onConfirm={() => del.mutate(i.id, { onError: () => save.mutate({ id: i.id, active: false }) })}><Trash2 className="h-4 w-4" /></ConfirmButton>
@@ -249,6 +257,7 @@ const Items = ({ items, cats, groups, outlets }: { items: MenuItem[]; cats: Menu
         </Table>
       </CardContent>
       {edit && <ItemDialog item={edit} cats={cats} groups={groups} outlets={outlets} onClose={() => setEdit(null)} />}
+      {recipe && <RecipeDialog item={recipe} onClose={() => setRecipe(null)} />}
     </Card>
   );
 };

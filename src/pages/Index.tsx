@@ -24,6 +24,7 @@ import MaintenancePage from "@/features/maintenance/MaintenancePage";
 import PosPage from "@/features/pos/PosPage";
 import KitchenDisplay from "@/features/pos/KitchenDisplay";
 import ReportsPage from "@/features/reports/ReportsPage";
+import InventoryPage from "@/features/inventory/InventoryPage";
 
 // Demo modules (still showing sample data)
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
@@ -33,7 +34,6 @@ import StaffScheduling from "@/components/StaffScheduling";
 import BudgetManagement from "@/components/BudgetManagement";
 import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
-import InventoryAlerts from "@/components/InventoryAlerts";
 
 const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void }>> = {
   dashboard: Dashboard,
@@ -54,7 +54,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   "budget-management": BudgetManagement,
   "quick-actions": QuickActionsDashboard,
   "task-automation": TaskAutomation,
-  "inventory-alerts": InventoryAlerts,
+  inventory: InventoryPage,
 };
 
 const ALL_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
