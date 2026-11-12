@@ -95,6 +95,9 @@ export interface RoomType {
   base_rate: number;
   max_occupancy: number;
   amenities: string[];
+  photo_url?: string | null;
+  online_bookable?: boolean;
+  online_rate?: number | null;
 }
 
 export interface Room {
@@ -379,4 +382,28 @@ export interface CostReport {
   movements: { location: string; kind: StockMoveKind; value: number; lines: number }[];
   purchases: { supplier: string; value: number; deliveries: number }[];
   stock_value: { location: string; value: number; items: number }[];
+}
+
+// ---------------------------------------------------------------- online booking & feedback
+export interface BookingSettings {
+  hotel_id: string; enabled: boolean; slug: string; headline: string | null; description: string | null; photo_url: string | null;
+  policies: string | null; payment_instructions: string | null; whatsapp: string | null; free_cancel_days: number | null;
+  min_nights: number; max_nights: number; max_advance_days: number; same_day_cutoff: string; show_reviews: boolean;
+}
+export interface GuestFeedback {
+  id: string; hotel_id: string; reservation_id: string; token: string; created_at: string; expires_at: string; shared_at: string | null;
+  submitted_at: string | null; overall: number | null; cleanliness: number | null; service: number | null; comfort: number | null;
+  food: number | null; value: number | null; recommend: number | null; comment: string | null; public_name: string | null;
+  consent_publish: boolean; published: boolean; response: string | null; responded_at: string | null;
+  reservations?: { code: string; check_in: string; check_out: string; guests?: { first_name: string; last_name: string; phone: string | null; email: string | null } | null;
+    rooms?: { room_number: string } | null } | null;
+}
+export interface PublicRoomType { id: string; name: string; description: string | null; max_occupancy: number; amenities: string[]; photo_url: string | null; rate: number }
+export interface PublicHotel {
+  name: string; city: string | null; address: string | null; country: string; phone: string | null; email: string | null; currency: string;
+  checkin_time: string; checkout_time: string; prices_include_tax: boolean; tax_rate: number; today: string;
+  headline: string | null; description: string | null; photo_url: string | null; policies: string | null; payment_instructions: string | null;
+  whatsapp: string | null; free_cancel_days: number | null; min_nights: number; max_nights: number; max_advance_days: number;
+  room_types: PublicRoomType[];
+  reviews: { count: number; average: number | null; recent: { name: string; overall: number; comment: string | null; month: string; response: string | null }[] } | null;
 }

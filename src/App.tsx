@@ -14,6 +14,8 @@ import Onboarding from "./pages/Onboarding";
 import { AuthPage, ResetPasswordPage } from "./pages/AuthPage";
 import { FolioPrintPage, InvoicePrintPage } from "./features/billing/PrintPages";
 import { PosBillPage, PosTicketPage } from "./features/pos/PosPrint";
+import BookingPage from "./features/public/BookingPage";
+import FeedbackPage from "./features/public/FeedbackPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
@@ -63,6 +65,8 @@ const App = () => (
                 <Routes>
                   <Route path="/login" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/book/:slug" element={<BookingPage />} />
+                  <Route path="/feedback/:token" element={<FeedbackPage />} />
                   <Route path="/" element={<Protected />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />

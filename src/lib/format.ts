@@ -152,6 +152,9 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("booking_settings_slug_key")) return "That page address is already used by another hotel. Choose another.";
+  if (msg.includes("booking_settings_slug_check")) return "The page address can only use lowercase letters, numbers and dashes (3 to 48 characters).";
+  if (msg.includes("photo_url_check")) return "Photo links must start with https://";
   if (msg.includes("stock_items_name")) return "A stock item with that name already exists.";
   if (msg.includes("suppliers_hotel_id_name_key")) return "A supplier with that name already exists.";
   if (msg.includes("stock_locations_hotel_id_name_key")) return "A store with that name already exists.";

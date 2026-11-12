@@ -29,6 +29,8 @@ staff only see their own hotel's data.
 | Reports: occupancy, ADR, RevPAR, revenue by department and outlet, VAT & levy by month, payments by method, booking sources, room types, nationalities, balances owing; any date range vs the previous period; CSV export and print | ✅ Live |
 | Inventory: stores (main, kitchen, bar, housekeeping), stock items with reorder levels and average cost, suppliers, purchase orders with manager approval, goods received, transfers, issues to departments, waste, returns, stock counts with manager approval, full stock history | ✅ Live |
 | Recipes on menu items: sending an order to the kitchen/bar takes ingredients from the outlet's store; food & drinks cost %, menu margins, waste and purchases report | ✅ Live |
+| Online booking page (`/book/<your-hotel>`): live availability and prices, booking without signing in, booking lookup and free cancellation window, "Book now" button for your website | ✅ Live |
+| Guest feedback: private link per stay after check-out (share by WhatsApp, email or copy), star ratings and recommend score, manager replies, chosen reviews shown on the booking page | ✅ Live |
 | Staff scheduling, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
@@ -59,6 +61,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    4. `20261111160000_pos.sql`
    5. `20261111180000_reports.sql`
    6. `20261112100000_inventory.sql`
+   7. `20261112160000_online_booking.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -109,4 +112,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 5. ~~Restaurant & bar POS (phase 1)~~ (next: stock & recipes, coursing, offline mode, eTIMS)
 6. ~~Reports~~
 7. ~~Inventory & stock~~ (next: modifier recipes, batch/expiry tracking, supplier invoices & payments)
-8. Staff scheduling, inventory, channel managers (Booking.com etc.)
+8. ~~Online booking & guest feedback~~ (next: online deposits by M-Pesa, booking emails, seasonal rates)
+9. Staff scheduling, inventory, channel managers (Booking.com etc.)
