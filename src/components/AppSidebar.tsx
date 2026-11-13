@@ -26,6 +26,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "dashboard", label: "Dashboard", icon: Home },
       { key: "reservations", label: "Reservations", icon: Calendar },
+      { key: "online-checkin", label: "Online check-in", icon: Smartphone, roles: FRONT },
       { key: "rooms", label: "Rooms", icon: MapPin },
       { key: "guests", label: "Guests", icon: Users, roles: [...FRONT, "accountant", "restaurant"] },
       { key: "billing", label: "Billing & Payments", icon: CreditCard, roles: [...FRONT, "accountant"] },
@@ -59,7 +60,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Coming next",
     items: [
-      { key: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone, roles: FRONT, preview: true },
       { key: "concierge", label: "Digital Concierge", icon: MessageCircle, roles: FRONT, preview: true },
       { key: "quick-actions", label: "Quick Actions", icon: Zap, roles: MGMT, preview: true },
       { key: "task-automation", label: "Task Automation", icon: Bot, roles: MGMT, preview: true },

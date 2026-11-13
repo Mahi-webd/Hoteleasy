@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, Receipt, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarDays, Smartphone, Receipt, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHe
 import { RES_STATUS, ROOM_STATUS, SOURCE_LABELS, addDays, formatMoney, formatShortDate, guestName, todayIn } from "@/lib/format";
 import type { Reservation, ReservationStatus } from "@/lib/db-types";
 import { ReservationDialog } from "./ReservationDialog";
+import { usePrecheckShare } from "../online/precheckShare";
 
 type View = "arrivals" | "inhouse" | "departures" | "upcoming" | "all" | "calendar";
 
@@ -176,6 +177,7 @@ const ReservationRow = ({
   onEdit: () => void; onCheckIn: () => void; onBill?: (checkout?: boolean) => void;
 }) => {
   const cancel = useCancelReservation();
+  const share = usePrecheckShare();
   const st = RES_STATUS[r.status];
   const late = r.status === "confirmed" && r.check_in < today;
   const overdue = r.status === "checked_in" && r.check_out < today;
@@ -233,6 +235,8 @@ const ReservationRow = ({
               {onBill && <DropdownMenuItem onClick={() => onBill()}><Receipt className="mr-2 h-4 w-4" />{r.status === "confirmed" ? "Bill / take deposit" : "Bill"}</DropdownMenuItem>}
               {r.status === "confirmed" && (
                 <>
+                  <DropdownMenuItem disabled={!r.guests?.phone} onClick={() => share(r, "wa")}><Smartphone className="mr-2 h-4 w-4" />Send online check-in (WhatsApp)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => share(r, "copy")}><Smartphone className="mr-2 h-4 w-4" />Copy online check-in link</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {r.check_in <= today && (
                     <DropdownMenuItem onClick={() => confirm(`Mark ${r.code} as a no-show?`) && cancel.mutate({ id: r.id, noShow: true })}>
@@ -252,7 +256,7 @@ const ReservationRow = ({
   );
 };
 
-const CheckInDialog = ({ reservation: r, onClose }: { reservation: Reservation; onClose: () => void }) => {
+export const CheckInDialog = ({ reservation: r, onClose }: { reservation: Reservation; onClose: () => void }) => {
   const { hotel } = useCurrentHotel();
   const checkIn = useCheckIn();
   const rooms = useRooms();

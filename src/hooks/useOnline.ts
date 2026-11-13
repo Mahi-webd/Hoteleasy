@@ -141,3 +141,83 @@ export const useOnlineBookings = () => {
         .eq("hotel_id", hotel.id).eq("source", "website").order("created_at", { ascending: false }).limit(100)) as unknown as OnlineBooking[],
   });
 };
+
+// ---------------------------------------------------------------- online check-in
+export interface Companion { name: string; id_number?: string | null; child?: boolean }
+export interface PrecheckForm {
+  first_name: string; last_name: string; email: string | null; phone: string | null; nationality: string | null; residence: string | null;
+  id_type: string | null; id_number: string | null; date_of_birth: string | null; address: string | null; arrival_time: string | null;
+  purpose: string | null; coming_from: string | null; going_to: string | null; vehicle_reg: string | null; companions: Companion[] | null;
+  requests: string | null; signed_name: string | null; marketing_ok: boolean | null;
+}
+export interface PublicPrecheck {
+  state: "open" | "submitted" | "reviewed" | "arrived" | "closed";
+  hotel: { name: string; address: string | null; city: string | null; phone: string | null; email: string | null; checkin_time: string; checkout_time: string; house_rules: string | null; policies: string | null };
+  code: string; check_in: string; check_out: string; nights: number; room_type: string; adults: number; children: number; submitted_at: string | null;
+  form: PrecheckForm;
+}
+export const usePublicPrecheck = (token: string) =>
+  useQuery({
+    queryKey: ["public", "precheck", token],
+    queryFn: async () => unwrap(await supabase.rpc("public_precheck", { _token: token })) as PublicPrecheck | null,
+  });
+export const submitPrecheck = async (token: string, d: Record<string, unknown>) =>
+  unwrap(await supabase.rpc("public_precheck_submit", { _token: token, _d: d }));
+export const findPrecheck = async (slug: string, code: string, key: string) =>
+  unwrap(await supabase.rpc("public_precheck_find", { _slug: slug, _code: code, _email_or_last_name: key })) as string;
+
+export interface Precheck extends Omit<PrecheckForm, "first_name" | "last_name"> {
+  id: string; hotel_id: string; reservation_id: string; token: string; created_at: string; shared_at: string | null; submitted_at: string | null;
+  first_name: string | null; last_name: string | null; signature: string | null; accepted_at: string | null; reviewed_at: string | null;
+}
+export interface Arrival {
+  id: string; code: string; status: string; check_in: string; check_out: string; nights: number; adults: number; children: number;
+  special_requests: string | null; room_id: string | null; room_type_id: string; total_amount: number; source: string;
+  guests: { id: string; first_name: string; last_name: string; phone: string | null; email: string | null; nationality: string | null; id_type: string | null; id_number: string | null; is_vip: boolean } | null;
+  rooms: { room_number: string } | null; room_types: { name: string } | null;
+  prechecks: Precheck[] | Precheck | null;
+}
+export const precheckOf = (a: Arrival): Precheck | null => (Array.isArray(a.prechecks) ? a.prechecks[0] ?? null : a.prechecks);
+
+export const useArrivalsPrecheck = (from: string, to: string) => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["precheck", "arrivals", hotel.id, from, to],
+    queryFn: async () =>
+      unwrap(await supabase.from("reservations")
+        .select("id, code, status, check_in, check_out, nights, adults, children, special_requests, room_id, room_type_id, total_amount, source, guests(id, first_name, last_name, phone, email, nationality, id_type, id_number, is_vip), rooms(room_number), room_types(name), prechecks(*)")
+        .eq("hotel_id", hotel.id).in("status", ["confirmed", "checked_in"]).gte("check_in", from).lte("check_in", to)
+        .order("check_in").limit(500)) as unknown as Arrival[],
+  });
+};
+export const getPrecheckLink = async (reservationId: string) =>
+  `${window.location.origin}/checkin/${unwrap(await supabase.rpc("precheck_link", { _reservation_id: reservationId })) as string}`;
+
+export const useMarkPrecheckShared = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (reservationId: string) =>
+      unwrap(await supabase.from("prechecks").update({ shared_at: new Date().toISOString() }).eq("reservation_id", reservationId).is("shared_at", null)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["precheck"] }),
+  });
+};
+export const useAcceptPrecheck = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(await supabase.rpc("precheck_accept", { _id: id })),
+    onSuccess: () => {
+      ["precheck", "reservations", "guests", "activity"].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+      toast.success("Details saved to the guest record");
+    },
+    onError: (e) => toast.error(friendlyError(e)),
+  });
+};
+export const useSaveHouseRules = () => {
+  const { hotel } = useCurrentHotel();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rules: string) => unwrap(await supabase.from("hotels").update({ house_rules: rules.trim() || null }).eq("id", hotel.id)),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberships"] }); toast.success("House rules saved"); },
+    onError: (e) => toast.error(friendlyError(e)),
+  });
+};

@@ -35,7 +35,8 @@ staff only see their own hotel's data.
 | Staff & rota: staff list (with or without app logins, pay rates private), shift types, weekly rota with drafts and publish, copy week, no double-booking or shifts on leave, leave requests and approval, clock in/out (self or by front desk), late and absent tracking, hours & pay report for payroll | ✅ Live |
 | Payroll: monthly payroll from pay rates and the time clock, PAYE (with personal relief), NSSF tiers I and II, SHIF, housing levy and NITA, overtime, bonuses and advances; approve, then mark paid to post wages and statutory bills to Expenses; printable payslips; PAYE, NSSF, SHIF, housing levy and M-Pesa/bank payment CSVs; dated tax-rate tables the owner can update when the law changes | ✅ Live |
 | My shifts (every staff login): clock in/out, own rota, who's working today, ask for leave, own approved payslips | ✅ Live |
-| Mobile check-in, digital concierge, etc. | 🟡 Demo screens (marked "demo"), next phases |
+| Online check-in: every confirmed booking gets a private link (WhatsApp, email or copy); guests fill in the guest register (ID/passport, nationality, arrival time, other guests, car) and sign the registration card on their phone; front desk reviews, accepts onto the guest record and checks in; printable A4 registration card (signed, or blank for walk-ins); house rules; "Check in online" from the booking page | ✅ Live |
+| Digital concierge, quick actions, task automation | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -69,6 +70,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    8. `20261112200000_expenses.sql`
    9. `20261113100000_staff_rota.sql`
    10. `20261113140000_payroll.sql`
+   11. `20261113200000_precheckin.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -121,5 +123,7 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 7. ~~Inventory & stock~~ (next: modifier recipes, batch/expiry tracking, supplier invoices & payments)
 8. ~~Online booking & guest feedback~~ (next: online deposits by M-Pesa, booking emails, seasonal rates)
 9. ~~Expenses & profit~~ (next: partial bill payments, petty cash, attachments)
-10. ~~Staff scheduling & attendance~~ (next: PAYE/NSSF/SHIF payslips, shift swaps)
-11. Mobile check-in, channel managers (Booking.com etc.)
+10. ~~Staff scheduling & attendance~~ (next: shift swaps)
+11. ~~Payroll & payslips~~
+12. ~~Online pre-check-in~~ (next: ID photo upload, eTIMS)
+13. M-Pesa STK push, seasonal rates, channel managers (Booking.com etc.)

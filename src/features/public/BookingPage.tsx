@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   BedDouble, CalendarCheck, CheckCircle2, Clock, Loader2, MapPin, MessageCircle, Phone, Printer, Search, Star, Users,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  bookRoom, fetchAvailability, lookupBooking, usePublicHotel, waNumber,
+  bookRoom, fetchAvailability, findPrecheck, lookupBooking, usePublicHotel, waNumber,
   type BookingLookup, type BookingResult, type Offer,
 } from "@/hooks/useOnline";
 import { addDays, formatMoney, friendlyError } from "@/lib/format";
@@ -109,7 +110,7 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
     finally { setSearching(false); }
   };
 
-  if (done) return <Confirmation h={h} r={done} />;
+  if (done) return <Confirmation h={h} r={done} slug={slug} />;
 
   const nights = Math.max(0, Math.round((parseISO(checkOut).getTime() - parseISO(checkIn).getTime()) / 86400000));
   return (
@@ -252,7 +253,7 @@ const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack
   );
 };
 
-const Confirmation = ({ h, r }: { h: PublicHotel; r: BookingResult }) => (
+const Confirmation = ({ h, r, slug }: { h: PublicHotel; r: BookingResult; slug: string }) => (
   <Card className="border-emerald-200">
     <CardContent className="p-6 space-y-4">
       <div className="flex items-start gap-3">
@@ -276,6 +277,7 @@ const Confirmation = ({ h, r }: { h: PublicHotel; r: BookingResult }) => (
         <div className="rounded-md border p-3 text-sm"><div className="font-medium mb-1">Payment</div><p className="whitespace-pre-line text-slate-700">{h.payment_instructions}</p></div>
       )}
       <div className="flex flex-wrap gap-2 print:hidden">
+        <CheckInOnline slug={slug} code={r.code} keyValue={r.email} />
         <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print</Button>
         {h.whatsapp && (
           <Button variant="outline" asChild>
@@ -288,6 +290,18 @@ const Confirmation = ({ h, r }: { h: PublicHotel; r: BookingResult }) => (
     </CardContent>
   </Card>
 );
+
+/** Opens the guest's online check-in for this booking. */
+const CheckInOnline = ({ slug, code, keyValue }: { slug: string; code: string; keyValue: string }) => {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button disabled={busy} onClick={async () => {
+      setBusy(true);
+      try { window.location.href = `/checkin/${await findPrecheck(slug, code, keyValue)}`; }
+      catch (e) { alert(friendlyError(e)); setBusy(false); }
+    }}><Smartphone className="mr-2 h-4 w-4" />Check in online now</Button>
+  );
+};
 
 // ---------------------------------------------------------------------------
 const Manage = ({ h, slug }: { h: PublicHotel; slug: string }) => {
@@ -324,6 +338,7 @@ const Manage = ({ h, slug }: { h: PublicHotel; slug: string }) => {
                 <Button variant="destructive" size="sm" disabled={busy} onClick={() => { if (window.confirm("Cancel this booking?")) run(true); }}>Cancel booking</Button>
               </div>
             ) : <p className="text-sm text-slate-600">To change or cancel this booking, please contact the hotel{h.phone ? ` on ${h.phone}` : ""}.</p>)}
+            {b.status === "confirmed" && <div className="pt-1"><CheckInOnline slug={slug} code={b.code} keyValue={key} /></div>}
           </div>
         )}
       </CardContent>

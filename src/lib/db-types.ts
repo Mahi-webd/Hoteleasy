@@ -55,6 +55,7 @@ export interface Hotel {
   tourism_levy_rate: number;
   invoice_prefix: string;
   next_invoice_number: number;
+  house_rules?: string | null;
   mpesa_paybill: string | null;
   mpesa_account: string | null;
   mpesa_till: string | null;

@@ -27,6 +27,7 @@ const ACTIVITY_DOT: Record<string, string> = {
   online: "bg-sky-500",
   feedback: "bg-amber-500",
   expense: "bg-rose-500",
+  precheck: "bg-cyan-500",
 };
 
 const useClock = () => {
