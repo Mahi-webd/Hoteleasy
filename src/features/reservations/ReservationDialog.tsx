@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, CalendarRange, Crown, Search, UserPlus, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useStayQuote } from "@/hooks/useRates";
+import { useCompanyAccounts } from "@/hooks/useCompanies";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useAvailableRooms, useGuests, useRoomTypes, useSaveReservation } from "@/hooks/useHotelQueries";
-import { ROOM_STATUS, SOURCE_LABELS, addDays, formatMoney, guestName, nightsBetween, todayIn } from "@/lib/format";
-import type { BookingSource, Guest, Reservation } from "@/lib/db-types";
+import { BILL_TO, ROOM_STATUS, SOURCE_LABELS, addDays, formatMoney, guestName, nightsBetween, todayIn } from "@/lib/format";
+import type { BillTo, BookingSource, Guest, Reservation } from "@/lib/db-types";
 import { GuestForm } from "../guests/GuestForm";
 
 const NO_ROOM = "__none__";
@@ -48,6 +49,11 @@ export const ReservationDialog = ({
   // Nightly prices from the season rules; null when one rate applies to every night.
   const [nightly, setNightly] = useState<Record<string, number> | null>(reservation?.nightly_rates ?? null);
   const [manualRate, setManualRate] = useState(false);
+  const companies = useCompanyAccounts();
+  const [companyId, setCompanyId] = useState<string>(reservation?.company_id ?? "");
+  const [billTo, setBillTo] = useState<BillTo>(reservation?.bill_to ?? "guest");
+  const [companyRef, setCompanyRef] = useState(reservation?.company_ref ?? "");
+  const company = (companies.data ?? []).find((c) => c.id === companyId);
   const [adults, setAdults] = useState(reservation?.adults ?? 1);
   const [children, setChildren] = useState(reservation?.children ?? 0);
   const [source, setSource] = useState<BookingSource>(reservation?.source ?? "walk_in");
@@ -59,8 +65,9 @@ export const ReservationDialog = ({
   const type = types.data?.find((t) => t.id === typeId);
   const validDates = checkOut > checkIn;
   // Price the stay from the season rules: always for new bookings, and for edits once the dates or room type change.
-  const stayChanged = !isEdit || checkIn !== reservation.check_in || checkOut !== reservation.check_out || typeId !== reservation.room_type_id;
-  const quote = useStayQuote(typeId, checkIn, checkOut, validDates && stayChanged);
+  const stayChanged = !isEdit || checkIn !== reservation.check_in || checkOut !== reservation.check_out || typeId !== reservation.room_type_id
+    || companyId !== (reservation.company_id ?? "");
+  const quote = useStayQuote(typeId, checkIn, checkOut, validDates && stayChanged, companyId || null);
   useEffect(() => {
     if (!quote.data || manualRate || !stayChanged) return;
     setRate(String(quote.data.average));
@@ -97,6 +104,9 @@ export const ReservationDialog = ({
         children,
         rate_per_night: Number(rate),
         nightly_rates: nightly,
+        company_id: companyId || null,
+        bill_to: companyId ? billTo : "guest",
+        company_ref: companyId ? companyRef.trim() || null : null,
         source,
         special_requests: String(f.get("special_requests") ?? "").trim() || null,
       },
@@ -234,6 +244,45 @@ export const ReservationDialog = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-3">
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Company account</Label>
+                <Select value={companyId || "none"} onValueChange={(v) => {
+                  const id = v === "none" ? "" : v; setCompanyId(id); setManualRate(false);
+                  const c = (companies.data ?? []).find((x) => x.id === id);
+                  setBillTo(c ? c.default_bill_to : "guest");
+                }}>
+                  <SelectTrigger aria-label="Company account"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (private guest)</SelectItem>
+                    {(companies.data ?? []).filter((c) => c.active || c.id === companyId).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}{c.over_limit ? " · over credit limit" : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {companyId && (
+                <div className="space-y-2">
+                  <Label>Who pays</Label>
+                  <Select value={billTo} onValueChange={(v) => setBillTo(v as BillTo)}>
+                    <SelectTrigger aria-label="Who pays"><SelectValue /></SelectTrigger>
+                    <SelectContent>{(["company_all", "company_room", "guest"] as BillTo[]).map((b) => <SelectItem key={b} value={b}>{b === "guest" ? "Guest pays (company rate only)" : BILL_TO[b]}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            {companyId && (
+              <div className="grid md:grid-cols-2 gap-3 items-end">
+                <div className="space-y-2"><Label htmlFor="res-lpo">Order / LPO number</Label>
+                  <Input id="res-lpo" value={companyRef} maxLength={60} onChange={(e) => setCompanyRef(e.target.value)} placeholder="Shown on the invoice and statement" /></div>
+                {company?.over_limit && billTo !== "guest" && (
+                  <p className="text-sm text-amber-700 flex items-center gap-1"><AlertTriangle className="h-4 w-4 shrink-0" />{company.name} is over its credit limit; a manager will need to check this guest out.</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -103,8 +103,20 @@ const PayInstructions = ({ h }: { h: Invoice["hotel"] }) =>
     </div>
   ) : null;
 
-const GuestBlock = ({ g, s }: { g: Invoice["guest"]; s: Invoice["stay"] }) => (
+const GuestBlock = ({ g, s, b }: { g: Invoice["guest"]; s: Invoice["stay"]; b?: Invoice["bill_to"] }) => (
   <div className="grid grid-cols-2 gap-6 mb-6">
+    {b ? (
+      <div>
+        <div className="text-xs uppercase text-slate-500">Bill to</div>
+        <div className="font-semibold">{b.company}</div>
+        <div className="text-slate-600">
+          {b.kra_pin && <>KRA PIN: <strong>{b.kra_pin}</strong><br /></>}
+          {b.address && <>{b.address}<br /></>}
+          {b.email}{b.order_ref && <><br />Order / LPO: <strong>{b.order_ref}</strong></>}
+          <br />Guest: {g.name}{b.scope === "room" && <> (extras paid by the guest)</>}
+        </div>
+      </div>
+    ) : (
     <div>
       <div className="text-xs uppercase text-slate-500">Bill to</div>
       <div className="font-semibold">{g.name}</div>
@@ -114,6 +126,7 @@ const GuestBlock = ({ g, s }: { g: Invoice["guest"]; s: Invoice["stay"] }) => (
         {g.address && <><br />{g.address}</>}
       </div>
     </div>
+    )}
     <div>
       <div className="text-xs uppercase text-slate-500">Stay</div>
       <div>Booking <strong>{s.code}</strong>{s.room && <> · Room <strong>{s.room}</strong></>}</div>
@@ -140,19 +153,22 @@ export const InvoicePrintPage = () => {
         <div className="mb-4 rounded border-2 border-red-500 p-2 text-center font-bold text-red-600">REPLACED — this invoice was superseded on {formatDate(i.superseded_at.slice(0, 10))}</div>
       )}
       <HotelHeader h={i.hotel} docTitle="Tax invoice" docNo={i.number} date={formatDate(i.issued_at.slice(0, 10))} />
-      <GuestBlock g={i.guest} s={i.stay} />
+      <GuestBlock g={i.guest} s={i.stay} b={i.bill_to} />
       <Lines lines={i.lines} currency={cur} totals={{ net: i.net_total, vat: i.vat_total, levy: i.levy_total, total: i.total, vatRate: i.hotel.vat_rate, levyRate: i.hotel.levy_rate }} />
       {paid.data && !i.superseded_at && (
         <div className="flex justify-end mt-2">
           <table className="min-w-[280px]">
             <tbody>
               <tr><td className="py-0.5 pr-6 text-slate-600">Paid</td><td className="text-right">{formatMoney2(paid.data.payments_total, cur)}</td></tr>
+              {Number(paid.data.transferred_total ?? 0) > 0 && (
+                <tr><td className="py-0.5 pr-6 text-slate-600">Charged to {i.bill_to?.company ?? "company"} account{i.bill_to ? `, due in ${i.bill_to.terms_days} days` : ""}</td><td className="text-right">{formatMoney2(Number(paid.data.transferred_total), cur)}</td></tr>
+              )}
               <tr className="font-semibold"><td className="py-0.5 pr-6">{balance! < 0 ? "Credit" : "Balance due"}</td><td className="text-right">{formatMoney2(Math.abs(balance!), cur)}</td></tr>
             </tbody>
           </table>
         </div>
       )}
-      {balance !== null && balance > 0.009 && <PayInstructions h={i.hotel} />}
+      {balance !== null && (balance > 0.009 || Number(paid.data?.transferred_total ?? 0) > 0) && <PayInstructions h={i.hotel} />}
       {i.hotel.footer && <div className="mt-8 text-center text-slate-500 whitespace-pre-line">{i.hotel.footer}</div>}
       <div className="mt-8 text-center text-xs text-slate-400">Thank you for staying with us.</div>
     </PrintShell>

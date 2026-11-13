@@ -16,7 +16,7 @@ import type {
 } from "@/lib/db-types";
 
 const RES_SELECT =
-  "*, guests(id, first_name, last_name, phone, email, is_vip), rooms(id, room_number, status), room_types(id, name)";
+  "*, guests(id, first_name, last_name, phone, email, is_vip), rooms(id, room_number, status), room_types(id, name), companies(name)";
 
 const unwrap = <T,>({ data, error }: { data: T | null; error: unknown }): T => {
   if (error) throw error;
@@ -269,6 +269,9 @@ export interface ReservationInput {
   children: number;
   rate_per_night: number;
   nightly_rates?: Record<string, number> | null;
+  company_id?: string | null;
+  bill_to?: string;
+  company_ref?: string | null;
   source: string;
   special_requests: string | null;
 }

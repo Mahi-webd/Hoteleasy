@@ -144,6 +144,10 @@ export interface Reservation {
   source: BookingSource;
   rate_per_night: number;
   nightly_rates?: Record<string, number> | null;
+  company_id?: string | null;
+  bill_to?: BillTo;
+  company_ref?: string | null;
+  companies?: { name: string } | null;
   nights: number;
   total_amount: number;
   special_requests: string | null;
@@ -208,6 +212,7 @@ export interface Balance {
   charges_total: number;
   payments_total: number;
   balance: number;
+  transferred_total?: number;
 }
 
 export interface InvoiceLine {
@@ -235,6 +240,7 @@ export interface Invoice {
   };
   guest: { name: string; phone: string | null; email: string | null; id_type: string | null; id_number: string | null; address: string | null };
   stay: { code: string; room: string | null; check_in: string; check_out: string; nights: number; adults: number; children: number };
+  bill_to?: { company: string; kra_pin: string | null; address: string | null; email: string | null; phone: string | null; order_ref: string | null; terms_days: number; scope: "room" | "all" } | null;
   lines: InvoiceLine[];
   net_total: number;
   vat_total: number;
@@ -502,3 +508,26 @@ export interface OutboxEmail {
   sent_at: string | null; created_at: string;
   reservations?: { code: string; check_in: string; guests: { first_name: string; last_name: string; email: string | null } | null } | null;
 }
+
+// ---------------------------------------------------------------- companies
+export type BillTo = "guest" | "company_room" | "company_all";
+export interface Company {
+  id: string; hotel_id: string; name: string; kra_pin: string | null; contact_name: string | null; email: string | null; phone: string | null;
+  address: string | null; credit_limit: number | null; terms_days: number; discount_pct: number | null; default_bill_to: "company_room" | "company_all";
+  active: boolean; notes?: string | null; created_at: string;
+}
+export interface Ageing { current: number; d30: number; d60: number; d90: number; d90p: number; overdue: number; unapplied_credit: number; oldest_due: string | null }
+export interface CompanyAccount extends Company {
+  balance: number | null; over_limit: boolean; available: number | null; ageing: Ageing | null;
+  last_payment: { date: string; amount: number } | null; rates: Record<string, number>; stays: number;
+}
+export interface LedgerEntry {
+  id: string; date: string; kind: "stay" | "payment" | "credit" | "charge"; description: string; reference: string | null; method: string | null;
+  amount: number; reservation_id: string | null; invoice: string | null; due: string | null; balance: number;
+}
+export interface Statement {
+  company: Company; from: string; to: string; opening: number; closing: number; entries: LedgerEntry[]; ageing: Ageing;
+  hotel: { name: string; address: string | null; city: string | null; phone: string | null; email: string | null; kra_pin: string | null; currency: string;
+    mpesa_paybill: string | null; mpesa_account: string | null; bank_details: string | null };
+}
+export interface FolioTransfer { id: string; reservation_id: string; company_id: string; amount: number; created_at: string; voided_at: string | null; void_reason: string | null; companies?: { name: string } | null }

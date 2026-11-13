@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart3, Bot, Calendar, Clock, CreditCard, Home, MapPin, MessageCircle, Package, Settings, ShoppingCart,
-  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon, CalendarRange } from "lucide-react";
+  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon, CalendarRange, Building2 } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
@@ -30,6 +30,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "rooms", label: "Rooms", icon: MapPin },
       { key: "guests", label: "Guests", icon: Users, roles: [...FRONT, "accountant", "restaurant"] },
       { key: "billing", label: "Billing & Payments", icon: CreditCard, roles: [...FRONT, "accountant"] },
+      { key: "companies", label: "Company accounts", icon: Building2, roles: [...FRONT, "accountant"] },
       { key: "online", label: "Online booking & reviews", icon: Globe, roles: [...FRONT, "accountant"] },
     ],
   },

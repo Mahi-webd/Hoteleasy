@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Ban, FileText, Loader2, LogOut, Plus, Printer, Receipt, Wallet } from "lucide-react";
+import { ArrowRightLeft, Ban, Building2, FileText, Loader2, LogOut, Plus, Printer, Receipt, Wallet } from "lucide-react";
+import { useCompanyAccounts, useCompanyTransfer } from "@/hooks/useCompanies";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +54,16 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
   );
   const unusedTotal = unusedNights.reduce((s, c) => s + Number(c.amount), 0);
   const balance = folio.data?.balance ?? 0;
-  const dueAtCheckout = Math.round((balance - (checkout ? unusedTotal : 0)) * 100) / 100;
+  const dueBeforeCompany = Math.round((balance - (checkout ? unusedTotal : 0)) * 100) / 100;
+  // A company-billed stay: what the company takes at check-out (worked out the same way as the database does).
+  const billing = folio.data?.billing;
+  const companyBilled = !!billing?.company_id && billing.bill_to !== "guest";
+  const roomLeft = (folio.data?.charges ?? []).filter((c) => c.kind === "room" && !c.voided_at && !unusedNights.includes(c)).reduce((a, c) => a + Number(c.amount), 0)
+    - (folio.data?.transferredTotal ?? 0);
+  const companyShare = !companyBilled || dueBeforeCompany <= 0 ? 0
+    : billing!.bill_to === "company_all" ? dueBeforeCompany : Math.max(0, Math.min(dueBeforeCompany, roomLeft));
+  const dueAtCheckout = Math.round((dueBeforeCompany - (r.status === "checked_in" ? companyShare : 0)) * 100) / 100;
+  const [moving, setMoving] = useState(false);
 
   const canVoid = (posted_by: string | null, at: string) =>
     isManager || (posted_by === user?.id && Date.now() - new Date(at).getTime() < 15 * 60_000);
@@ -82,9 +92,17 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
           <LoadingBlock />
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            {companyBilled && (
+              <div className="rounded-md border border-violet-200 bg-violet-50 dark:bg-violet-950/30 p-3 text-sm flex items-start gap-2">
+                <Building2 className="h-4 w-4 mt-0.5 text-violet-700" />
+                <span>Billed to <b>{billing!.companies?.name}</b> ({billing!.bill_to === "company_room" ? "room only; the guest pays extras" : "everything"}){billing!.company_ref ? `, order ${billing!.company_ref}` : ""}.
+                  {r.status === "checked_in" && companyShare > 0.009 && <> At check-out <b>{formatMoney2(companyShare, cur)}</b> moves to the company's account.</>}</span>
+              </div>
+            )}
+            <div className={`grid gap-3 ${folio.data.transferredTotal > 0 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
               <Stat label="Charges" value={formatMoney2(folio.data.chargesTotal, cur)} />
               <Stat label="Paid" value={formatMoney2(folio.data.paymentsTotal, cur)} />
+              {folio.data.transferredTotal > 0 && <Stat label="To company account" value={formatMoney2(folio.data.transferredTotal, cur)} />}
               <Stat
                 label={balance < -0.009 ? "In credit" : "Balance"}
                 value={formatMoney2(Math.abs(balance), cur)}
@@ -188,7 +206,16 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                           </TableCell>
                         </TableRow>
                       ))}
-                      {!folio.data.payments.length && (
+                      {folio.data.transfers.map((t) => (
+                        <TableRow key={t.id} className={t.voided_at ? "opacity-50" : ""}>
+                          <TableCell className="whitespace-nowrap text-xs">{new Date(t.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</TableCell>
+                          <TableCell><div className={t.voided_at ? "line-through" : ""}><ArrowRightLeft className="inline h-3 w-3 mr-1" />Moved to {t.companies?.name ?? "company"} account</div>
+                            {t.voided_at && <div className="text-xs text-slate-500">undone: {t.void_reason}</div>}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">{formatMoney2(t.amount, cur)}</TableCell>
+                          <TableCell />
+                        </TableRow>
+                      ))}
+                      {!folio.data.payments.length && !folio.data.transfers.length && (
                         <TableRow><TableCell colSpan={4} className="text-center text-slate-500 py-6">No payments yet.</TableCell></TableRow>
                       )}
                     </TableBody>
@@ -222,6 +249,9 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                     <a href={`/folio/${r.id}`} target="_blank" rel="noreferrer"><Printer className="mr-1 h-4 w-4" />Print interim bill</a>
                   </Button>
                 )}
+                {(r.status === "checked_in" || r.status === "checked_out") && balance > 0.009 && can("owner", "manager", "front_desk", "accountant") && (
+                  <Button variant="outline" size="sm" onClick={() => setMoving(true)}><Building2 className="mr-1 h-4 w-4" />Move to company account</Button>
+                )}
               </div>
 
               {checkout && r.status === "checked_in" && (
@@ -243,11 +273,35 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                 </div>
               )}
             </div>
+            {moving && <MoveToCompany reservationId={r.id} balance={balance} defaultCompany={billing?.company_id ?? undefined} currency={cur} onClose={() => setMoving(false)} />}
             {r.status === "checked_out" && <p className="text-xs text-slate-500">Checked out {formatDate(r.check_out)}. Late charges and payments can still be added.</p>}
           </div>
         )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+const MoveToCompany = ({ reservationId, balance, defaultCompany, currency, onClose }: { reservationId: string; balance: number; defaultCompany?: string; currency: string; onClose: () => void }) => {
+  const companies = useCompanyAccounts();
+  const move = useCompanyTransfer();
+  const [companyId, setCompanyId] = useState(defaultCompany ?? "");
+  const [amount, setAmount] = useState(String(balance));
+  const list = (companies.data ?? []).filter((c) => c.active);
+  const c = list.find((x) => x.id === companyId);
+  return (
+    <div className="rounded-lg border p-3 space-y-3 bg-violet-50/50 dark:bg-violet-950/20">
+      <div className="font-medium text-sm">Move the bill to a company account</div>
+      <div className="grid sm:grid-cols-[1fr_160px_auto_auto] gap-2 items-end">
+        <div className="space-y-1"><Label>Company</Label>
+          <Select value={companyId} onValueChange={setCompanyId}><SelectTrigger aria-label="Company to bill"><SelectValue placeholder={list.length ? "Choose a company" : "No company accounts yet"} /></SelectTrigger>
+            <SelectContent>{list.map((x) => <SelectItem key={x.id} value={x.id}>{x.name}{x.over_limit ? " (over limit)" : ""}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-1"><Label htmlFor="mv-amt">Amount ({currency})</Label><Input id="mv-amt" type="number" min={0.01} max={balance} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button disabled={!companyId || !(Number(amount) > 0) || move.isPending} onClick={() => move.mutate({ reservationId, companyId, amount: Number(amount) }, { onSuccess: onClose })}>Move</Button>
+      </div>
+      {c?.available != null && <p className="text-xs text-slate-600">{c.name} can take {formatMoney2(Math.max(0, c.available), currency)} more before its credit limit.</p>}
+    </div>
   );
 };
 

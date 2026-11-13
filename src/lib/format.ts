@@ -146,6 +146,12 @@ export const friendlyError = (err: unknown): string => {
     return "This room type is still used by rooms or reservations.";
   if (msg.includes("violates foreign key") && msg.includes("guests"))
     return "This guest has reservations and can't be deleted.";
+  if (msg.includes("CREDIT_LIMIT:")) return msg.replace(/^.*CREDIT_LIMIT:\s*/, "");
+  if (msg.includes("companies_kra_pin_check")) return "A KRA PIN is a letter, 9 digits and a letter, e.g. P051234567X.";
+  if (msg.includes("companies_hotel_id_name_key")) return "There is already a company with that name.";
+  if (msg.includes("companies_email_check")) return "Enter a valid email address for the company.";
+  if (msg.includes("company_ledger_mpesa_once")) return "This M-Pesa code is already recorded.";
+  if (msg.includes("reservations_company_id_fkey")) return "This company has bookings; close the account instead of deleting it.";
   if (msg.includes("BALANCE_DUE:")) return msg.replace(/^.*BALANCE_DUE:\s*/, "") + ". Take payment or choose \u201ccheck out with balance owing\u201d.";
   if (msg.includes("payments_mpesa_once")) return "That M-Pesa code has already been recorded.";
   if (msg.includes("payments_mpesa_code")) return "M-Pesa codes are 10 letters/numbers, e.g. TK45ABC1XY.";
@@ -248,3 +254,5 @@ export const SHIFT_COLORS: Record<string, string> = {
   rose: "bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-800",
   slate: "bg-slate-100 text-slate-900 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600",
 };
+
+export const BILL_TO: Record<string, string> = { guest: "Guest pays", company_room: "Company pays the room", company_all: "Company pays everything" };

@@ -38,6 +38,7 @@ staff only see their own hotel's data.
 | Online check-in: every confirmed booking gets a private link (WhatsApp, email or copy); guests fill in the guest register (ID/passport, nationality, arrival time, other guests, car) and sign the registration card on their phone; front desk reviews, accepts onto the guest record and checks in; printable A4 registration card (signed, or blank for walk-ins); house rules; "Check in online" from the booking page | ✅ Live |
 | Rates & seasons: weekend, holiday and high/low season prices (a % change or fixed prices per room type), minimum stays and no-arrival days; each night priced on its own for front desk and the booking page; rate & availability calendar | ✅ Live |
 | Guest emails: booking confirmation, pre-arrival (with the online check-in link), thank-you with the review link, and cancellation, sent automatically through Resend; email log with previews and retry; test emails | ✅ Live (needs the one-time email setup below) |
+| Company accounts (city ledger): companies with KRA PIN, negotiated rates (fixed per room type or % off), credit limits and payment terms; bookings billed to the company (room only or everything) with LPO number; at check-out the company's share moves to its account and the invoice is addressed to the company; payments, credit notes, ageing (current / 30 / 60 / 90 / 90+), printable statements, ageing CSV | ✅ Live |
 | Digital concierge, quick actions, task automation | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
@@ -79,6 +80,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    11. `20261113200000_precheckin.sql`
    12. `20261114100000_seasonal_rates.sql`
    13. `20261114110000_emails.sql`
+   14. `20261114140000_companies.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -153,4 +155,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 11. ~~Payroll & payslips~~
 12. ~~Online pre-check-in~~ (next: ID photo upload, eTIMS)
 13. ~~Seasonal rates & booking emails~~ (next: SMS/WhatsApp messages, rate plans such as B&B vs half board)
-14. M-Pesa STK push, channel managers (Booking.com etc.)
+14. ~~Corporate accounts~~ (next: emailing statements, company booking portal)
+15. M-Pesa STK push, channel managers (Booking.com etc.)

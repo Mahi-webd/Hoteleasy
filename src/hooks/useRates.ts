@@ -34,11 +34,11 @@ export const useRateCalendar = (from: string, days: number) => {
     queryFn: async () => unwrap(await supabase.rpc("rate_calendar", { _hotel_id: hotel.id, _from: from, _days: days })) as CalendarRow[],
   });
 };
-export const useStayQuote = (roomTypeId: string, checkIn: string, checkOut: string, enabled = true) =>
+export const useStayQuote = (roomTypeId: string, checkIn: string, checkOut: string, enabled = true, companyId: string | null = null) =>
   useQuery({
-    queryKey: ["rates", "quote", roomTypeId, checkIn, checkOut],
+    queryKey: ["rates", "quote", roomTypeId, checkIn, checkOut, companyId],
     enabled: enabled && !!roomTypeId && checkOut > checkIn,
-    queryFn: async () => unwrap(await supabase.rpc("stay_quote", { _room_type_id: roomTypeId, _check_in: checkIn, _check_out: checkOut, _online: false })) as StayQuote,
+    queryFn: async () => unwrap(await supabase.rpc("stay_quote", { _room_type_id: roomTypeId, _check_in: checkIn, _check_out: checkOut, _online: false, _company_id: companyId })) as StayQuote,
     staleTime: 30_000,
   });
 

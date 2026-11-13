@@ -188,6 +188,7 @@ const ReservationRow = ({
       <TableCell>
         <div className="font-medium flex items-center gap-1">{guestName(r.guests)}{r.guests?.is_vip && <Crown className="h-4 w-4 text-amber-500" />}</div>
         <div className="text-xs text-slate-500">{r.code} · {SOURCE_LABELS[r.source]}{r.guests?.phone ? ` · ${r.guests.phone}` : ""}</div>
+        {r.companies && <div className="text-xs text-violet-700">{r.companies.name}{r.bill_to !== "guest" ? (r.bill_to === "company_room" ? " pays room" : " pays all") : " rate"}{r.company_ref ? ` · ${r.company_ref}` : ""}</div>}
         {r.special_requests && <div className="text-xs text-blue-700 truncate max-w-[240px]" title={r.special_requests}>“{r.special_requests}”</div>}
       </TableCell>
       <TableCell className="whitespace-nowrap">

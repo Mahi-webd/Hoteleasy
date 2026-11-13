@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
-import type { Balance, ChargeKind, FolioCharge, Invoice, Payment, PaymentMethod, Reservation } from "@/lib/db-types";
+import type { BillTo, FolioTransfer, Balance, ChargeKind, FolioCharge, Invoice, Payment, PaymentMethod, Reservation } from "@/lib/db-types";
 
 const unwrap = <T,>({ data, error }: { data: T | null; error: unknown }): T => {
   if (error) throw error;
@@ -30,11 +30,15 @@ export const useFolio = (reservationId?: string) =>
     queryKey: ["folio", reservationId],
     enabled: !!reservationId,
     queryFn: async () => {
-      const [charges, payments, invoices] = await Promise.all([
+      const [charges, payments, invoices, transfers, res] = await Promise.all([
         supabase.from("folio_charges").select("*").eq("reservation_id", reservationId!).order("stay_date", { nullsFirst: false }).order("posted_at"),
         supabase.from("payments").select("*").eq("reservation_id", reservationId!).order("received_at"),
         supabase.from("invoices").select("id, number, issued_at, total, superseded_at").eq("reservation_id", reservationId!).order("issued_at", { ascending: false }),
+        supabase.from("folio_transfers").select("*, companies(name)").eq("reservation_id", reservationId!).order("created_at"),
+        supabase.from("reservations").select("company_id, bill_to, company_ref, companies(name)").eq("id", reservationId!).maybeSingle(),
       ]);
+      const t = unwrap(transfers) as FolioTransfer[];
+      const transferredTotal = t.filter((x) => !x.voided_at).reduce((s, x) => s + Number(x.amount), 0);
       const c = unwrap(charges) as FolioCharge[];
       const p = unwrap(payments) as Payment[];
       const live = (x: { voided_at: string | null }) => !x.voided_at;
@@ -46,7 +50,10 @@ export const useFolio = (reservationId?: string) =>
         invoices: unwrap(invoices) as Pick<Invoice, "id" | "number" | "issued_at" | "total" | "superseded_at">[],
         chargesTotal,
         paymentsTotal,
-        balance: Math.round((chargesTotal - paymentsTotal) * 100) / 100,
+        transfers: t,
+        transferredTotal,
+        billing: unwrap(res) as unknown as { company_id: string | null; bill_to: BillTo; company_ref: string | null; companies: { name: string } | null } | null,
+        balance: Math.round((chargesTotal - paymentsTotal - transferredTotal) * 100) / 100,
       };
     },
   });
