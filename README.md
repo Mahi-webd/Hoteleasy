@@ -33,7 +33,8 @@ staff only see their own hotel's data.
 | Guest feedback: private link per stay after check-out (share by WhatsApp, email or copy), star ratings and recommend score, manager replies, chosen reviews shown on the booking page | ✅ Live |
 | Expenses & profit: expenses and supplier bills (paid or to pay, claimable VAT, monthly repeats, void with reason), bills from goods received, monthly budgets and revenue targets, profit & loss with budget vs actual, VAT estimate, bills to pay | ✅ Live |
 | Staff & rota: staff list (with or without app logins, pay rates private), shift types, weekly rota with drafts and publish, copy week, no double-booking or shifts on leave, leave requests and approval, clock in/out (self or by front desk), late and absent tracking, hours & pay report for payroll | ✅ Live |
-| My shifts (every staff login): clock in/out, own rota, who's working today, ask for leave | ✅ Live |
+| Payroll: monthly payroll from pay rates and the time clock, PAYE (with personal relief), NSSF tiers I and II, SHIF, housing levy and NITA, overtime, bonuses and advances; approve, then mark paid to post wages and statutory bills to Expenses; printable payslips; PAYE, NSSF, SHIF, housing levy and M-Pesa/bank payment CSVs; dated tax-rate tables the owner can update when the law changes | ✅ Live |
+| My shifts (every staff login): clock in/out, own rota, who's working today, ask for leave, own approved payslips | ✅ Live |
 | Mobile check-in, digital concierge, etc. | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
@@ -67,6 +68,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    7. `20261112160000_online_booking.sql`
    8. `20261112200000_expenses.sql`
    9. `20261113100000_staff_rota.sql`
+   10. `20261113140000_payroll.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.

@@ -152,6 +152,8 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("payroll_rates_hotel_id_effective_from_key")) return "There are already rates starting on that date.";
+  if (msg.includes("payslips_staff_id_fkey")) return "This person has payslips, so they can't be deleted; turn them off instead.";
   if (msg.includes("time_entries_one_open")) return "Already clocked in.";
   if (msg.includes("staff_hotel_id_user_id_key")) return "That login is already linked to another staff member.";
   if (msg.includes("shift_templates_hotel_id_name_key")) return "A shift type with that name already exists.";

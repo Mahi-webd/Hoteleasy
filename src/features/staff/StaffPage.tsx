@@ -28,6 +28,8 @@ import { downloadCsv } from "@/lib/csv";
 import type { Employment, LeaveKind, LeaveRequest, Shift, ShiftTemplate, Staff, StaffPay } from "@/lib/db-types";
 import { dateIn, hoursBetween, localToIso, mondayOf, timeIn, windowIso } from "./time";
 
+import { Payroll } from "./Payroll";
+
 const MAX_WEEK_HOURS = 52;
 
 const StaffPage = () => {
@@ -38,13 +40,14 @@ const StaffPage = () => {
   const [tab, setTab] = useState(admin ? "rota" : clocker ? "today" : "hours");
   return (
     <div className="space-y-4">
-      <PageHeader title="Staff & rota" subtitle="Who works when, who's in today, leave, and hours for payroll" />
+      <PageHeader title="Staff & rota" subtitle="Who works when, who's in today, leave, hours and payroll" />
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex flex-wrap h-auto">
           {admin && <TabsTrigger value="rota">Rota</TabsTrigger>}
           {clocker && <TabsTrigger value="today">Today</TabsTrigger>}
           {admin && <TabsTrigger value="leave">Leave</TabsTrigger>}
           {money && <TabsTrigger value="hours">Hours & pay</TabsTrigger>}
+          {money && <TabsTrigger value="payroll">Payroll</TabsTrigger>}
           {admin && <TabsTrigger value="people">Staff</TabsTrigger>}
           {admin && <TabsTrigger value="types">Shift types</TabsTrigger>}
         </TabsList>
@@ -52,6 +55,7 @@ const StaffPage = () => {
         {clocker && <TabsContent value="today"><Today admin={admin} /></TabsContent>}
         {admin && <TabsContent value="leave"><LeaveAdmin /></TabsContent>}
         {money && <TabsContent value="hours"><Hours /></TabsContent>}
+        {money && <TabsContent value="payroll"><Payroll /></TabsContent>}
         {admin && <TabsContent value="people"><People /></TabsContent>}
         {admin && <TabsContent value="types"><Templates /></TabsContent>}
       </Tabs>
@@ -512,7 +516,7 @@ const Hours = () => {
           </CardContent>
         </Card>
       )}
-      <p className="text-xs text-slate-500">Hours worked come from clock in/out, less the shift's break. "Absent" counts published shifts that ended with no clock-in. Pay estimates: daily rate × days in, hourly rate × hours, monthly salary × share of the month. They are a guide for payroll, not a payslip (no PAYE, NSSF, SHIF or housing levy deductions).
+      <p className="text-xs text-slate-500">Hours worked come from clock in/out, less the shift's break. "Absent" counts published shifts that ended with no clock-in. Pay estimates: daily rate × days in, hourly rate × hours, monthly salary × share of the month. They are a guide; the Payroll tab works out payslips with PAYE, NSSF, SHIF and housing levy.
         {can("owner", "manager", "accountant") && casualTotal > 0 && ` Casual wages in this period: ${formatMoney(casualTotal, hotel.currency)}; record them under Expenses & profit → Casual labour when paid.`}</p>
     </div>
   );
@@ -572,10 +576,16 @@ const StaffDialog = ({ s, pay, members, taken, onClose }: {
   const [f, setF] = useState<Partial<Staff>>(s);
   const [payType, setPayType] = useState<StaffPay["pay_type"] | "none">(pay?.pay_type ?? (s.employment === "casual" ? "daily" : "none"));
   const [rate, setRate] = useState(pay ? String(pay.rate) : "");
+  const [pd, setPd] = useState<Partial<StaffPay>>({
+    statutory: pay?.statutory ?? s.employment !== "casual", house_allowance: pay?.house_allowance ?? 0, other_allowance: pay?.other_allowance ?? 0,
+    kra_pin: pay?.kra_pin ?? "", nssf_no: pay?.nssf_no ?? "", sha_no: pay?.sha_no ?? "", id_no: pay?.id_no ?? "",
+    pay_method: pay?.pay_method ?? "mpesa", pay_account: pay?.pay_account ?? s.phone ?? "", bank_name: pay?.bank_name ?? "",
+  });
+  const sp = <K extends keyof StaffPay>(k: K, v: StaffPay[K]) => setPd((x) => ({ ...x, [k]: v }));
   const set = <K extends keyof Staff>(k: K, v: Staff[K]) => setF((x) => ({ ...x, [k]: v }));
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{s.id ? `Edit ${s.full_name}` : "New staff member"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1"><Label htmlFor="st-n">Full name</Label><Input id="st-n" value={f.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} /></div>
@@ -597,6 +607,20 @@ const StaffDialog = ({ s, pay, members, taken, onClose }: {
               <Select value={payType} onValueChange={(v) => setPayType(v as typeof payType)}><SelectTrigger aria-label="Pay type"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="none">Not recorded</SelectItem><SelectItem value="monthly">Monthly salary</SelectItem><SelectItem value="daily">Per day</SelectItem><SelectItem value="hourly">Per hour</SelectItem></SelectContent></Select></div>
             {payType !== "none" && <div className="space-y-1"><Label htmlFor="st-r">Rate</Label><Input id="st-r" type="number" min={0} value={rate} onChange={(e) => setRate(e.target.value)} /></div>}
+            {payType !== "none" && <>
+              <div className="space-y-1"><Label htmlFor="st-ha">House allowance / month</Label><Input id="st-ha" type="number" min={0} value={pd.house_allowance ?? 0} onChange={(e) => sp("house_allowance", Number(e.target.value))} /></div>
+              <div className="space-y-1"><Label htmlFor="st-oa">Other allowances / month</Label><Input id="st-oa" type="number" min={0} value={pd.other_allowance ?? 0} onChange={(e) => sp("other_allowance", Number(e.target.value))} /></div>
+              <label className="col-span-2 flex items-center gap-2 text-sm"><Switch checked={!!pd.statutory} onCheckedChange={(v) => sp("statutory", v)} />Deduct PAYE, NSSF, SHIF and housing levy (turn off for casuals paid gross)</label>
+              <div className="space-y-1"><Label htmlFor="st-kra">KRA PIN</Label><Input id="st-kra" value={pd.kra_pin ?? ""} onChange={(e) => sp("kra_pin", e.target.value.toUpperCase())} placeholder="A012345678Z" /></div>
+              <div className="space-y-1"><Label htmlFor="st-id">ID number</Label><Input id="st-id" value={pd.id_no ?? ""} onChange={(e) => sp("id_no", e.target.value)} /></div>
+              <div className="space-y-1"><Label htmlFor="st-nssf">NSSF number</Label><Input id="st-nssf" value={pd.nssf_no ?? ""} onChange={(e) => sp("nssf_no", e.target.value)} /></div>
+              <div className="space-y-1"><Label htmlFor="st-sha">SHA number</Label><Input id="st-sha" value={pd.sha_no ?? ""} onChange={(e) => sp("sha_no", e.target.value)} /></div>
+              <div className="space-y-1"><Label>Paid by</Label>
+                <Select value={pd.pay_method ?? "mpesa"} onValueChange={(v) => sp("pay_method", v as StaffPay["pay_method"])}><SelectTrigger aria-label="Paid by"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="mpesa">M-Pesa</SelectItem><SelectItem value="bank">Bank transfer</SelectItem><SelectItem value="cash">Cash</SelectItem></SelectContent></Select></div>
+              {pd.pay_method !== "cash" && <div className="space-y-1"><Label htmlFor="st-acc">{pd.pay_method === "bank" ? "Account number" : "M-Pesa number"}</Label><Input id="st-acc" value={pd.pay_account ?? ""} onChange={(e) => sp("pay_account", e.target.value)} /></div>}
+              {pd.pay_method === "bank" && <div className="space-y-1 col-span-2"><Label htmlFor="st-bank">Bank and branch</Label><Input id="st-bank" value={pd.bank_name ?? ""} onChange={(e) => sp("bank_name", e.target.value)} /></div>}
+            </>}
           </div>
           <div className="space-y-1"><Label htmlFor="st-no">Notes</Label><Textarea id="st-no" rows={2} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)} placeholder="Emergency contact, skills…" /></div>
           <label className="flex items-center gap-2 text-sm"><Switch checked={f.active ?? true} onCheckedChange={(v) => set("active", v)} />Works here now (turn off when someone leaves; their history stays)</label>
@@ -605,7 +629,10 @@ const StaffDialog = ({ s, pay, members, taken, onClose }: {
           <Button disabled={!f.full_name?.trim() || save.isPending} onClick={() => save.mutate({
             staff: { id: f.id, full_name: f.full_name!.trim(), department: f.department?.trim() || "Front office", job_title: f.job_title?.trim() || null, phone: f.phone?.trim() || null,
               employment: f.employment ?? "permanent", user_id: f.user_id ?? null, active: f.active ?? true, started_on: f.started_on || null, notes: f.notes?.trim() || null },
-            pay: payType === "none" ? (pay ? null : undefined) : { pay_type: payType, rate: Number(rate) || 0 },
+            pay: payType === "none" ? (pay ? null : undefined) : {
+              pay_type: payType, rate: Number(rate) || 0, statutory: !!pd.statutory, house_allowance: Number(pd.house_allowance) || 0, other_allowance: Number(pd.other_allowance) || 0,
+              kra_pin: pd.kra_pin?.trim() || null, nssf_no: pd.nssf_no?.trim() || null, sha_no: pd.sha_no?.trim() || null, id_no: pd.id_no?.trim() || null,
+              pay_method: pd.pay_method ?? "mpesa", pay_account: pd.pay_account?.trim() || null, bank_name: pd.bank_name?.trim() || null },
           }, { onSuccess: onClose })}>Save</Button></DialogFooter>
       </DialogContent>
     </Dialog>

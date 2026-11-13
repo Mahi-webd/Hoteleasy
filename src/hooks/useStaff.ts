@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { friendlyError } from "@/lib/format";
-import type { HoursRow, LeaveRequest, Shift, ShiftTemplate, Staff, StaffPay, TimeEntry } from "@/lib/db-types";
+import type { PayrollRates, PayrollRun, Payslip, HoursRow, LeaveRequest, Shift, ShiftTemplate, Staff, StaffPay, TimeEntry } from "@/lib/db-types";
 
 const unwrap = <T,>({ data, error }: { data: T | null; error: unknown }): T => {
   if (error) throw error;
@@ -157,7 +157,7 @@ export const useFixTime = () =>
 
 export const useSaveStaff = () => {
   const { hotel } = useCurrentHotel();
-  return useStaffAction(async ({ staff, pay }: { staff: Partial<Staff>; pay?: { pay_type: StaffPay["pay_type"]; rate: number } | null }) => {
+  return useStaffAction(async ({ staff, pay }: { staff: Partial<Staff>; pay?: Omit<StaffPay, "staff_id" | "hotel_id"> | null }) => {
     const { id, ...rest } = staff;
     const row = (id
       ? unwrap(await supabase.from("staff").update(rest).eq("id", id).select().single())
@@ -192,4 +192,61 @@ export const useSaveLeave = () => {
     return id ? unwrap(await supabase.from("leave_requests").update(rest).eq("id", id))
       : unwrap(await supabase.from("leave_requests").insert({ ...rest, hotel_id: hotel.id }));
   }, (a) => (a.status === "approved" ? "Leave approved" : a.status === "refused" ? "Leave refused" : a.status === "cancelled" ? "Leave cancelled" : "Leave request sent"));
+};
+
+// ---------------------------------------------------------------- payroll
+export const usePayrollRuns = () => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["staff", "runs", hotel.id],
+    queryFn: async () => unwrap(await supabase.from("payroll_runs").select("*").eq("hotel_id", hotel.id).order("month", { ascending: false })) as PayrollRun[],
+  });
+};
+export const usePayslips = (runId?: string | null) =>
+  useQuery({
+    queryKey: ["staff", "payslips", runId],
+    enabled: !!runId,
+    queryFn: async () => unwrap(await supabase.from("payslips").select("*").eq("run_id", runId!).order("department").order("full_name")) as Payslip[],
+  });
+export const useMyPayslips = (staffId?: string) =>
+  useQuery({
+    queryKey: ["staff", "mypayslips", staffId],
+    enabled: !!staffId,
+    queryFn: async () => unwrap(await supabase.from("payslips").select("*, payroll_runs(month, status)").eq("staff_id", staffId!).order("id")) as (Payslip & { payroll_runs: { month: string; status: string } | null })[],
+  });
+export const usePayrollRates = (enabled = true) => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["staff", "rates", hotel.id],
+    enabled,
+    queryFn: async () => unwrap(await supabase.from("payroll_rates").select("*").eq("hotel_id", hotel.id).order("effective_from", { ascending: false })) as PayrollRates[],
+  });
+};
+export const useGeneratePayroll = () => {
+  const { hotel } = useCurrentHotel();
+  return useStaffAction(async (month: string) => unwrap(await supabase.rpc("payroll_generate", { _hotel_id: hotel.id, _month: month })) as string,
+    "Payroll prepared from pay rates and the time clock");
+};
+export const usePayrollAction = () =>
+  useStaffAction(async ({ id, action, paidOn }: { id: string; action: "approve" | "reopen" | "paid"; paidOn?: string }) =>
+    unwrap(await supabase.rpc("payroll_set_status", { _run_id: id, _action: action, _paid_on: paidOn ?? null })),
+    ({ action }) => ({ approve: "Payroll approved: staff can now see their payslips", reopen: "Payroll reopened for changes", paid: "Payroll paid: wages and statutory bills added to Expenses" })[action]);
+export const useDeleteRun = () =>
+  useStaffAction(async (id: string) => unwrap(await supabase.from("payroll_runs").delete().eq("id", id)), "Draft payroll deleted");
+export const useUpdatePayslip = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...rest }: { id: string } & Partial<Pick<Payslip, "overtime_hours" | "bonus" | "advances" | "other_deductions" | "note" | "days_worked" | "hours_worked">>) =>
+      unwrap(await supabase.from("payslips").update(rest).eq("id", id)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["staff", "payslips"] }),
+    onError: (e) => { toast.error(friendlyError(e)); qc.invalidateQueries({ queryKey: ["staff", "payslips"] }); },
+  });
+};
+export const useSaveRates = () => {
+  const { hotel } = useCurrentHotel();
+  return useStaffAction(async (r: Partial<PayrollRates>) => {
+    const { id, ...rest } = r;
+    return id ? unwrap(await supabase.from("payroll_rates").update(rest).eq("id", id))
+      : unwrap(await supabase.from("payroll_rates").insert({ ...rest, hotel_id: hotel.id }));
+  }, "Statutory rates saved");
 };

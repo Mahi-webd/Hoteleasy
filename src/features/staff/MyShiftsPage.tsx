@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { CalendarDays, Clock, LogIn, LogOut, Plus, UserX } from "lucide-react";
+import { CalendarDays, Clock, FileText, LogIn, LogOut, Plus, UserX } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
 import { useCurrentHotel } from "@/contexts/HotelContext";
-import { useClock, useLeave, useMyStaff, useSaveLeave, useShiftTemplates, useShifts, useStaffList, useTimeEntries } from "@/hooks/useStaff";
-import { LEAVE_KINDS, addDays, formatDate, todayIn } from "@/lib/format";
+import { useClock, useLeave, useMyPayslips, useMyStaff, useSaveLeave, useShiftTemplates, useShifts, useStaffList, useTimeEntries } from "@/hooks/useStaff";
+import { LEAVE_KINDS, addDays, formatDate, formatMoney, todayIn } from "@/lib/format";
 import { LeaveDialog, ShiftChip } from "./StaffPage";
 import { dateIn, hoursBetween, timeIn, windowIso } from "./time";
 
@@ -27,6 +27,7 @@ const MyShiftsPage = () => {
   const clock = useClock();
   const saveLeave = useSaveLeave();
   const [asking, setAsking] = useState(false);
+  const slips = useMyPayslips(me.data?.id);
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 30000); return () => clearInterval(t); }, []);
 
@@ -116,6 +117,22 @@ const MyShiftsPage = () => {
           </CardContent>
         </Card>
       </div>
+      {(() => {
+        const mySlips = (slips.data ?? []).filter((p) => p.payroll_runs && p.payroll_runs.status !== "draft").sort((a, b) => b.payroll_runs!.month.localeCompare(a.payroll_runs!.month)).slice(0, 12);
+        return mySlips.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-lg">My payslips</CardTitle></CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {mySlips.map((p) => (
+                <a key={p.id} href={`/payslips/${p.run_id}?staff=${p.staff_id}`} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-slate-50">
+                  <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-slate-400" />{format(parseISO(p.payroll_runs!.month), "MMMM yyyy")}</span>
+                  <span className="tabular-nums font-medium">{formatMoney(Number(p.net), hotel.currency)} net</span>
+                </a>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
       {asking && <LeaveDialog staff={[st]} fixedStaffId={st.id} onClose={() => setAsking(false)} />}
       <p className="text-xs text-slate-500">Today is {format(parseISO(today), "EEEE d MMMM")}.</p>
     </div>

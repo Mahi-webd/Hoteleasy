@@ -434,7 +434,11 @@ export interface Staff {
   id: string; hotel_id: string; full_name: string; department: string; job_title: string | null; phone: string | null;
   employment: Employment; user_id: string | null; active: boolean; started_on: string | null; notes: string | null;
 }
-export interface StaffPay { staff_id: string; hotel_id: string; pay_type: "monthly" | "daily" | "hourly"; rate: number }
+export interface StaffPay {
+  staff_id: string; hotel_id: string; pay_type: "monthly" | "daily" | "hourly"; rate: number;
+  statutory?: boolean; house_allowance?: number; other_allowance?: number; kra_pin?: string | null; nssf_no?: string | null; sha_no?: string | null;
+  id_no?: string | null; pay_method?: "mpesa" | "bank" | "cash"; pay_account?: string | null; bank_name?: string | null;
+}
 export interface ShiftTemplate { id: string; hotel_id: string; name: string; starts: string; ends: string; break_minutes: number; color: string; sort: number }
 export interface Shift {
   id: string; hotel_id: string; staff_id: string; starts_at: string; ends_at: string; break_minutes: number; template_id: string | null;
@@ -452,4 +456,19 @@ export interface HoursRow {
   staff_id: string; name: string; department: string; employment: Employment; shifts: number; scheduled_hours: number; worked_days: number;
   worked_hours: number; open: number; late: number; absent: number; leave_days: number; sick_days: number; overtime_hours: number;
   pay_type: StaffPay["pay_type"] | null; rate: number | null; pay_estimate: number | null;
+}
+
+// ---------------------------------------------------------------- payroll
+export interface PayeBand { upto: number | null; rate: number }
+export interface PayrollRates {
+  id: string; hotel_id: string; effective_from: string; paye_bands: PayeBand[]; personal_relief: number; nssf_rate: number; nssf_lel: number; nssf_uel: number;
+  shif_rate: number; shif_min: number; ahl_rate: number; ahl_employer_rate: number; nita_per_employee: number; overtime_multiplier: number; hours_per_month: number; note: string | null;
+}
+export interface PayrollRun { id: string; hotel_id: string; month: string; status: "draft" | "approved" | "paid"; rates_id: string; approved_at: string | null; paid_on: string | null; created_at: string }
+export interface Payslip {
+  id: string; run_id: string; hotel_id: string; staff_id: string; full_name: string; department: string | null; job_title: string | null;
+  kra_pin: string | null; nssf_no: string | null; sha_no: string | null; id_no: string | null; pay_type: string; rate: number; pay_method: string | null; pay_account: string | null;
+  statutory: boolean; days_worked: number; hours_worked: number; overtime_hours: number; bonus: number; advances: number; other_deductions: number; note: string | null;
+  basic: number; house_allowance: number; other_allowance: number; overtime_pay: number; gross: number; nssf_tier1: number; nssf_tier2: number; shif: number; ahl: number;
+  taxable: number; tax_before_relief: number; personal_relief: number; paye: number; net: number; employer_nssf: number; employer_ahl: number; nita: number;
 }

@@ -14,6 +14,7 @@ import Onboarding from "./pages/Onboarding";
 import { AuthPage, ResetPasswordPage } from "./pages/AuthPage";
 import { FolioPrintPage, InvoicePrintPage } from "./features/billing/PrintPages";
 import { PosBillPage, PosTicketPage } from "./features/pos/PosPrint";
+import { PayslipPage } from "./features/staff/PayslipPrint";
 import BookingPage from "./features/public/BookingPage";
 import FeedbackPage from "./features/public/FeedbackPage";
 
@@ -70,6 +71,7 @@ const App = () => (
                   <Route path="/" element={<Protected />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
+                  <Route path="/payslips/:runId" element={<Protected><PayslipPage /></Protected>} />
                   <Route path="/pos-bill/:id" element={<Protected><PosBillPage /></Protected>} />
                   <Route path="/pos-ticket/:id" element={<Protected><PosTicketPage /></Protected>} />
                   <Route path="*" element={<NotFound />} />
