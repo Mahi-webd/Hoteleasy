@@ -25,9 +25,12 @@ const copy = async (text: string, what = "Link") => {
   try { await navigator.clipboard.writeText(text); toast.success(`${what} copied`); } catch { toast.error("Could not copy; select and copy it yourself"); }
 };
 
+import { EmailsTab } from "./EmailsTab";
+
 const OnlinePage = () => {
   const { can } = useCurrentHotel();
   const admin = can("owner", "manager");
+  const canEmail = can("owner", "manager", "front_desk");
   const settings = useBookingSettings();
   const [tab, setTab] = useState("bookings");
   if (settings.isLoading) return <LoadingBlock />;
@@ -54,10 +57,12 @@ const OnlinePage = () => {
         <TabsList>
           <TabsTrigger value="bookings">Online bookings</TabsTrigger>
           <TabsTrigger value="reviews">Guest reviews</TabsTrigger>
+          {canEmail && <TabsTrigger value="emails">Guest emails</TabsTrigger>}
           {admin && <TabsTrigger value="setup">Setup</TabsTrigger>}
         </TabsList>
         <TabsContent value="bookings"><Bookings /></TabsContent>
         <TabsContent value="reviews"><Reviews canReply={admin} /></TabsContent>
+        {canEmail && <TabsContent value="emails"><EmailsTab admin={admin} /></TabsContent>}
         {admin && s && <TabsContent value="setup"><Setup s={s} url={url} /></TabsContent>}
       </Tabs>
     </div>

@@ -268,6 +268,7 @@ export interface ReservationInput {
   adults: number;
   children: number;
   rate_per_night: number;
+  nightly_rates?: Record<string, number> | null;
   source: string;
   special_requests: string | null;
 }
@@ -279,7 +280,7 @@ export const useSaveReservation = () => {
       id
         ? unwrap(await supabase.from("reservations").update(r).eq("id", id))
         : unwrap(await supabase.from("reservations").insert({ ...r, hotel_id: hotel.id })),
-    { invalidate: ["reservations", "rooms", "dashboard", "activity"], success: (a) => (a.id ? "Reservation updated" : "Reservation created") },
+    { invalidate: ["reservations", "rooms", "dashboard", "activity", "rates", "precheck"], success: (a) => (a.id ? "Reservation updated" : "Reservation created") },
   );
 };
 

@@ -143,6 +143,7 @@ export interface Reservation {
   status: ReservationStatus;
   source: BookingSource;
   rate_per_night: number;
+  nightly_rates?: Record<string, number> | null;
   nights: number;
   total_amount: number;
   special_requests: string | null;
@@ -472,4 +473,32 @@ export interface Payslip {
   statutory: boolean; days_worked: number; hours_worked: number; overtime_hours: number; bonus: number; advances: number; other_deductions: number; note: string | null;
   basic: number; house_allowance: number; other_allowance: number; overtime_pay: number; gross: number; nssf_tier1: number; nssf_tier2: number; shif: number; ahl: number;
   taxable: number; tax_before_relief: number; personal_relief: number; paye: number; net: number; employer_nssf: number; employer_ahl: number; nita: number;
+}
+
+// ---------------------------------------------------------------- rates & emails
+export type SeasonColor = "amber" | "rose" | "emerald" | "sky" | "violet" | "slate" | "orange" | "teal";
+export interface RateSeason {
+  id: string; hotel_id: string; name: string; starts_on: string; ends_on: string; weekdays: number[]; adjust_pct: number | null;
+  min_nights: number | null; closed_to_arrival: boolean; priority: number; color: SeasonColor; active: boolean; note: string | null; created_at: string;
+  rate_season_prices?: { room_type_id: string; rate: number }[];
+}
+export interface QuoteNight { date: string; rate: number; season: string | null; color: SeasonColor | null }
+export interface StayQuote {
+  nights: QuoteNight[]; count: number; total: number; average: number; min_nights: number; closed_to_arrival: boolean;
+  closed_season: string | null; seasons: string[]; uniform: boolean;
+}
+export interface CalendarDay { date: string; rate: number; online: number; season: string | null; color: SeasonColor | null; min_nights: number | null; cta: boolean; free: number }
+export interface CalendarRow { room_type_id: string; name: string; base_rate: number; online_rate: number | null; rooms: number; days: CalendarDay[] }
+
+export type EmailKind = "confirmation" | "prearrival" | "thankyou" | "cancellation" | "test";
+export interface EmailSettings {
+  hotel_id: string; enabled: boolean; app_url: string; from_name: string | null; reply_to: string | null;
+  send_confirmation: boolean; send_prearrival: boolean; prearrival_days: number; send_thankyou: boolean; send_cancellation: boolean;
+  confirmation_note: string | null; prearrival_note: string | null; updated_at: string;
+}
+export interface OutboxEmail {
+  id: string; hotel_id: string; reservation_id: string | null; kind: EmailKind; to_email: string | null; subject: string | null;
+  send_after: string; status: "queued" | "sending" | "sent" | "failed" | "skipped" | "cancelled"; attempts: number; last_error: string | null;
+  sent_at: string | null; created_at: string;
+  reservations?: { code: string; check_in: string; guests: { first_name: string; last_name: string; email: string | null } | null } | null;
 }

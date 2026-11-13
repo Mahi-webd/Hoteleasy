@@ -145,8 +145,10 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
               <RoomCard key={o.room_type_id} rt={rt} h={h}>
                 <div className="text-right space-y-1">
                   <div className="text-2xl font-bold">{formatMoney(o.total, h.currency)}</div>
-                  <div className="text-xs text-slate-500">{formatMoney(o.rate, h.currency)} × {o.nights} night{o.nights === 1 ? "" : "s"} · {h.prices_include_tax ? "taxes included" : "plus taxes"}</div>
+                  <div className="text-xs text-slate-500">{o.uniform === false ? `avg ${formatMoney(o.rate, h.currency)}` : formatMoney(o.rate, h.currency)} × {o.nights} night{o.nights === 1 ? "" : "s"} · {h.prices_include_tax ? "taxes included" : "plus taxes"}</div>
+                  {o.seasons && o.seasons.length > 0 && <div className="text-xs text-slate-500">{o.seasons.join(", ")}</div>}
                   {!o.fits ? <Badge variant="outline">Sleeps up to {rt.max_occupancy}</Badge>
+                    : o.restriction ? <Badge variant="outline" className="text-amber-800 border-amber-300 whitespace-normal">{o.restriction}</Badge>
                     : o.available === 0 ? <Badge variant="outline" className="text-red-700 border-red-200">Sold out</Badge>
                     : o.available <= 2 && <Badge variant="outline" className="text-amber-800 border-amber-300">Only {o.available} left</Badge>}
                   <div><Button disabled={!ok} onClick={() => setChosen({ ...o, rt })} aria-label={`Choose ${rt.name}`}>Choose</Button></div>
@@ -155,7 +157,7 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
             );
           })}
           {offers.every((o) => o.available === 0 || !o.fits) && (
-            <p className="text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-md p-3">Nothing is free for these dates and guests online. Try other dates, or contact the hotel.</p>
+            <p className="text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-md p-3">{offers.some((o) => o.restriction) ? "These dates have a minimum stay or no arrivals that day. Try a longer stay or another arrival date, or contact the hotel." : "Nothing is free for these dates and guests online. Try other dates, or contact the hotel."}</p>
           )}
         </div>
       )}

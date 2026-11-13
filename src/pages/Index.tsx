@@ -30,6 +30,7 @@ import FinancePage from "@/features/finance/FinancePage";
 import StaffPage from "@/features/staff/StaffPage";
 import MyShiftsPage from "@/features/staff/MyShiftsPage";
 import PrecheckAdmin from "@/features/online/PrecheckAdmin";
+import RatesPage from "@/features/rates/RatesPage";
 
 // Demo modules (still showing sample data)
 import DigitalConcierge from "@/components/DigitalConcierge";
@@ -51,6 +52,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   staff: StaffPage,
   "my-shifts": MyShiftsPage,
   "online-checkin": PrecheckAdmin,
+  rates: RatesPage,
   online: OnlinePage,
   concierge: DigitalConcierge,
   finance: FinancePage,

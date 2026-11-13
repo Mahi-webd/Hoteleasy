@@ -76,7 +76,7 @@ export const usePublicHotel = (slug: string) =>
     staleTime: 60_000,
   });
 
-export interface Offer { room_type_id: string; name: string; available: number; fits: boolean; nights: number; rate: number; total: number }
+export interface Offer { room_type_id: string; name: string; available: number; fits: boolean; nights: number; rate: number; total: number; uniform?: boolean; seasons?: string[]; restriction?: string | null }
 
 export const fetchAvailability = async (slug: string, checkIn: string, checkOut: string, guests: number) =>
   unwrap(await supabase.rpc("public_availability", { _slug: slug, _check_in: checkIn, _check_out: checkOut, _guests: guests })) as Offer[];

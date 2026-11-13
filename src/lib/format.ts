@@ -152,6 +152,11 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("rate_seasons_dates_ck")) return "The last night must be on or after the first night (and within about two years).";
+  if (msg.includes("rate_seasons_weekdays_ck")) return "Choose at least one night of the week.";
+  if (msg.includes("rate_seasons_adjust_pct_check")) return "The % change must be between -90% and +500%.";
+  if (msg.includes("email_settings_app_url_check")) return "The link address must start with https://";
+  if (msg.includes("email_settings_reply_to_check")) return "Enter a valid reply-to email address.";
   if (msg.includes("prechecks_signature_check")) return "The signature is too large; please clear it and sign again.";
   if (msg.includes("hotels_house_rules_check")) return "Please keep the house rules under 4,000 characters.";
   if (msg.includes("payroll_rates_hotel_id_effective_from_key")) return "There are already rates starting on that date.";

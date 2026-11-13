@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, Crown, Search, UserPlus, X } from "lucide-react";
+import { AlertTriangle, CalendarRange, Crown, Search, UserPlus, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { useStayQuote } from "@/hooks/useRates";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,9 @@ export const ReservationDialog = ({
   const [typeId, setTypeId] = useState(reservation?.room_type_id ?? defaults?.room_type_id ?? "");
   const [roomId, setRoomId] = useState<string>(reservation?.room_id ?? defaults?.room_id ?? NO_ROOM);
   const [rate, setRate] = useState<string>(reservation ? String(reservation.rate_per_night) : "");
+  // Nightly prices from the season rules; null when one rate applies to every night.
+  const [nightly, setNightly] = useState<Record<string, number> | null>(reservation?.nightly_rates ?? null);
+  const [manualRate, setManualRate] = useState(false);
   const [adults, setAdults] = useState(reservation?.adults ?? 1);
   const [children, setChildren] = useState(reservation?.children ?? 0);
   const [source, setSource] = useState<BookingSource>(reservation?.source ?? "walk_in");
@@ -52,17 +57,23 @@ export const ReservationDialog = ({
   }, [types.data, typeId]);
 
   const type = types.data?.find((t) => t.id === typeId);
-  // Default the rate from the room type unless staff typed one.
-  useEffect(() => {
-    if (type && !isEdit && rate === "") setRate(String(type.base_rate));
-  }, [type, isEdit, rate]);
-
   const validDates = checkOut > checkIn;
+  // Price the stay from the season rules: always for new bookings, and for edits once the dates or room type change.
+  const stayChanged = !isEdit || checkIn !== reservation.check_in || checkOut !== reservation.check_out || typeId !== reservation.room_type_id;
+  const quote = useStayQuote(typeId, checkIn, checkOut, validDates && stayChanged);
+  useEffect(() => {
+    if (!quote.data || manualRate || !stayChanged) return;
+    setRate(String(quote.data.average));
+    setNightly(quote.data.uniform ? null : Object.fromEntries(quote.data.nights.map((n) => [n.date, Number(n.rate)])));
+  }, [quote.data, manualRate, stayChanged]);
+
   const nights = validDates ? nightsBetween(checkIn, checkOut) : 0;
   const available = useAvailableRooms(checkIn, checkOut, typeId, reservation?.id);
   const availableIds = useMemo(() => new Set(available.data?.map((r) => r.id)), [available.data]);
   const roomStillFree = roomId === NO_ROOM || availableIds.has(roomId) || available.isLoading;
-  const total = nights * Number(rate || 0);
+  const nightlyTotal = nightly ? Object.entries(nightly).filter(([d]) => d >= checkIn && d < checkOut).reduce((a, [, v]) => a + Number(v), 0) : null;
+  const total = nightly && nightlyTotal !== null ? nightlyTotal + Math.max(0, nights - Object.keys(nightly).filter((d) => d >= checkIn && d < checkOut).length) * Number(rate || 0) : nights * Number(rate || 0);
+  const q = stayChanged ? quote.data : undefined;
   const overCapacity = type && adults + children > type.max_occupancy;
 
   useEffect(() => {
@@ -85,6 +96,7 @@ export const ReservationDialog = ({
         adults,
         children,
         rate_per_night: Number(rate),
+        nightly_rates: nightly,
         source,
         special_requests: String(f.get("special_requests") ?? "").trim() || null,
       },
@@ -208,8 +220,10 @@ export const ReservationDialog = ({
 
           <div className="grid md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Rate per night ({hotel.currency})</Label>
-              <Input type="number" min={0} step="50" value={rate} onChange={(e) => setRate(e.target.value)} required />
+              <Label htmlFor="res-rate">{nightly ? `Average rate per night (${hotel.currency})` : `Rate per night (${hotel.currency})`}</Label>
+              <Input id="res-rate" type="number" min={0} step="50" value={rate} required
+                onChange={(e) => { setRate(e.target.value); setManualRate(true); setNightly(null); }} />
+              {manualRate && <button type="button" className="text-xs text-blue-700 underline" onClick={() => setManualRate(false)}>Use season prices</button>}
             </div>
             <div className="space-y-2">
               <Label>Booked via</Label>
@@ -227,11 +241,26 @@ export const ReservationDialog = ({
             <Textarea name="special_requests" defaultValue={reservation?.special_requests ?? ""} rows={2} placeholder="e.g. Late arrival, extra bed, airport pickup" />
           </div>
 
-          <div className="rounded-lg bg-blue-50 dark:bg-slate-800 p-3 flex items-center justify-between">
-            <span className="text-sm text-slate-600 dark:text-slate-300">
-              {nights} night{nights === 1 ? "" : "s"} × {formatMoney(Number(rate || 0), hotel.currency)}
-            </span>
-            <span className="text-lg font-bold">{formatMoney(total, hotel.currency)}</span>
+          {q && !manualRate && (q.closed_to_arrival || q.min_nights > nights) && (
+            <p className="text-sm text-amber-700 flex items-center gap-1"><AlertTriangle className="h-4 w-4 shrink-0" />
+              {q.closed_to_arrival ? `${q.closed_season}: no arrivals on this date for online bookings. ` : ""}
+              {q.min_nights > nights ? `Minimum stay is ${q.min_nights} nights for these dates (online bookings must follow it).` : ""}</p>
+          )}
+          <div className="rounded-lg bg-blue-50 dark:bg-slate-800 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                {nightly ? `${nights} night${nights === 1 ? "" : "s"}, priced night by night` : `${nights} night${nights === 1 ? "" : "s"} × ${formatMoney(Number(rate || 0), hotel.currency)}`}
+                {q && !manualRate && q.seasons.length > 0 && <span className="ml-1 inline-flex items-center gap-1 text-xs"><CalendarRange className="h-3 w-3" />{q.seasons.join(", ")}</span>}
+              </span>
+              <span className="text-lg font-bold" data-testid="res-total">{formatMoney(total, hotel.currency)}</span>
+            </div>
+            {nightly && (
+              <div className="flex flex-wrap gap-1 text-xs">
+                {Object.entries(nightly).filter(([d]) => d >= checkIn && d < checkOut).sort().map(([d, v]) => (
+                  <span key={d} className="rounded bg-white dark:bg-slate-900 border px-1.5 py-0.5">{format(parseISO(d), "EEE d")}: {formatMoney(Number(v), "")}</span>
+                ))}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
