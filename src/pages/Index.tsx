@@ -27,11 +27,12 @@ import ReportsPage from "@/features/reports/ReportsPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import OnlinePage from "@/features/online/OnlinePage";
 import FinancePage from "@/features/finance/FinancePage";
+import StaffPage from "@/features/staff/StaffPage";
+import MyShiftsPage from "@/features/staff/MyShiftsPage";
 
 // Demo modules (still showing sample data)
 import GuestMobileCheckin from "@/components/GuestMobileCheckin";
 import DigitalConcierge from "@/components/DigitalConcierge";
-import StaffScheduling from "@/components/StaffScheduling";
 import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
 
@@ -47,7 +48,8 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   reports: ReportsPage,
   housekeeping: HousekeepingPage,
   maintenance: MaintenancePage,
-  staff: StaffScheduling,
+  staff: StaffPage,
+  "my-shifts": MyShiftsPage,
   "mobile-checkin": GuestMobileCheckin,
   online: OnlinePage,
   concierge: DigitalConcierge,

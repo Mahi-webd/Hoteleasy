@@ -52,12 +52,13 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
       { key: "maintenance", label: "Maintenance", icon: Wrench },
       { key: "inventory", label: "Inventory", icon: Package, roles: ["owner", "manager", "storekeeper", "accountant", "restaurant"] },
+      { key: "staff", label: "Staff & rota", icon: Users, roles: ["owner", "manager", "front_desk", "accountant"] },
+      { key: "my-shifts", label: "My shifts", icon: Clock },
     ],
   },
   {
     title: "Coming next",
     items: [
-      { key: "staff", label: "Staff Scheduling", icon: Clock, roles: MGMT, preview: true },
       { key: "mobile-checkin", label: "Mobile Check-in", icon: Smartphone, roles: FRONT, preview: true },
       { key: "concierge", label: "Digital Concierge", icon: MessageCircle, roles: FRONT, preview: true },
       { key: "quick-actions", label: "Quick Actions", icon: Zap, roles: MGMT, preview: true },

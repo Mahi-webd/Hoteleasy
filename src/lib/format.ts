@@ -152,6 +152,11 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("folio_charges_discount_sign")) return "Prices must be positive (use the Discount type to reduce a bill).";
   if (msg.includes("NO_SHIFT:")) return "Open your cash shift first (POS → Shift).";
   if (msg.includes("pos_orders_one_open_per_table")) return "That table already has an open bill.";
+  if (msg.includes("time_entries_one_open")) return "Already clocked in.";
+  if (msg.includes("staff_hotel_id_user_id_key")) return "That login is already linked to another staff member.";
+  if (msg.includes("shift_templates_hotel_id_name_key")) return "A shift type with that name already exists.";
+  if (msg.includes("leave_requests_check")) return "Check the dates: the last day must be on or after the first, and at most 120 days later.";
+  if (msg.includes("shifts_check")) return "A shift can be at most 16 hours long.";
   if (msg.includes("expenses_one_bill_per_receipt")) return "There is already a bill for this delivery.";
   if (msg.includes("expenses_check2")) return "Give a reason for voiding this expense.";
   if (msg.includes("expenses_check1")) return "Choose how and when it was paid.";
@@ -217,4 +222,20 @@ export const EXPENSE_GROUPS: Record<import("./db-types").ExpenseGroup, string> =
 };
 export const EXPENSE_METHODS: Record<import("./db-types").ExpenseMethod, string> = {
   cash: "Cash", mpesa: "M-Pesa", bank_transfer: "Bank transfer", card: "Card", cheque: "Cheque", other: "Other",
+};
+
+// ---------------------------------------------------------------- staff
+export const DEPARTMENTS = ["Management", "Front office", "Housekeeping", "Laundry", "Kitchen", "Restaurant & bar", "Maintenance", "Security", "Grounds", "Stores", "Accounts"];
+export const LEAVE_KINDS: Record<import("./db-types").LeaveKind, string> = {
+  annual: "Annual leave", sick: "Sick leave", maternity: "Maternity leave", paternity: "Paternity leave",
+  compassionate: "Compassionate leave", unpaid: "Unpaid leave", off: "Day off",
+};
+export const EMPLOYMENT: Record<import("./db-types").Employment, string> = { permanent: "Permanent", contract: "Contract", casual: "Casual" };
+export const SHIFT_COLORS: Record<string, string> = {
+  blue: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800",
+  green: "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800",
+  amber: "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800",
+  purple: "bg-violet-100 text-violet-900 border-violet-300 dark:bg-violet-950 dark:text-violet-100 dark:border-violet-800",
+  rose: "bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-800",
+  slate: "bg-slate-100 text-slate-900 border-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600",
 };

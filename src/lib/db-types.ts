@@ -426,3 +426,30 @@ export interface PnlReport {
   paid_out: { method: ExpenseMethod; amount: number; count: number }[];
   payables: { total: number; count: number; overdue: number; due_7: number; later: number };
 }
+
+// ---------------------------------------------------------------- staff & rota
+export type Employment = "permanent" | "contract" | "casual";
+export type LeaveKind = "annual" | "sick" | "maternity" | "paternity" | "compassionate" | "unpaid" | "off";
+export interface Staff {
+  id: string; hotel_id: string; full_name: string; department: string; job_title: string | null; phone: string | null;
+  employment: Employment; user_id: string | null; active: boolean; started_on: string | null; notes: string | null;
+}
+export interface StaffPay { staff_id: string; hotel_id: string; pay_type: "monthly" | "daily" | "hourly"; rate: number }
+export interface ShiftTemplate { id: string; hotel_id: string; name: string; starts: string; ends: string; break_minutes: number; color: string; sort: number }
+export interface Shift {
+  id: string; hotel_id: string; staff_id: string; starts_at: string; ends_at: string; break_minutes: number; template_id: string | null;
+  department: string | null; note: string | null; published: boolean;
+}
+export interface LeaveRequest {
+  id: string; hotel_id: string; staff_id: string; kind: LeaveKind; from_date: string; to_date: string;
+  status: "requested" | "approved" | "refused" | "cancelled"; note: string | null; decided_at: string | null; created_at: string;
+}
+export interface TimeEntry {
+  id: string; hotel_id: string; staff_id: string; shift_id: string | null; clock_in: string; clock_out: string | null;
+  source: "self" | "supervisor"; note: string | null; edited_by: string | null;
+}
+export interface HoursRow {
+  staff_id: string; name: string; department: string; employment: Employment; shifts: number; scheduled_hours: number; worked_days: number;
+  worked_hours: number; open: number; late: number; absent: number; leave_days: number; sick_days: number; overtime_hours: number;
+  pay_type: StaffPay["pay_type"] | null; rate: number | null; pay_estimate: number | null;
+}
