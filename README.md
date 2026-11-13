@@ -55,6 +55,10 @@ staff only see their own hotel's data.
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 
+## Still to do
+
+- [ ] **Email sending setup**: waiting for the domain. Do steps 1–4 of "Sending guest emails" below, *then* switch emails on per hotel. Until then keep "Send guest emails" off in every hotel.
+
 ## Setup
 
 ### 1. Supabase
