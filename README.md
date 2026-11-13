@@ -120,4 +120,4 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 8. ~~Online booking & guest feedback~~ (next: online deposits by M-Pesa, booking emails, seasonal rates)
 9. ~~Expenses & profit~~ (next: partial bill payments, petty cash, attachments)
 10. ~~Staff scheduling & attendance~~ (next: PAYE/NSSF/SHIF payslips, shift swaps)
-11. Mobile check-in, inventory, channel managers (Booking.com etc.)
+11. Mobile check-in, channel managers (Booking.com etc.)
