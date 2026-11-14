@@ -42,6 +42,7 @@ staff only see their own hotel's data.
 | Company accounts (city ledger): companies with KRA PIN, negotiated rates (fixed per room type or % off), credit limits and payment terms; bookings billed to the company (room only or everything) with LPO number; at check-out the company's share moves to its account and the invoice is addressed to the company; payments, credit notes, ageing (current / 30 / 60 / 90 / 90+), printable statements, ageing CSV | ✅ Live |
 | Guest requests: printable QR code per room; guests confirm their last name and ask for towels, cleaning, repairs, wake-up calls, taxis, late check-out or room service from their phone, with live status and replies; requests go to housekeeping, maintenance, front desk or the restaurant (repairs open a maintenance ticket); staff board with sound alerts; "good to know" info for guests; links stop working at check-out | ✅ Live |
 | Owner overview & alerts: every hotel you own or manage on one page (occupancy tonight, arrivals/departures, revenue today and month to date vs last month, collected, owed, bills due, next 7 nights); live alerts by job (overstays, no-shows, rooms not ready, unanswered guest requests, open bills and cash shifts, low stock, guest and company debts, overdue bills, payroll and statutory deadlines, leave requests, failed emails) in a header bell and on the dashboard | ✅ Live |
+| Night audit & day close: checks before closing (arrivals not checked in, guests past check-out, missing room nights, open bills and cash shifts), one-click no-show, close the day to lock its payments, charges and bills, printable daily manager's report (occupancy, ADR, RevPAR, revenue, money taken by method, guest and company balances, cash shifts, notes), reopen the latest day with a reason, alert when yesterday is not closed | ✅ Live |
 
 ### Roles
 
@@ -87,6 +88,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    16. `20261114220000_board_pos.sql`
    17. `20261115090000_guest_requests.sql`
    18. `20261115120000_alerts.sql`
+   19. `20261115150000_night_audit.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -165,4 +167,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 15. ~~Meal plans & packages~~, including board meals at the POS
 16. ~~Guest requests & concierge~~
 17. ~~Owner overview & alerts~~ (next: daily summary email once email sending is set up)
+18. ~~Night audit & day close~~ (next: email the manager's report to the owner once email sending is set up)
 18. M-Pesa STK push, channel managers (Booking.com etc.)

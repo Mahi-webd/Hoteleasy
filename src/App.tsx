@@ -20,6 +20,7 @@ import RegCardPage from "./features/online/RegCardPage";
 import StatementPage from "./features/companies/StatementPage";
 import { GuestStayPage, RoomQrPage } from "./features/public/GuestStayPage";
 import RoomQrSheet from "./features/requests/RoomQrSheet";
+import DayReportPage from "./features/audit/DayReportPage";
 import BookingPage from "./features/public/BookingPage";
 import FeedbackPage from "./features/public/FeedbackPage";
 
@@ -79,6 +80,7 @@ const App = () => (
                   <Route path="/" element={<Protected />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
+                  <Route path="/day-report/:day" element={<Protected><DayReportPage /></Protected>} />
                   <Route path="/room-qr" element={<Protected><RoomQrSheet /></Protected>} />
                   <Route path="/statement/:id" element={<Protected><StatementPage /></Protected>} />
                   <Route path="/reg-card/:id" element={<Protected><RegCardPage /></Protected>} />

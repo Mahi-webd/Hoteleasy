@@ -305,7 +305,7 @@ export const useCancelReservation = () =>
   useAction(
     async ({ id, noShow }: { id: string; noShow?: boolean }) =>
       unwrap(await supabase.rpc("cancel_reservation", { _reservation_id: id, _no_show: !!noShow })),
-    { invalidate: ["reservations", "rooms", "dashboard", "activity"], success: (a) => (a.noShow ? "Marked as no-show" : "Reservation cancelled") },
+    { invalidate: ["reservations", "rooms", "dashboard", "activity", "audit", "alerts"], success: (a) => (a.noShow ? "Marked as no-show" : "Reservation cancelled") },
   );
 
 // ---------------------------------------------------------------- dashboard

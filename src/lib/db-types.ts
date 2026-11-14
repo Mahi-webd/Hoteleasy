@@ -580,3 +580,18 @@ export interface OwnerHotel {
   mtd: Kpis; last_month: Kpis; debtors: number; bills_due: number; next_7_days: { date: string; occupied: number }[];
   alerts: HotelAlert[]; alerts_high: number;
 }
+
+// ---------------------------------------------------------------- night audit
+export interface DayCheckItem { id: string; code?: string; guest?: string; room?: string | null; number?: number; total?: number }
+export interface DayCheck { key: string; title: string; detail: string; items?: DayCheckItem[] }
+export interface DayChecks { day: string; last_closed: string | null; today: string; next_to_close: string; blocking: DayCheck[]; warnings: DayCheck[]; can_close: boolean }
+export interface DayReport {
+  day: string; closed: boolean; closed_at?: string; closed_by?: string | null; notes?: string | null;
+  hotel: { name: string; currency: string; city: string | null };
+  kpis: Kpis & { room_nights_available: number; vat: number; levy: number; gross: number; trevpar: number }; mtd: Kpis;
+  rooms: number; out_of_service: number; in_house: number; guests: number; arrivals: number; departures: number; no_shows: number; cancellations: number; new_bookings: number;
+  payments: { method: string; amount: number }[]; pos: { outlet: string; bills: number; sales: number }[];
+  shifts: { opened_at: string; closed_at: string; expected: number | null; counted: number | null; variance: number | null; by: string | null }[];
+  guest_ledger: number; deposits: number; guest_debts: number; city_ledger: number; voids: number;
+}
+export interface BusinessDay { hotel_id: string; day: string; closed_at: string; closed_by: string | null; summary: DayReport; notes: string | null }

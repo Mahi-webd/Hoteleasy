@@ -30,6 +30,7 @@ const ACTIVITY_DOT: Record<string, string> = {
   expense: "bg-rose-500",
   precheck: "bg-cyan-500",
   request: "bg-orange-500",
+  audit: "bg-indigo-500",
 };
 
 const useClock = () => {

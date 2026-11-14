@@ -34,6 +34,7 @@ import RatesPage from "@/features/rates/RatesPage";
 import CompaniesPage from "@/features/companies/CompaniesPage";
 import RequestsPage from "@/features/requests/RequestsPage";
 import OwnerOverview from "@/features/owner/OwnerOverview";
+import AuditPage from "@/features/audit/AuditPage";
 import { AlertsBell } from "@/features/owner/Alerts";
 
 // Demo modules (still showing sample data)
@@ -59,6 +60,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   requests: RequestsPage,
   finance: FinancePage,
   owner: OwnerOverview,
+  audit: AuditPage,
   inventory: InventoryPage,
 };
 
