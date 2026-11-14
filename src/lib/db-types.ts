@@ -56,6 +56,7 @@ export interface Hotel {
   invoice_prefix: string;
   next_invoice_number: number;
   house_rules?: string | null;
+  guest_info?: string | null;
   mpesa_paybill: string | null;
   mpesa_account: string | null;
   mpesa_till: string | null;
@@ -556,3 +557,16 @@ export const mealsOf = (p: Pick<RatePlan, "breakfast" | "lunch" | "dinner">) =>
 /** What a plan adds to a stay. */
 export const planPrice = (p: Pick<RatePlan, "adult_night" | "child_night" | "adult_stay" | "child_stay">, nights: number, adults: number, children: number) =>
   (Number(p.adult_night) * adults + Number(p.child_night) * children) * nights + Number(p.adult_stay) * adults + Number(p.child_stay) * children;
+
+// ---------------------------------------------------------------- guest requests
+export type RequestDept = "housekeeping" | "maintenance" | "front_desk" | "restaurant";
+export type RequestStatus = "new" | "acknowledged" | "done" | "cancelled";
+export interface RequestType { id: string; hotel_id: string; label: string; department: RequestDept; icon: string; ask_time: boolean; ask_details: boolean; active: boolean; sort: number }
+export interface GuestRequest {
+  id: string; hotel_id: string; reservation_id: string; room_id: string | null; type_id: string | null; label: string; department: RequestDept;
+  details: string | null; wanted_at: string | null; status: RequestStatus; reply: string | null; ticket_id: string | null; from_guest: boolean;
+  created_at: string; acknowledged_at: string | null; done_at: string | null;
+  rooms?: { room_number: string } | null;
+  reservations?: { code: string; check_out: string; guests: { first_name: string; last_name: string; phone: string | null } | null } | null;
+}
+export const DEPT_LABEL: Record<RequestDept, string> = { housekeeping: "Housekeeping", maintenance: "Maintenance", front_desk: "Front desk", restaurant: "Restaurant" };

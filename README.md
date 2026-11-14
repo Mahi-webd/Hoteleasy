@@ -40,7 +40,8 @@ staff only see their own hotel's data.
 | Guest emails: booking confirmation, pre-arrival (with the online check-in link), thank-you with the review link, and cancellation, sent automatically through Resend; email log with previews and retry; test emails | ✅ Live (needs the one-time email setup below) |
 | Meal plans & packages: bed & breakfast, half board, full board or packages (e.g. safari with game drives), priced per adult/child per night and per stay, limited to room types if needed; meals posted to the bill night by night as food; plan choice on the booking page and at the desk; daily meal counts for the kitchen; at the restaurant POS a bill can be marked as a guest's board meal so food is covered up to the plan's allowance per person (drinks and extras still charged, no double-counted revenue) | ✅ Live |
 | Company accounts (city ledger): companies with KRA PIN, negotiated rates (fixed per room type or % off), credit limits and payment terms; bookings billed to the company (room only or everything) with LPO number; at check-out the company's share moves to its account and the invoice is addressed to the company; payments, credit notes, ageing (current / 30 / 60 / 90 / 90+), printable statements, ageing CSV | ✅ Live |
-| Digital concierge, quick actions, task automation | 🟡 Demo screens (marked "demo"), next phases |
+| Guest requests: printable QR code per room; guests confirm their last name and ask for towels, cleaning, repairs, wake-up calls, taxis, late check-out or room service from their phone, with live status and replies; requests go to housekeeping, maintenance, front desk or the restaurant (repairs open a maintenance ticket); staff board with sound alerts; "good to know" info for guests; links stop working at check-out | ✅ Live |
+| Quick actions, task automation | 🟡 Demo screens (marked "demo"), next phases |
 
 ### Roles
 
@@ -84,6 +85,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    14. `20261114140000_companies.sql`
    15. `20261114200000_rate_plans.sql`
    16. `20261114220000_board_pos.sql`
+   17. `20261115090000_guest_requests.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -160,4 +162,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 13. ~~Seasonal rates & booking emails~~ (next: SMS/WhatsApp messages, rate plans such as B&B vs half board)
 14. ~~Corporate accounts~~ (next: emailing statements, company booking portal)
 15. ~~Meal plans & packages~~, including board meals at the POS
-16. M-Pesa STK push, channel managers (Booking.com etc.)
+16. ~~Guest requests & concierge~~
+17. M-Pesa STK push, channel managers (Booking.com etc.)

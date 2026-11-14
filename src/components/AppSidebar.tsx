@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart3, Bot, Calendar, Clock, CreditCard, Home, MapPin, MessageCircle, Package, Settings, ShoppingCart,
-  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon, CalendarRange, Building2 } from "lucide-react";
+  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
@@ -26,6 +26,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "dashboard", label: "Dashboard", icon: Home },
       { key: "reservations", label: "Reservations", icon: Calendar },
       { key: "online-checkin", label: "Online check-in", icon: Smartphone, roles: FRONT },
+      { key: "requests", label: "Guest requests", icon: BellRing, roles: ["owner", "manager", "front_desk", "housekeeping", "maintenance", "restaurant"] },
       { key: "rates", label: "Rates & seasons", icon: CalendarRange, roles: [...FRONT, "accountant"] },
       { key: "rooms", label: "Rooms", icon: MapPin },
       { key: "guests", label: "Guests", icon: Users, roles: [...FRONT, "accountant", "restaurant"] },
@@ -61,7 +62,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Coming next",
     items: [
-      { key: "concierge", label: "Digital Concierge", icon: MessageCircle, roles: FRONT, preview: true },
       { key: "quick-actions", label: "Quick Actions", icon: Zap, roles: MGMT, preview: true },
       { key: "task-automation", label: "Task Automation", icon: Bot, roles: MGMT, preview: true },
     ],

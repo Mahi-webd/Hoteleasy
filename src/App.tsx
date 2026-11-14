@@ -18,6 +18,8 @@ import { PayslipPage } from "./features/staff/PayslipPrint";
 import PrecheckPage from "./features/public/PrecheckPage";
 import RegCardPage from "./features/online/RegCardPage";
 import StatementPage from "./features/companies/StatementPage";
+import { GuestStayPage, RoomQrPage } from "./features/public/GuestStayPage";
+import RoomQrSheet from "./features/requests/RoomQrSheet";
 import BookingPage from "./features/public/BookingPage";
 import FeedbackPage from "./features/public/FeedbackPage";
 
@@ -72,9 +74,12 @@ const App = () => (
                   <Route path="/book/:slug" element={<BookingPage />} />
                   <Route path="/feedback/:token" element={<FeedbackPage />} />
                   <Route path="/checkin/:token" element={<PrecheckPage />} />
+                  <Route path="/r/:token" element={<RoomQrPage />} />
+                  <Route path="/stay/:key" element={<GuestStayPage />} />
                   <Route path="/" element={<Protected />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
+                  <Route path="/room-qr" element={<Protected><RoomQrSheet /></Protected>} />
                   <Route path="/statement/:id" element={<Protected><StatementPage /></Protected>} />
                   <Route path="/reg-card/:id" element={<Protected><RegCardPage /></Protected>} />
                   <Route path="/payslips/:runId" element={<Protected><PayslipPage /></Protected>} />

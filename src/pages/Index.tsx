@@ -32,9 +32,9 @@ import MyShiftsPage from "@/features/staff/MyShiftsPage";
 import PrecheckAdmin from "@/features/online/PrecheckAdmin";
 import RatesPage from "@/features/rates/RatesPage";
 import CompaniesPage from "@/features/companies/CompaniesPage";
+import RequestsPage from "@/features/requests/RequestsPage";
 
 // Demo modules (still showing sample data)
-import DigitalConcierge from "@/components/DigitalConcierge";
 import QuickActionsDashboard from "@/components/QuickActionsDashboard";
 import TaskAutomation from "@/components/TaskAutomation";
 
@@ -56,7 +56,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   rates: RatesPage,
   companies: CompaniesPage,
   online: OnlinePage,
-  concierge: DigitalConcierge,
+  requests: RequestsPage,
   finance: FinancePage,
   "quick-actions": QuickActionsDashboard,
   "task-automation": TaskAutomation,

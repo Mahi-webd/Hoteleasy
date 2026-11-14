@@ -319,6 +319,7 @@ export const useActivity = () => {
           .from("activity_log")
           .select("id, kind, message, created_at")
           .eq("hotel_id", hotel.id)
+          .neq("kind", "guest_page_fail")
           .order("created_at", { ascending: false })
           .limit(12),
       ) as ActivityItem[],

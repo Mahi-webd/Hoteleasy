@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, Smartphone, Receipt, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
+import { AlertTriangle, BellRing, CalendarDays, Smartphone, Receipt, ChevronLeft, ChevronRight, Crown, LogIn, LogOut, MoreVertical, Pencil, Plus, Search, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,10 @@ import { RES_STATUS, ROOM_STATUS, SOURCE_LABELS, addDays, formatMoney, formatSho
 import type { Reservation, ReservationStatus } from "@/lib/db-types";
 import { ReservationDialog } from "./ReservationDialog";
 import { usePrecheckShare } from "../online/precheckShare";
+import { stayLink } from "@/hooks/useRequests";
+import { toast } from "sonner";
+import { friendlyError } from "@/lib/format";
+import { waNumber } from "@/hooks/useOnline";
 
 type View = "arrivals" | "inhouse" | "departures" | "upcoming" | "all" | "calendar";
 
@@ -235,6 +239,16 @@ const ReservationRow = ({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" />{r.status === "checked_in" ? "Extend / edit stay" : "Edit"}</DropdownMenuItem>
               {onBill && <DropdownMenuItem onClick={() => onBill()}><Receipt className="mr-2 h-4 w-4" />{r.status === "confirmed" ? "Bill / take deposit" : "Bill"}</DropdownMenuItem>}
+              {r.status === "checked_in" && (
+                <DropdownMenuItem onClick={async () => {
+                  try {
+                    const url = await stayLink(r.id);
+                    const msg = `Welcome, ${r.guests?.first_name ?? ""}! Need towels, a taxi or anything else during your stay? Ask here: ${url}`;
+                    if (r.guests?.phone) window.open(`https://wa.me/${waNumber(r.guests.phone)}?text=${encodeURIComponent(msg)}`, "_blank");
+                    else { await navigator.clipboard.writeText(url); toast.success("Guest page link copied"); }
+                  } catch (e) { toast.error(friendlyError(e)); }
+                }}><BellRing className="mr-2 h-4 w-4" />{r.guests?.phone ? "Send guest page (WhatsApp)" : "Copy guest page link"}</DropdownMenuItem>
+              )}
               {r.status === "confirmed" && (
                 <>
                   <DropdownMenuItem disabled={!r.guests?.phone} onClick={() => share(r, "wa")}><Smartphone className="mr-2 h-4 w-4" />Send online check-in (WhatsApp)</DropdownMenuItem>
