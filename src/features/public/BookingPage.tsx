@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   bookRoom, fetchAvailability, findPrecheck, lookupBooking, usePublicHotel, waNumber,
-  type BookingLookup, type BookingResult, type Offer,
+  type BookingLookup, type BookingResult, type Offer, type OfferPlan,
 } from "@/hooks/useOnline";
 import { addDays, formatMoney, friendlyError } from "@/lib/format";
+import { mealsOf, planPrice } from "@/lib/db-types";
 import type { PublicHotel, PublicRoomType } from "@/lib/db-types";
 
 const nice = (d: string) => format(parseISO(d), "EEE d MMM yyyy");
@@ -98,7 +99,7 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
-  const [chosen, setChosen] = useState<(Offer & { rt: PublicRoomType }) | null>(null);
+  const [chosen, setChosen] = useState<(Offer & { rt: PublicRoomType; plan: OfferPlan | null; grand: number }) | null>(null);
   const [done, setDone] = useState<BookingResult | null>(null);
   const types = new Map(h.room_types.map((t) => [t.id, t]));
 
@@ -142,8 +143,29 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
             const rt = types.get(o.room_type_id)!;
             const ok = o.available > 0 && o.fits;
             return (
-              <RoomCard key={o.room_type_id} rt={rt} h={h}>
+              <RoomCard key={o.room_type_id} rt={rt} h={h} extra={!!o.plans?.length && (
+
+                  <div className="border-t p-3 space-y-2">
+                    {[null, ...o.plans].map((p) => {
+                      const grand = o.total + (p ? planPrice(p, o.nights, adults, children) : 0);
+                      const short = !!p?.too_short;
+                      return (
+                        <div key={p?.id ?? "ro"} className="flex flex-wrap items-center gap-3 rounded-md border px-3 py-2">
+                          <div className="flex-1 min-w-[180px]">
+                            <div className="font-medium text-sm">{p ? p.name : "Room only"}</div>
+                            <div className="text-xs text-slate-500">{p ? mealsOf(p) : "no meals"}{p?.stay_label && Number(p.adult_stay) > 0 ? ` · includes ${p.stay_label}` : ""}{short ? ` · min ${p!.min_nights} nights` : ""}</div>
+                            {p?.description && <div className="text-xs text-slate-500">{p.description}</div>}
+                          </div>
+                          <div className="font-semibold tabular-nums">{formatMoney(grand, h.currency)}</div>
+                          <Button size="sm" disabled={!ok || short} onClick={() => setChosen({ ...o, rt, plan: p, grand })}
+                            aria-label={`Choose ${rt.name}${p ? `, ${p.name}` : ", room only"}`}>Choose</Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}>
                 <div className="text-right space-y-1">
+                  {!!o.plans?.length && <div className="text-xs text-slate-500">Room only from</div>}
                   <div className="text-2xl font-bold">{formatMoney(o.total, h.currency)}</div>
                   <div className="text-xs text-slate-500">{o.uniform === false ? `avg ${formatMoney(o.rate, h.currency)}` : formatMoney(o.rate, h.currency)} × {o.nights} night{o.nights === 1 ? "" : "s"} · {h.prices_include_tax ? "taxes included" : "plus taxes"}</div>
                   {o.seasons && o.seasons.length > 0 && <div className="text-xs text-slate-500">{o.seasons.join(", ")}</div>}
@@ -151,7 +173,7 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
                     : o.restriction ? <Badge variant="outline" className="text-amber-800 border-amber-300 whitespace-normal">{o.restriction}</Badge>
                     : o.available === 0 ? <Badge variant="outline" className="text-red-700 border-red-200">Sold out</Badge>
                     : o.available <= 2 && <Badge variant="outline" className="text-amber-800 border-amber-300">Only {o.available} left</Badge>}
-                  <div><Button disabled={!ok} onClick={() => setChosen({ ...o, rt })} aria-label={`Choose ${rt.name}`}>Choose</Button></div>
+                  {!o.plans?.length && <div><Button disabled={!ok} onClick={() => setChosen({ ...o, rt, plan: null, grand: o.total })} aria-label={`Choose ${rt.name}`}>Choose</Button></div>}
                 </div>
               </RoomCard>
             );
@@ -170,7 +192,7 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
   );
 };
 
-const RoomCard = ({ rt, h, children }: { rt: PublicRoomType; h: PublicHotel; children?: React.ReactNode }) => (
+const RoomCard = ({ rt, h, children, extra }: { rt: PublicRoomType; h: PublicHotel; children?: React.ReactNode; extra?: React.ReactNode }) => (
   <Card className="overflow-hidden">
     <div className="flex flex-col sm:flex-row">
       {rt.photo_url ? <img src={rt.photo_url} alt={rt.name} className="sm:w-56 h-40 sm:h-auto object-cover" />
@@ -187,6 +209,7 @@ const RoomCard = ({ rt, h, children }: { rt: PublicRoomType; h: PublicHotel; chi
         )}
       </CardContent>
     </div>
+    {extra}
   </Card>
 );
 
@@ -199,7 +222,7 @@ const RoomList = ({ h }: { h: PublicHotel }) => (
 );
 
 const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack, onDone, onSoldOut }: {
-  h: PublicHotel; slug: string; offer: Offer & { rt: PublicRoomType }; checkIn: string; checkOut: string; adults: number; children: number;
+  h: PublicHotel; slug: string; offer: Offer & { rt: PublicRoomType; plan: OfferPlan | null; grand: number }; checkIn: string; checkOut: string; adults: number; children: number;
   onBack: () => void; onDone: (r: BookingResult) => void; onSoldOut: () => void;
 }) => {
   const [busy, setBusy] = useState(false);
@@ -211,7 +234,7 @@ const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack
     setBusy(true); setError("");
     try {
       onDone(await bookRoom({
-        slug, roomTypeId: offer.room_type_id, checkIn, checkOut, adults, children,
+        slug, roomTypeId: offer.room_type_id, checkIn, checkOut, adults, children, ratePlanId: offer.plan?.id ?? null,
         firstName: v("first"), lastName: v("last"), email: v("email"), phone: v("phone"), nationality: v("nat"), requests: v("req"), website: v("website"),
       }));
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -226,10 +249,10 @@ const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack
       <CardContent className="p-5 space-y-4">
         <div className="flex flex-wrap justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold">{offer.rt.name}</h2>
+            <h2 className="text-lg font-semibold">{offer.rt.name}{offer.plan ? `, ${offer.plan.name}` : offer.plans?.length ? ", room only" : ""}</h2>
             <p className="text-sm text-slate-600">{nice(checkIn)} → {nice(checkOut)} · {offer.nights} night{offer.nights === 1 ? "" : "s"} · {adults} adult{adults === 1 ? "" : "s"}{children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}</p>
           </div>
-          <div className="text-right"><div className="text-2xl font-bold">{formatMoney(offer.total, h.currency)}</div><div className="text-xs text-slate-500">{h.prices_include_tax ? "taxes included" : "plus taxes"} · pay at the hotel</div></div>
+          <div className="text-right"><div className="text-2xl font-bold">{formatMoney(offer.grand, h.currency)}</div><div className="text-xs text-slate-500">{h.prices_include_tax ? "taxes included" : "plus taxes"} · pay at the hotel</div></div>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
@@ -271,6 +294,7 @@ const Confirmation = ({ h, r, slug }: { h: PublicHotel; r: BookingResult; slug: 
       </div>
       <dl className="grid grid-cols-2 gap-y-2 text-sm">
         <dt className="text-slate-500">Room</dt><dd>{r.room_type}</dd>
+        {r.plan && <><dt className="text-slate-500">Meal plan</dt><dd>{r.plan}</dd></>}
         <dt className="text-slate-500">Check-in</dt><dd>{nice(r.check_in)} from {h.checkin_time}</dd>
         <dt className="text-slate-500">Check-out</dt><dd>{nice(r.check_out)} by {h.checkout_time}</dd>
         <dt className="text-slate-500">Total</dt><dd className="font-semibold">{formatMoney(r.total, r.currency)} <span className="font-normal text-slate-500">({r.nights} night{r.nights === 1 ? "" : "s"})</span></dd>

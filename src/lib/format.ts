@@ -146,6 +146,9 @@ export const friendlyError = (err: unknown): string => {
     return "This room type is still used by rooms or reservations.";
   if (msg.includes("violates foreign key") && msg.includes("guests"))
     return "This guest has reservations and can't be deleted.";
+  if (msg.includes("rate_plans_hotel_id_code_key")) return "There is already a plan with that code.";
+  if (msg.includes("rate_plans_code_check")) return "The plan code must be 1–6 letters or numbers, e.g. BB or HB.";
+  if (msg.includes("reservations_rate_plan_id_fkey")) return "Bookings use this plan, so it can't be deleted; switch it off instead.";
   if (msg.includes("CREDIT_LIMIT:")) return msg.replace(/^.*CREDIT_LIMIT:\s*/, "");
   if (msg.includes("companies_kra_pin_check")) return "A KRA PIN is a letter, 9 digits and a letter, e.g. P051234567X.";
   if (msg.includes("companies_hotel_id_name_key")) return "There is already a company with that name.";

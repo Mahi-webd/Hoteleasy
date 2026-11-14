@@ -48,7 +48,7 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
   const unusedNights = useMemo(
     () =>
       departure
-        ? (folio.data?.charges ?? []).filter((c) => c.kind === "room" && !c.voided_at && c.stay_date && c.stay_date >= departure)
+        ? (folio.data?.charges ?? []).filter((c) => (c.kind === "room" || (c.rate_plan_id && c.kind === "food")) && !c.voided_at && c.stay_date && c.stay_date >= departure)
         : [],
     [folio.data, departure],
   );
@@ -58,7 +58,7 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
   // A company-billed stay: what the company takes at check-out (worked out the same way as the database does).
   const billing = folio.data?.billing;
   const companyBilled = !!billing?.company_id && billing.bill_to !== "guest";
-  const roomLeft = (folio.data?.charges ?? []).filter((c) => c.kind === "room" && !c.voided_at && !unusedNights.includes(c)).reduce((a, c) => a + Number(c.amount), 0)
+  const roomLeft = (folio.data?.charges ?? []).filter((c) => (c.kind === "room" || (c.rate_plan_id && c.kind === "food")) && !c.voided_at && !unusedNights.includes(c)).reduce((a, c) => a + Number(c.amount), 0)
     - (folio.data?.transferredTotal ?? 0);
   const companyShare = !companyBilled || dueBeforeCompany <= 0 ? 0
     : billing!.bill_to === "company_all" ? dueBeforeCompany : Math.max(0, Math.min(dueBeforeCompany, roomLeft));

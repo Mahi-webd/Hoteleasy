@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, CalendarRange, Crown, Search, UserPlus, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { useStayQuote } from "@/hooks/useRates";
+import { useRatePlans, useStayQuote } from "@/hooks/useRates";
+import { mealsOf, planPrice } from "@/lib/db-types";
 import { useCompanyAccounts } from "@/hooks/useCompanies";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,8 @@ export const ReservationDialog = ({
   const [billTo, setBillTo] = useState<BillTo>(reservation?.bill_to ?? "guest");
   const [companyRef, setCompanyRef] = useState(reservation?.company_ref ?? "");
   const company = (companies.data ?? []).find((c) => c.id === companyId);
+  const plans = useRatePlans();
+  const [planId, setPlanId] = useState<string>(reservation?.rate_plan_id ?? "");
   const [adults, setAdults] = useState(reservation?.adults ?? 1);
   const [children, setChildren] = useState(reservation?.children ?? 0);
   const [source, setSource] = useState<BookingSource>(reservation?.source ?? "walk_in");
@@ -82,6 +85,12 @@ export const ReservationDialog = ({
   const total = nightly && nightlyTotal !== null ? nightlyTotal + Math.max(0, nights - Object.keys(nightly).filter((d) => d >= checkIn && d < checkOut).length) * Number(rate || 0) : nights * Number(rate || 0);
   const q = stayChanged ? quote.data : undefined;
   const overCapacity = type && adults + children > type.max_occupancy;
+  const plan = (plans.data ?? []).find((p) => p.id === planId);
+  const planOptions = (plans.data ?? []).filter((p) => (p.active || p.id === reservation?.rate_plan_id) && (!p.room_type_ids || p.room_type_ids.includes(typeId)));
+  // Keep the booked meal price unless the plan or the guests change (the database does the same).
+  const planUnchanged = isEdit && planId === (reservation.rate_plan_id ?? "") && adults === reservation.adults && children === reservation.children;
+  const meals = !plan ? 0 : planUnchanged ? Number(reservation.plan_night ?? 0) * nights + Number(reservation.plan_stay ?? 0) : planPrice(plan, nights, adults, children);
+  const planMismatch = !!plan && !!plan.room_type_ids && !plan.room_type_ids.includes(typeId);
 
   useEffect(() => {
     // If the selected room no longer fits the new dates/type, clear it.
@@ -104,6 +113,7 @@ export const ReservationDialog = ({
         children,
         rate_per_night: Number(rate),
         nightly_rates: nightly,
+        rate_plan_id: planId || null,
         company_id: companyId || null,
         bill_to: companyId ? billTo : "guest",
         company_ref: companyId ? companyRef.trim() || null : null,
@@ -227,11 +237,27 @@ export const ReservationDialog = ({
           {overCapacity && (
             <p className="text-sm text-amber-700 flex items-center gap-1"><AlertTriangle className="h-4 w-4" />{type?.name} rooms take up to {type?.max_occupancy} guests.</p>
           )}
+          {(plans.data ?? []).length > 0 && (
+            <div className="space-y-2">
+              <Label>Meal plan</Label>
+              <Select value={planId || "none"} onValueChange={(v) => setPlanId(v === "none" ? "" : v)}>
+                <SelectTrigger aria-label="Meal plan"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Room only</SelectItem>
+                  {planOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} ({mealsOf(p)}) · +{formatMoney(Number(p.adult_night), hotel.currency)} per adult/night{Number(p.adult_stay) > 0 ? ` + ${formatMoney(Number(p.adult_stay), "")} per adult/stay` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {planMismatch && <p className="text-sm text-red-600 flex items-center gap-1"><AlertTriangle className="h-4 w-4" />{plan!.name} isn't offered with {type?.name}.</p>}
+              {plan?.min_nights && nights < plan.min_nights && <p className="text-sm text-amber-700">{plan.name} is normally at least {plan.min_nights} nights.</p>}
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="res-rate">{nightly ? `Average rate per night (${hotel.currency})` : `Rate per night (${hotel.currency})`}</Label>
-              <Input id="res-rate" type="number" min={0} step="50" value={rate} required
+              <Input id="res-rate" type="number" min={0} step="any" value={rate} required
                 onChange={(e) => { setRate(e.target.value); setManualRate(true); setNightly(null); }} />
               {manualRate && <button type="button" className="text-xs text-blue-700 underline" onClick={() => setManualRate(false)}>Use season prices</button>}
             </div>
@@ -301,8 +327,13 @@ export const ReservationDialog = ({
                 {nightly ? `${nights} night${nights === 1 ? "" : "s"}, priced night by night` : `${nights} night${nights === 1 ? "" : "s"} × ${formatMoney(Number(rate || 0), hotel.currency)}`}
                 {q && !manualRate && q.seasons.length > 0 && <span className="ml-1 inline-flex items-center gap-1 text-xs"><CalendarRange className="h-3 w-3" />{q.seasons.join(", ")}</span>}
               </span>
-              <span className="text-lg font-bold" data-testid="res-total">{formatMoney(total, hotel.currency)}</span>
+              <span className="text-lg font-bold" data-testid="res-total">{formatMoney(total + meals, hotel.currency)}</span>
             </div>
+            {plan && meals > 0 && (
+              <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+                <span>Room {formatMoney(total, hotel.currency)} + {plan.name} {formatMoney(meals, hotel.currency)}</span>
+              </div>
+            )}
             {nightly && (
               <div className="flex flex-wrap gap-1 text-xs">
                 {Object.entries(nightly).filter(([d]) => d >= checkIn && d < checkOut).sort().map(([d, v]) => (
@@ -314,7 +345,7 @@ export const ReservationDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={!guest || !typeId || !validDates || !roomStillFree || save.isPending || rate === ""}>
+            <Button type="submit" disabled={!guest || !typeId || !validDates || !roomStillFree || save.isPending || rate === "" || planMismatch}>
               {isEdit ? "Save changes" : "Create reservation"}
             </Button>
           </DialogFooter>

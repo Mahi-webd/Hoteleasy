@@ -32,7 +32,7 @@ export const ShiftPanel = () => {
           </CardHeader>
           <CardContent>
             <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); openShift.mutate(Number(float || 0)); }}>
-              <Input type="number" min={0} step="50" value={float} onChange={(e) => setFloat(e.target.value)} aria-label={`Opening float (${hotel.currency})`} />
+              <Input type="number" min={0} step="any" value={float} onChange={(e) => setFloat(e.target.value)} aria-label={`Opening float (${hotel.currency})`} />
               <Button type="submit" disabled={openShift.isPending}>Open shift</Button>
             </form>
           </CardContent>

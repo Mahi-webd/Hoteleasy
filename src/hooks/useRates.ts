@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
-import type { CalendarRow, EmailSettings, OutboxEmail, RateSeason, StayQuote } from "@/lib/db-types";
+import type { MealCounts, RatePlan, CalendarRow, EmailSettings, OutboxEmail, RateSeason, StayQuote } from "@/lib/db-types";
 
 const unwrap = <T,>({ data, error }: { data: T | null; error: unknown }): T => {
   if (error) throw error;
@@ -95,3 +95,29 @@ export const useRetryEmail = () =>
   useAct(async (id: string) => unwrap(await supabase.rpc("email_retry", { _id: id })), ["emails"], "Email queued to send now");
 export const fetchEmailPreview = async (reservationId: string, kind: string) =>
   unwrap(await supabase.rpc("email_preview", { _reservation_id: reservationId, _kind: kind })) as { subject?: string; html?: string; to?: string; skip?: string };
+
+// ---------------------------------------------------------------- rate plans
+export const useRatePlans = () => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["rates", "plans", hotel.id],
+    queryFn: async () => unwrap(await supabase.from("rate_plans").select("*").eq("hotel_id", hotel.id).order("sort").order("adult_night")) as RatePlan[],
+  });
+};
+export const useSavePlan = () => {
+  const { hotel } = useCurrentHotel();
+  return useAct(async (p: Partial<RatePlan>) => {
+    const { id, created_at: _c, hotel_id: _h, ...rest } = p; void _c; void _h;
+    return id ? unwrap(await supabase.from("rate_plans").update(rest).eq("id", id)) : unwrap(await supabase.from("rate_plans").insert({ ...rest, hotel_id: hotel.id }));
+  }, ["rates"], "Rate plan saved");
+};
+export const useDeletePlan = () =>
+  useAct(async (id: string) => unwrap(await supabase.from("rate_plans").delete().eq("id", id)), ["rates"], "Rate plan deleted");
+export const useMealCounts = (date: string) => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["rates", "meals", hotel.id, date],
+    queryFn: async () => unwrap(await supabase.rpc("meal_counts", { _hotel_id: hotel.id, _date: date })) as MealCounts,
+    refetchInterval: 60_000,
+  });
+};

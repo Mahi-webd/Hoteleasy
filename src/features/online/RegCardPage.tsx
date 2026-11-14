@@ -26,7 +26,7 @@ const RegCardPage = () => {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.from("reservations")
-        .select("id, code, status, check_in, check_out, nights, adults, children, special_requests, room_id, room_type_id, total_amount, rate_per_night, source, guests(id, first_name, last_name, phone, email, nationality, id_type, id_number, is_vip, address, date_of_birth), rooms(room_number), room_types(name), prechecks(*)")
+        .select("id, code, status, check_in, check_out, nights, adults, children, special_requests, room_id, room_type_id, total_amount, rate_per_night, source, guests(id, first_name, last_name, phone, email, nationality, id_type, id_number, is_vip, address, date_of_birth), rooms(room_number), room_types(name), prechecks(*), rate_plans(name, code)")
         .eq("id", id!).maybeSingle();
       if (error) throw error;
       return data as unknown as (Arrival & { rate_per_night: number; guests: Arrival["guests"] & { address: string | null; date_of_birth: string | null } }) | null;
@@ -63,6 +63,7 @@ const RegCardPage = () => {
           <Field l="Arrival" v={fmt(r.check_in)} /><Field l="Departure" v={fmt(r.check_out)} />
           <Field l="Nights" v={r.nights} /><Field l="Adults / children" v={`${r.adults} / ${r.children}`} />
           <Field l={`Rate per night (${hotel.currency})`} v={Number(r.rate_per_night).toLocaleString("en-KE")} /><Field l="Expected arrival time" v={p?.arrival_time} />
+          <Field l="Meal plan" v={(r as unknown as { rate_plans: { name: string } | null }).rate_plans?.name ?? "Room only"} />
         </div>
         {(companions.length > 0 || blanks > 0) && (
           <div>

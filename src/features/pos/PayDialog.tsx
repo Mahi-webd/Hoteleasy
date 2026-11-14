@@ -99,7 +99,7 @@ export const PayDialog = ({ order, onPaid, onClose }: { order: PosOrder; onPaid:
 
           <TabsContent value="cash" className="space-y-2">
             <Label htmlFor="pay-tendered">Cash received</Label>
-            <Input id="pay-tendered" type="number" min={0} step="50" value={tendered} onChange={(e) => setTendered(e.target.value)} placeholder={String(amt)} />
+            <Input id="pay-tendered" type="number" min={0} step="any" value={tendered} onChange={(e) => setTendered(e.target.value)} placeholder={String(amt)} />
             <div className="flex flex-wrap gap-2">
               {[500, 1000, 2000, 5000].filter((n) => n >= amt).slice(0, 3).map((n) => (
                 <Button key={n} type="button" size="sm" variant="outline" onClick={() => setTendered(String(n))}>{n.toLocaleString()}</Button>

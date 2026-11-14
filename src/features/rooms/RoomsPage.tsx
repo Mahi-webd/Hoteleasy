@@ -388,7 +388,7 @@ const RoomTypeDialog = ({ type, onClose }: { type: Partial<RoomType>; onClose: (
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Rate per night (KES)</Label>
-              <Input name="base_rate" type="number" min={0} step="50" defaultValue={type.base_rate ?? ""} required />
+              <Input name="base_rate" type="number" min={0} step="any" defaultValue={type.base_rate ?? ""} required />
             </div>
             <div className="space-y-2">
               <Label>Max guests</Label>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Ban, CalendarRange, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { Ban, CalendarRange, ChevronLeft, ChevronRight, Coffee, Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,9 @@ import { ConfirmButton } from "@/components/common/ConfirmButton";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useRoomTypes } from "@/hooks/useHotelQueries";
-import { useDeleteSeason, useRateCalendar, useSaveSeason, useSeasons, useToggleSeason } from "@/hooks/useRates";
+import { useDeletePlan, useDeleteSeason, useMealCounts, useRateCalendar, useRatePlans, useSavePlan, useSaveSeason, useSeasons, useToggleSeason } from "@/hooks/useRates";
 import { addDays, formatMoney, todayIn } from "@/lib/format";
-import type { RateSeason, SeasonColor } from "@/lib/db-types";
+import { mealsOf, type RatePlan, type RateSeason, type SeasonColor } from "@/lib/db-types";
 
 export const SEASON_BG: Record<SeasonColor, string> = {
   amber: "bg-amber-100 dark:bg-amber-900/40", rose: "bg-rose-100 dark:bg-rose-900/40", emerald: "bg-emerald-100 dark:bg-emerald-900/40",
@@ -36,11 +36,14 @@ const RatesPage = () => {
   const admin = can("owner", "manager");
   return (
     <div className="space-y-4">
-      <PageHeader title="Rates & seasons" subtitle="Prices per night by season, weekend and holiday, used by front desk and your booking page" />
+      <PageHeader title="Rates & seasons" subtitle="Prices per night by season, meal plans and packages, used by front desk and your booking page" />
       <Tabs defaultValue="calendar">
-        <TabsList><TabsTrigger value="calendar">Rate calendar</TabsTrigger><TabsTrigger value="seasons">Seasons</TabsTrigger></TabsList>
+        <TabsList className="flex-wrap h-auto"><TabsTrigger value="calendar">Rate calendar</TabsTrigger><TabsTrigger value="seasons">Seasons</TabsTrigger>
+          <TabsTrigger value="plans">Meal plans & packages</TabsTrigger><TabsTrigger value="meals">Meal counts</TabsTrigger></TabsList>
         <TabsContent value="calendar"><RateCalendar /></TabsContent>
         <TabsContent value="seasons"><Seasons admin={admin} /></TabsContent>
+        <TabsContent value="plans"><Plans admin={admin} /></TabsContent>
+        <TabsContent value="meals"><Meals /></TabsContent>
       </Tabs>
     </div>
   );
@@ -278,5 +281,175 @@ const SeasonDialog = ({ s, onClose }: { s: Partial<RateSeason>; onClose: () => v
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// ---------------------------------------------------------------- meal plans & packages
+const PLAN_TEMPLATES: { label: string; p: Partial<RatePlan> }[] = [
+  { label: "Bed & breakfast", p: { name: "Bed & breakfast", code: "BB", breakfast: true, adult_night: 1000, child_night: 500, sort: 1 } },
+  { label: "Half board", p: { name: "Half board", code: "HB", breakfast: true, dinner: true, adult_night: 2500, child_night: 1250, sort: 2 } },
+  { label: "Full board", p: { name: "Full board", code: "FB", breakfast: true, lunch: true, dinner: true, adult_night: 4000, child_night: 2000, sort: 3 } },
+  { label: "Safari package", p: { name: "Safari package", code: "SAF", breakfast: true, lunch: true, dinner: true, adult_night: 4000, child_night: 2000, adult_stay: 15000, child_stay: 7500, stay_label: "game drives & park fees", min_nights: 2, sort: 4 } },
+];
+
+const Plans = ({ admin }: { admin: boolean }) => {
+  const { hotel } = useCurrentHotel();
+  const plans = useRatePlans();
+  const types = useRoomTypes();
+  const del = useDeletePlan();
+  const [editing, setEditing] = useState<Partial<RatePlan> | null>(null);
+  const list = plans.data ?? [];
+  const typeName = (id: string) => types.data?.find((t) => t.id === id)?.name ?? "?";
+  return (
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2 flex-wrap">
+        <div><CardTitle className="text-lg">Meal plans & packages</CardTitle>
+          <CardDescription>Room prices are always room only. A plan adds meals per person per night, and a package can add a price per person per stay. Meals go on the bill as food, night by night.</CardDescription></div>
+        {admin && (
+          <div className="flex flex-wrap gap-2">
+            <Select onValueChange={(v) => setEditing({ ...PLAN_TEMPLATES[Number(v)].p, online: true, active: true })}>
+              <SelectTrigger className="w-52" aria-label="Start a plan from a template"><SelectValue placeholder="Start from a template…" /></SelectTrigger>
+              <SelectContent>{PLAN_TEMPLATES.map((t, i) => <SelectItem key={t.label} value={String(i)}>{t.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button size="sm" onClick={() => setEditing({ online: true, active: true, adult_night: 0, child_night: 0, adult_stay: 0, child_stay: 0, sort: 5 })}><Plus className="mr-1 h-4 w-4" />New plan</Button>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {plans.isLoading ? <LoadingBlock /> : !list.length ? (
+          <EmptyState icon={Coffee} title="Room only for now">Add bed & breakfast, half board, full board or a package so front desk and online guests can choose.</EmptyState>
+        ) : list.map((p) => (
+          <div key={p.id} className={`rounded-md border p-3 flex flex-wrap items-center gap-3 ${p.active ? "" : "opacity-60"}`}>
+            <Badge variant="outline" className="font-mono">{p.code}</Badge>
+            <div className="min-w-[200px] flex-1">
+              <div className="font-medium">{p.name}{!p.active && <Badge variant="outline" className="ml-2">Off</Badge>}{!p.online && <Badge variant="secondary" className="ml-2">Front desk only</Badge>}</div>
+              <div className="text-sm text-slate-500">{mealsOf(p)}{p.room_type_ids ? ` · ${p.room_type_ids.map(typeName).join(", ")} only` : ""}{p.min_nights && p.min_nights > 1 ? ` · min ${p.min_nights} nights` : ""}</div>
+            </div>
+            <div className="text-sm text-right">
+              <div><b>{formatMoney(Number(p.adult_night), hotel.currency)}</b> per adult / night{Number(p.child_night) > 0 && <>, {formatMoney(Number(p.child_night), "")} per child</>}</div>
+              {Number(p.adult_stay) > 0 && <div className="text-slate-600">+ {formatMoney(Number(p.adult_stay), "")} per adult per stay{p.stay_label ? ` (${p.stay_label})` : ""}</div>}
+            </div>
+            {admin && (
+              <div className="flex gap-1 ml-auto">
+                <Button size="icon" variant="ghost" onClick={() => setEditing(p)} aria-label={`Edit ${p.name}`}><Pencil className="h-4 w-4" /></Button>
+                <ConfirmButton size="icon" variant="ghost" title={`Delete ${p.name}?`} description="If bookings use it, switch it off instead." onConfirm={() => del.mutate(p.id)} aria-label={`Delete ${p.name}`}><Trash2 className="h-4 w-4" /></ConfirmButton>
+              </div>
+            )}
+          </div>
+        ))}
+        <p className="text-xs text-slate-500">Changing a plan's prices doesn't change bookings already made. A Friday night on half board means dinner on Friday and breakfast on Saturday.</p>
+      </CardContent>
+      {editing && <PlanDialog p={editing} onClose={() => setEditing(null)} />}
+    </Card>
+  );
+};
+
+const PlanDialog = ({ p, onClose }: { p: Partial<RatePlan>; onClose: () => void }) => {
+  const { hotel } = useCurrentHotel();
+  const types = useRoomTypes();
+  const save = useSavePlan();
+  const [f, setF] = useState<Partial<RatePlan>>(p);
+  const set = <K extends keyof RatePlan>(k: K, v: RatePlan[K]) => setF((x) => ({ ...x, [k]: v }));
+  const num = (k: "adult_night" | "child_night" | "adult_stay" | "child_stay", label: string) => (
+    <div className="space-y-1"><Label htmlFor={`rp-${k}`}>{label}</Label><Input id={`rp-${k}`} type="number" min={0} value={f[k] ?? 0} onChange={(e) => set(k, Number(e.target.value))} /></div>
+  );
+  const only = f.room_type_ids ?? [];
+  const valid = !!f.name?.trim() && /^[A-Za-z0-9]{1,6}$/.test(f.code ?? "");
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{p.id ? `Edit ${p.name}` : "New meal plan or package"}</DialogTitle>
+          <DialogDescription>Prices in {hotel.currency}, added on top of the room price.</DialogDescription></DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-[1fr_120px] gap-3">
+            <div className="space-y-1"><Label htmlFor="rp-name">Name</Label><Input id="rp-name" value={f.name ?? ""} onChange={(e) => set("name", e.target.value)} placeholder="Half board" /></div>
+            <div className="space-y-1"><Label htmlFor="rp-code">Code</Label><Input id="rp-code" value={f.code ?? ""} maxLength={6} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="HB" /></div>
+          </div>
+          <div className="space-y-1"><Label>Meals included</Label>
+            <div className="flex gap-4">{(["breakfast", "lunch", "dinner"] as const).map((m) => (
+              <label key={m} className="flex items-center gap-2 text-sm capitalize"><Switch checked={!!f[m]} onCheckedChange={(v) => set(m, v)} aria-label={m} />{m}</label>
+            ))}</div></div>
+          <div className="grid grid-cols-2 gap-3">{num("adult_night", "Per adult per night")}{num("child_night", "Per child per night")}</div>
+          <div className="rounded-md border p-3 space-y-3">
+            <div className="text-sm font-medium">Package extras (optional, once per stay)</div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {num("adult_stay", "Per adult")}{num("child_stay", "Per child")}
+              <div className="space-y-1"><Label htmlFor="rp-label">What it covers</Label><Input id="rp-label" value={f.stay_label ?? ""} onChange={(e) => set("stay_label", e.target.value || null)} placeholder="game drives & park fees" /></div>
+            </div>
+          </div>
+          <div className="space-y-1"><Label htmlFor="rp-desc">Description for guests</Label><Textarea id="rp-desc" rows={2} value={f.description ?? ""} onChange={(e) => set("description", e.target.value || null)} placeholder="Breakfast and a three-course dinner in the restaurant." /></div>
+          <div className="space-y-1"><Label>Room types</Label>
+            <div className="flex flex-wrap gap-1">
+              <Button type="button" size="sm" variant={!only.length ? "default" : "outline"} onClick={() => set("room_type_ids", null)}>All</Button>
+              {(types.data ?? []).map((t) => {
+                const on = only.includes(t.id);
+                return <Button key={t.id} type="button" size="sm" variant={on ? "default" : "outline"} aria-pressed={on}
+                  onClick={() => set("room_type_ids", on ? only.filter((x) => x !== t.id) : [...only, t.id])}>{t.name}</Button>;
+              })}
+            </div></div>
+          <div className="grid sm:grid-cols-3 gap-3 items-end">
+            <div className="space-y-1"><Label htmlFor="rp-min">Minimum nights</Label><Input id="rp-min" type="number" min={1} max={30} value={f.min_nights ?? ""} placeholder="none" onChange={(e) => set("min_nights", e.target.value === "" ? null : Number(e.target.value))} /></div>
+            <label className="flex items-center gap-2 text-sm pb-2"><Switch checked={f.online ?? true} onCheckedChange={(v) => set("online", v)} />On the booking page</label>
+            <label className="flex items-center gap-2 text-sm pb-2"><Switch checked={f.active ?? true} onCheckedChange={(v) => set("active", v)} />Offered</label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button disabled={!valid || save.isPending} onClick={() => save.mutate({
+            id: f.id, name: f.name!.trim(), code: f.code!.toUpperCase(), description: f.description?.trim() || null, breakfast: !!f.breakfast, lunch: !!f.lunch, dinner: !!f.dinner,
+            adult_night: Number(f.adult_night) || 0, child_night: Number(f.child_night) || 0, adult_stay: Number(f.adult_stay) || 0, child_stay: Number(f.child_stay) || 0,
+            stay_label: f.stay_label?.trim() || null, room_type_ids: only.length ? only : null, online: f.online ?? true, min_nights: f.min_nights || null,
+            active: f.active ?? true, sort: f.sort ?? 5,
+          }, { onSuccess: onClose })}>Save plan</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ---------------------------------------------------------------- meal counts for the kitchen
+const Meals = () => {
+  const { hotel } = useCurrentHotel();
+  const [date, setDate] = useState(todayIn(hotel.timezone));
+  const q = useMealCounts(date);
+  const m = q.data;
+  return (
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2 flex-wrap">
+        <div><CardTitle className="text-lg">Meal counts</CardTitle>
+          <CardDescription>Guests on meal plans: breakfast and lunch for those who slept the night before, dinner for those staying tonight. Walk-in diners aren't included.</CardDescription></div>
+        <div className="flex gap-2 items-center">
+          <Button size="icon" variant="outline" onClick={() => setDate(addDays(date, -1))} aria-label="Previous day"><ChevronLeft className="h-4 w-4" /></Button>
+          <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className="w-40" aria-label="Day" />
+          <Button size="icon" variant="outline" onClick={() => setDate(addDays(date, 1))} aria-label="Next day"><ChevronRight className="h-4 w-4" /></Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {q.isLoading || !m ? <LoadingBlock /> : (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              {(["breakfast", "lunch", "dinner"] as const).map((k) => (
+                <div key={k} className="rounded-md border p-3 text-center"><div className="text-sm text-slate-500 capitalize">{k}</div><div className="text-3xl font-bold tabular-nums" data-testid={`meals-${k}`}>{m[k]}</div></div>
+              ))}
+            </div>
+            {!m.stays.length ? <EmptyState icon={UtensilsCrossed} title="No plan guests for this day">Bookings on bed & breakfast, half board or full board appear here.</EmptyState> : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-left text-slate-500 border-b"><th className="py-1.5">Room</th><th>Guest</th><th>Plan</th><th className="text-right">People</th><th className="text-center">Breakfast</th><th className="text-center">Lunch</th><th className="text-center">Dinner</th></tr></thead>
+                  <tbody>{m.stays.map((s) => (
+                    <tr key={s.code} className="border-b last:border-0">
+                      <td className="py-1.5 font-medium">{s.room ?? "—"}</td><td>{s.guest}<span className="text-xs text-slate-500"> · {s.code}</span></td>
+                      <td><Badge variant="outline" className="font-mono">{s.plan_code}</Badge></td>
+                      <td className="text-right">{s.adults}{s.children ? ` + ${s.children} ch` : ""}</td>
+                      {(["breakfast", "lunch", "dinner"] as const).map((k) => <td key={k} className="text-center">{s[k] ? "✓" : ""}</td>)}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };

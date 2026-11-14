@@ -145,6 +145,10 @@ export interface Reservation {
   rate_per_night: number;
   nightly_rates?: Record<string, number> | null;
   company_id?: string | null;
+  rate_plan_id?: string | null;
+  plan_night?: number;
+  plan_stay?: number;
+  rate_plans?: { name: string; code: string } | null;
   bill_to?: BillTo;
   company_ref?: string | null;
   companies?: { name: string } | null;
@@ -174,6 +178,7 @@ export type PaymentMethod = "cash" | "mpesa" | "card" | "bank_transfer" | "chequ
 
 export interface FolioCharge {
   id: string;
+  rate_plan_id?: string | null;
   hotel_id: string;
   reservation_id: string;
   kind: ChargeKind;
@@ -531,3 +536,19 @@ export interface Statement {
     mpesa_paybill: string | null; mpesa_account: string | null; bank_details: string | null };
 }
 export interface FolioTransfer { id: string; reservation_id: string; company_id: string; amount: number; created_at: string; voided_at: string | null; void_reason: string | null; companies?: { name: string } | null }
+
+// ---------------------------------------------------------------- rate plans
+export interface RatePlan {
+  id: string; hotel_id: string; name: string; code: string; description: string | null; breakfast: boolean; lunch: boolean; dinner: boolean;
+  adult_night: number; child_night: number; adult_stay: number; child_stay: number; stay_label: string | null; room_type_ids: string[] | null;
+  online: boolean; min_nights: number | null; active: boolean; sort: number; created_at: string;
+}
+export interface MealCounts {
+  date: string; breakfast: number; lunch: number; dinner: number;
+  stays: { code: string; guest: string; room: string | null; pax: number; adults: number; children: number; plan: string; plan_code: string; breakfast: boolean; lunch: boolean; dinner: boolean }[];
+}
+export const mealsOf = (p: Pick<RatePlan, "breakfast" | "lunch" | "dinner">) =>
+  [p.breakfast && "breakfast", p.lunch && "lunch", p.dinner && "dinner"].filter(Boolean).join(", ") || "room only";
+/** What a plan adds to a stay. */
+export const planPrice = (p: Pick<RatePlan, "adult_night" | "child_night" | "adult_stay" | "child_stay">, nights: number, adults: number, children: number) =>
+  (Number(p.adult_night) * adults + Number(p.child_night) * children) * nights + Number(p.adult_stay) * adults + Number(p.child_stay) * children;
