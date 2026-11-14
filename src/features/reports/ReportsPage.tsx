@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useReport, type DailyRow, type PeriodReport } from "@/hooks/useReports";
 import {
   CHARGE_KINDS, PAYMENT_METHODS, POS_METHODS, OUTLET_KINDS, RES_STATUS, SOURCE_LABELS,
@@ -186,11 +186,7 @@ const Section = ({ title, children, onCsv, note }: { title: string; children: Re
         <CardTitle className="text-lg">{title}</CardTitle>
         {note && <p className="text-xs text-slate-500 mt-1">{note}</p>}
       </div>
-      {onCsv && (
-        <Button size="sm" variant="ghost" onClick={onCsv} className="print:hidden" aria-label={`Download ${title} as CSV`}>
-          <Download className="mr-1 h-4 w-4" />CSV
-        </Button>
-      )}
+      {onCsv && <CsvButton title={title} onCsv={onCsv} />}
     </CardHeader>
     <CardContent className="p-0 overflow-x-auto">{children}</CardContent>
   </Card>
@@ -617,3 +613,10 @@ const Balances = ({ r, cur, file }: TabProps) => {
     </div>
   );
 };
+
+const CsvButton = ({ title, onCsv }: { title: string; onCsv: () => void }) =>
+  useCanExport() ? (
+    <Button size="sm" variant="ghost" onClick={onCsv} className="print:hidden" aria-label={`Download ${title} as CSV`}>
+      <Download className="mr-1 h-4 w-4" />CSV
+    </Button>
+  ) : null;

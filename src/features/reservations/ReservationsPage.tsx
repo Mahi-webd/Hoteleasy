@@ -155,7 +155,7 @@ const ReservationsPage = () => {
                   </TableHeader>
                   <TableBody>
                     {rows.map((r) => (
-                      <ReservationRow key={r.id} r={r} today={today} currency={hotel.currency} canEdit={canEdit}
+                      <ReservationRow key={r.id} r={r} today={today} currency={hotel.currency} canEdit={canEdit} canCheckIn={allowed("reservations.checkin")} canCheckOut={allowed("reservations.checkout")}
                         balance={balances.data?.get(r.id)?.balance}
                         onEdit={() => setEditing({ r })} onCheckIn={() => setCheckingIn(r)}
                         onBill={seeMoney ? (checkout) => setBilling({ r, checkout }) : undefined} />
@@ -176,9 +176,9 @@ const ReservationsPage = () => {
 };
 
 const ReservationRow = ({
-  r, today, currency, canEdit, balance, onEdit, onCheckIn, onBill,
+  r, today, currency, canEdit, canCheckIn, canCheckOut, balance, onEdit, onCheckIn, onBill,
 }: {
-  r: Reservation; today: string; currency: string; canEdit: boolean; balance?: number;
+  r: Reservation; today: string; currency: string; canEdit: boolean; canCheckIn: boolean; canCheckOut: boolean; balance?: number;
   onEdit: () => void; onCheckIn: () => void; onBill?: (checkout?: boolean) => void;
 }) => {
   const cancel = useCancelReservation();
@@ -222,10 +222,10 @@ const ReservationRow = ({
         {overdue && <div className="text-xs text-red-600 mt-1">Overdue checkout</div>}
       </TableCell>
       <TableCell className="text-right whitespace-nowrap">
-        {canEdit && r.status === "confirmed" && r.check_in <= today && (
+        {canCheckIn && r.status === "confirmed" && r.check_in <= today && (
           <Button size="sm" onClick={onCheckIn} className="bg-green-600 hover:bg-green-700"><LogIn className="mr-1 h-4 w-4" />Check in</Button>
         )}
-        {canEdit && r.status === "checked_in" && (
+        {canCheckOut && r.status === "checked_in" && (
           <Button size="sm" variant={r.check_out <= today ? "default" : "outline"}
             onClick={() => onBill ? onBill(true) : alert("Ask front desk or a manager to check this guest out.")}>
             <LogOut className="mr-1 h-4 w-4" />Check out

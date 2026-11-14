@@ -43,7 +43,7 @@ staff only see their own hotel's data.
 | Guest requests: printable QR code per room; guests confirm their last name and ask for towels, cleaning, repairs, wake-up calls, taxis, late check-out or room service from their phone, with live status and replies; requests go to housekeeping, maintenance, front desk or the restaurant (repairs open a maintenance ticket); staff board with sound alerts; "good to know" info for guests; links stop working at check-out | ✅ Live |
 | Owner overview & alerts: every hotel you own or manage on one page (occupancy tonight, arrivals/departures, revenue today and month to date vs last month, collected, owed, bills due, next 7 nights); live alerts by job (overstays, no-shows, rooms not ready, unanswered guest requests, open bills and cash shifts, low stock, guest and company debts, overdue bills, payroll and statutory deadlines, leave requests, failed emails) in a header bell and on the dashboard | ✅ Live |
 | Night audit & day close: checks before closing (arrivals not checked in, guests past check-out, missing room nights, open bills and cash shifts), one-click no-show, close the day to lock its payments, charges and bills, printable daily manager's report (occupancy, ADR, RevPAR, revenue, money taken by method, guest and company balances, cash shifts, notes), reopen the latest day with a reason, alert when yesterday is not closed | ✅ Live |
-| Roles & permissions: the owner makes custom roles (name, job type, description) and ticks what each can do in a grid of 23 areas × view / create / edit / delete plus special rights (void payments, close/reopen the day, approve with PIN, see balances…), 60 permissions in all; copy a built-in role as a starting point; give roles in Settings & Team or when inviting; checked by the database, not just hidden on screen; the 8 built-in roles work as before | ✅ Live |
+| Roles & permissions: the owner makes custom roles (name, job type, description) and ticks what each can do in a grid of 23 areas × view / create / edit / delete plus special rights (void payments, close/reopen the day, approve with PIN, see balances…), 66 permissions in all (separate rights for check-in, check-out, changing the room rate, refunds, POS discounts and spreadsheet downloads); copy a built-in role as a starting point; give roles in Settings & Team or when inviting; checked by the database, not just hidden on screen; "Who can do this?" lists everyone who has a permission; new permissions from updates are flagged until the owner reviews them; the 8 built-in roles work as before | ✅ Live |
 
 ### Roles
 
@@ -58,7 +58,13 @@ staff only see their own hotel's data.
 | Accountant | Guests, money screens, reports, stock costs, expenses and profit & loss (budgets and voiding are for owners/managers) |
 | Storekeeper | Inventory: receiving, purchase orders, transfers, issues, waste and counts (no guest details or money screens) |
 
-Owners can also make **custom roles** (Roles & permissions). For developers: every role check in the database names the permission it protects, e.g. `has_hotel_role(hotel_id, array['owner','manager']::hotel_role[], 'billing.void')`. Built-in roles use the role list, custom roles use their ticked permissions. A check without a permission (two arguments) is for built-in roles only. When adding a new check, add its permission to `permission_catalog` (in a migration) and to `src/lib/permissions.ts`.
+Owners can also make **custom roles** (Roles & permissions).
+
+**Adding a page or button later (for developers).** The permission list lives in one place, the `permission_catalog` table:
+1. In the page's migration, add its permissions, e.g. `insert into public.permission_catalog (key, module, module_label, action, label, sort, default_roles) values ('spa.view','spa','Spa','view','See spa bookings',700,array['owner','manager','front_desk'])`. `default_roles` decides which built-in roles get it; the owner always does; custom roles get it only when the owner ticks it, and the Roles page shows it as **New** until the owner marks it seen.
+2. Protect the tables and functions with the 3-argument check, e.g. `has_hotel_role(hotel_id, array['owner','manager']::hotel_role[], 'spa.edit')`. Built-in roles use the role list, custom roles their ticks. A 2-argument check is for built-in roles only.
+3. In the app use `allowed("spa.edit")` for buttons and `perm: "spa.view"` for the sidebar item.
+4. `npm run check:perms` (also runs before every build) fails if the app or SQL names a permission that isn't in the list.
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 

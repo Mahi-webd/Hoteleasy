@@ -28,7 +28,8 @@ export const ReservationDialog = ({
   defaults?: { check_in?: string; room_id?: string; room_type_id?: string };
   onClose: () => void;
 }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
+  const canRate = allowed("reservations.rate");
   const today = todayIn(hotel.timezone);
   const types = useRoomTypes();
   const save = useSaveReservation();
@@ -257,9 +258,11 @@ export const ReservationDialog = ({
           <div className="grid md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="res-rate">{nightly ? `Average rate per night (${hotel.currency})` : `Rate per night (${hotel.currency})`}</Label>
-              <Input id="res-rate" type="number" min={0} step="any" value={rate} required
+              <Input id="res-rate" type="number" min={0} step="any" value={rate} required readOnly={!canRate}
+                className={canRate ? undefined : "bg-slate-50 dark:bg-slate-800"}
                 onChange={(e) => { setRate(e.target.value); setManualRate(true); setNightly(null); }} />
               {manualRate && <button type="button" className="text-xs text-blue-700 underline" onClick={() => setManualRate(false)}>Use season prices</button>}
+              {!canRate && <p className="text-xs text-slate-500">Season price. Ask a manager to change the rate.</p>}
             </div>
             <div className="space-y-2">
               <Label>Booked via</Label>

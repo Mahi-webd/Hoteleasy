@@ -57,3 +57,30 @@ export const useDeleteRole = () => {
     onError: (e) => toast.error(friendlyError(e)),
   });
 };
+
+/** Permissions added since the owner last looked at the roles (empty when the hotel has no custom roles). */
+export const useNewPermissions = (enabled: boolean) => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["roles", "new", hotel.id],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await rpc("roles_new_permissions", { _hotel_id: hotel.id });
+      if (error) throw error;
+      return (data ?? []) as string[];
+    },
+  });
+};
+
+export const useMarkRolesReviewed = () => {
+  const { hotel } = useCurrentHotel();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await rpc("roles_mark_reviewed", { _hotel_id: hotel.id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles", "new"] }),
+    onError: (e) => toast.error(friendlyError(e)),
+  });
+};

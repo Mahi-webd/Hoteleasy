@@ -344,7 +344,7 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
       )}
       {dialog?.kind === "board" && <BoardDialog orderId={o.id} onClose={() => setDialog(null)} />}
       {dialog?.kind === "discount" && (
-        <ApprovalDialog title="Discount this bill" confirmLabel="Apply discount" reasons={["Returning guest", "Staff", "Corporate rate", "Promotion", "Complaint"]}
+        <ApprovalDialog perm="pos.discount" title="Discount this bill" confirmLabel="Apply discount" reasons={["Returning guest", "Staff", "Corporate rate", "Promotion", "Complaint"]}
           onClose={() => setDialog(null)}
           onSubmit={(reason, pin) => discount.mutateAsync({ orderId: o.id, kind: Number(discValue) > 0 ? discKind : null, value: Number(discValue), reason: reason || "Removed", pin })}>
           <div className="grid grid-cols-2 gap-2">
@@ -358,7 +358,7 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
         </ApprovalDialog>
       )}
       {dialog?.kind === "service" && (
-        <ApprovalDialog title="Service charge for this bill" confirmLabel="Save" needsReason={false} onClose={() => setDialog(null)}
+        <ApprovalDialog perm="pos.discount" title="Service charge for this bill" confirmLabel="Save" needsReason={false} onClose={() => setDialog(null)}
           onSubmit={(_r, pin) => service.mutateAsync({ orderId: o.id, rate: Number(svcRate || 0) / 100, pin })}>
           <div className="space-y-1">
             <Label htmlFor="svc-rate">Service charge %</Label>

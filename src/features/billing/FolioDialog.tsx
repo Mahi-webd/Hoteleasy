@@ -225,7 +225,7 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                   reservationId={r.id}
                   currency={cur}
                   suggested={checkout ? dueAtCheckout : balance}
-                  canRefund={isManager}
+                  canRefund={allowed("billing.refund")}
                   phone={r.guests?.phone ?? ""}
                 />
               </TabsContent>
@@ -254,7 +254,7 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                 )}
               </div>
 
-              {checkout && r.status === "checked_in" && (
+              {checkout && r.status === "checked_in" && allowed("reservations.checkout") && (
                 <div className="flex flex-col items-end gap-2">
                   {dueAtCheckout > 0.009 && (
                     <label className="flex items-center gap-2 text-sm">

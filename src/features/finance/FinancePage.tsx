@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useInventory } from "@/hooks/useInventory";
 import {
   useBudgets, useCopyRecurring, useExpenseCategories, useExpenses, usePayExpense, usePnl, useReopenExpense, useSaveBudget,
@@ -120,6 +120,7 @@ const buildRows = (lines: PnlLine[], cats: ExpenseCategory[], months: string[]) 
 };
 
 const Pnl = ({ onBills }: { onBills: () => void }) => {
+  const canExport = useCanExport();
   const { hotel } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const t = parseISO(today);
@@ -168,7 +169,7 @@ const Pnl = ({ onBills }: { onBills: () => void }) => {
           <div className="ml-auto flex items-end gap-2">
             <div className="space-y-1"><Label htmlFor="pl-from" className="text-xs">From</Label><Input id="pl-from" type="date" value={from} max={to} className="w-40" onChange={(e) => { setPreset(""); setRange([e.target.value, to]); }} /></div>
             <div className="space-y-1"><Label htmlFor="pl-to" className="text-xs">To</Label><Input id="pl-to" type="date" value={to} min={from} className="w-40" onChange={(e) => { setPreset(""); setRange([from, e.target.value]); }} /></div>
-            <Button size="sm" variant="outline" onClick={csv} disabled={!built}><Download className="mr-1 h-4 w-4" />CSV</Button>
+            {canExport && <Button size="sm" variant="outline" onClick={csv} disabled={!built}><Download className="mr-1 h-4 w-4" />CSV</Button>}
           </div>
         </CardContent>
       </Card>
@@ -301,6 +302,7 @@ const CategorySelect = ({ cats, value, onChange, includeStock = true, allowAll }
 );
 
 const Expenses = ({ admin }: { admin: boolean }) => {
+  const canExport = useCanExport();
   const { hotel } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const [month, setMonth] = useState(today.slice(0, 7));
@@ -339,12 +341,12 @@ const Expenses = ({ admin }: { admin: boolean }) => {
             <Button variant="outline" size="sm" onClick={() => copy.mutate(from)} disabled={copy.isPending} title="Copy last month's repeating expenses (rent, salaries…) into this month as unpaid bills">
               <Repeat className="mr-1 h-4 w-4" />Add repeating
             </Button>
-            <Button variant="ghost" size="sm" disabled={!rows.length} onClick={() => downloadCsv(`expenses_${month}`,
+            {canExport && (<Button variant="ghost" size="sm" disabled={!rows.length} onClick={() => downloadCsv(`expenses_${month}`,
               ["No.", "Date", "Paid to", "Description", "Category", "Group", "Amount", "VAT", "Net", "Reference", "Status", "Paid on", "Method", "Due"],
               rows.map((e) => [e.number, e.spent_on, who(e), e.description, catName.get(e.category_id)?.name, EXPENSE_GROUPS[catName.get(e.category_id)?.grp ?? "other"],
                 Number(e.amount), Number(e.vat_amount), Number(e.net_amount), e.reference, e.status, e.paid_on, e.paid_method ? EXPENSE_METHODS[e.paid_method] : "", e.due_on]))}>
               <Download className="mr-1 h-4 w-4" />CSV
-            </Button>
+            </Button>)}
             <Button size="sm" onClick={() => setEdit({ spent_on: today, status: "paid", paid_method: "mpesa", vat_amount: 0 })}><Plus className="mr-1 h-4 w-4" />Expense</Button>
           </div>
         </CardContent>

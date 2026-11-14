@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import type { Hotel, HotelRole, Membership } from "@/lib/db-types";
-import { builtInPerms } from "@/lib/permissions";
 
 const STORAGE_KEY = "hoteleasy.currentHotel";
 
@@ -64,9 +63,7 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
       return data as unknown as { permissions: string[]; custom_role_id: string | null; custom_role_name: string | null } | null;
     },
   });
-  const perms = useMemo(() => new Set<string>(
-    mine?.permissions ?? (current && !current.custom_role_id ? builtInPerms(current.role) : []),
-  ), [mine, current]);
+  const perms = useMemo(() => new Set<string>(mine?.permissions ?? []), [mine]);
   const customRole = current?.custom_role_id ? { id: current.custom_role_id, name: mine?.custom_role_name ?? "" } : null;
 
   useEffect(() => {
@@ -90,7 +87,7 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
     allowed: (...ps) => !!current && (current.role === "owner" || ps.some((p) => p.split("|").some((x) => perms.has(x)))),
     customRole,
     perms,
-    permsReady: !current?.custom_role_id || !!mine,
+    permsReady: !current || current.role === "owner" || !!mine,
   };
 
   return <HotelContext.Provider value={value}>{children}</HotelContext.Provider>;
@@ -108,3 +105,6 @@ export const useCurrentHotel = () => {
   if (!ctx.hotel || !ctx.role) throw new Error("No hotel selected");
   return { ...ctx, hotel: ctx.hotel, role: ctx.role };
 };
+
+/** Spreadsheet (CSV) downloads need reports.export. */
+export const useCanExport = () => useHotel().allowed("reports.export");

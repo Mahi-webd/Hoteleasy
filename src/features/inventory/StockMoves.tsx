@@ -10,7 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, LoadingBlock } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useMove, useMovements } from "@/hooks/useInventory";
 import { MOVE_KINDS, addDays, formatMoney, formatQty, todayIn } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
@@ -95,6 +95,7 @@ export const MoveStock = ({ data, wasteOnly }: { data: InvData; wasteOnly: boole
 
 // ---------------------------------------------------------------- history
 export const MovementHistory = ({ data, seesCost }: { data: InvData; seesCost: boolean }) => {
+  const canExport = useCanExport();
   const { hotel } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const [from, setFrom] = useState(addDays(today, -6));
@@ -115,12 +116,12 @@ export const MovementHistory = ({ data, seesCost }: { data: InvData; seesCost: b
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between">
           <div><CardTitle className="text-lg">Stock history</CardTitle><CardDescription>Every change to stock, newest first. Nothing here can be edited.</CardDescription></div>
-          <Button size="sm" variant="ghost" disabled={!rows.length} onClick={() => downloadCsv(`stock-history_${from}_${to}`,
+          {canExport && (<Button size="sm" variant="ghost" disabled={!rows.length} onClick={() => downloadCsv(`stock-history_${from}_${to}`,
             ["Date", "Item", "Unit", "Store", "Type", "Quantity", ...(seesCost ? ["Unit cost", "Value"] : []), "Details"],
             rows.map((m) => [m.created_at.replace("T", " ").slice(0, 16), items.get(m.item_id)?.name, items.get(m.item_id)?.unit, locs.get(m.location_id),
               MOVE_KINDS[m.kind], Number(m.qty), ...(seesCost ? [Number(m.unit_cost), Number(m.value)] : []), detail(m)]))}>
             <Download className="mr-1 h-4 w-4" />CSV
-          </Button>
+          </Button>)}
         </div>
         <div className="flex flex-wrap gap-2 items-end">
           <div className="space-y-1"><Label htmlFor="mh-from" className="text-xs">From</Label><Input id="mh-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className="w-40" /></div>

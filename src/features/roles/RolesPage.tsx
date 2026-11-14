@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Copy, Lock, Pencil, Plus, ShieldCheck, Trash2, Users } from "lucide-react";
+import { Copy, Lock, Pencil, Plus, Search, ShieldCheck, Sparkles, Trash2, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,8 @@ import { PageHeader, LoadingBlock } from "@/components/common/PageHeader";
 import { ConfirmButton } from "@/components/common/ConfirmButton";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useTeam } from "@/hooks/useHotelQueries";
-import { useCustomRoles, useDeleteRole, useSaveRole, type RoleDraft } from "@/hooks/useRoles";
-import { ACTION_LABELS, ALL_PERMS, PERMISSIONS, builtInPerms } from "@/lib/permissions";
+import { useCustomRoles, useDeleteRole, useMarkRolesReviewed, useNewPermissions, useSaveRole, type RoleDraft } from "@/hooks/useRoles";
+import { ACTION_LABELS, builtInPerms, useCatalog, type Catalog } from "@/lib/permissions";
 import { ROLE_LABELS } from "@/lib/format";
 import type { CustomRole, HotelRole } from "@/lib/db-types";
 
@@ -29,6 +29,10 @@ type Editing = { draft: RoleDraft; readOnly?: string } | null;
 const RolesPage = () => {
   const { role } = useCurrentHotel();
   const roles = useCustomRoles();
+  const catalog = useCatalog();
+  const fresh = useNewPermissions(role === "owner");
+  const markSeen = useMarkRolesReviewed();
+  const newPerms = fresh.data ?? [];
   const team = useTeam();
   const del = useDeleteRole();
   const [editing, setEditing] = useState<Editing>(null);
@@ -43,14 +47,15 @@ const RolesPage = () => {
   }, [team.data]);
 
   if (role !== "owner") return <div className="p-6 text-slate-600">Only the hotel owner can manage roles.</div>;
-  if (roles.isLoading) return <LoadingBlock />;
+  if (roles.isLoading || !catalog.data) return <LoadingBlock />;
+  const cat = catalog.data;
 
   const startNew = (from?: HotelRole | CustomRole) =>
     setEditing({ draft: {
       name: from ? `${typeof from === "string" ? ROLE_LABELS[from] : from.name} (copy)` : "",
       description: typeof from === "object" ? from.description ?? "" : "",
       base_role: typeof from === "string" ? (from === "owner" ? "manager" : from) : from?.base_role ?? "front_desk",
-      permissions: typeof from === "string" ? builtInPerms(from) : from?.permissions ?? ["dashboard.view", "settings.view"],
+      permissions: typeof from === "string" ? builtInPerms(cat, from) : from?.permissions ?? ["dashboard.view", "settings.view"],
     } });
 
   return (
@@ -58,6 +63,18 @@ const RolesPage = () => {
       <PageHeader title="Roles & permissions"
         subtitle="Make your own roles and tick exactly what each one can see and do. Give them to people under Settings & Team."
         actions={<Button onClick={() => startNew()}><Plus className="mr-1 h-4 w-4" />New role</Button>} />
+
+      {newPerms.length > 0 && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/40 dark:border-indigo-900 p-4 flex flex-col md:flex-row md:items-center gap-3" data-testid="new-perms">
+          <Sparkles className="h-5 w-5 text-indigo-600 shrink-0" />
+          <div className="flex-1 text-sm">
+            <div className="font-medium">{newPerms.length} new {newPerms.length === 1 ? "permission" : "permissions"} since you last checked your roles</div>
+            <div className="text-slate-600 dark:text-slate-300">{newPerms.map((k) => cat.rows.find((x) => x.key === k)).filter(Boolean).map((x) => `${x!.module_label}: ${x!.label}`).join(" · ")}</div>
+            <div className="text-xs text-slate-500 mt-1">Built-in roles already have them where it makes sense. Open your roles to decide for each one (they're marked "New").</div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => markSeen.mutate()} disabled={markSeen.isPending}>Mark as seen</Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -80,7 +97,7 @@ const RolesPage = () => {
                     <TableRow key={r.id}>
                       <TableCell><div className="font-medium">{r.name}</div>{r.description && <div className="text-xs text-slate-500">{r.description}</div>}</TableCell>
                       <TableCell>{ROLE_LABELS[r.base_role]}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.permissions.length} of {ALL_PERMS.length}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.permissions.length} of {cat.all.length}</TableCell>
                       <TableCell className="text-right tabular-nums">{n}</TableCell>
                       <TableCell className="text-right whitespace-nowrap">
                         <Button size="sm" variant="ghost" onClick={() => setEditing({ draft: { id: r.id, name: r.name, description: r.description ?? "", base_role: r.base_role, permissions: r.permissions } })}
@@ -111,10 +128,10 @@ const RolesPage = () => {
               {BUILT_IN.map((r) => (
                 <TableRow key={r}>
                   <TableCell className="font-medium"><span className="inline-flex items-center gap-2"><Lock className="h-3.5 w-3.5 text-slate-400" />{ROLE_LABELS[r]}</span></TableCell>
-                  <TableCell className="text-right tabular-nums">{r === "owner" ? "All, plus roles and team" : `${builtInPerms(r).length} of ${ALL_PERMS.length}`}</TableCell>
+                  <TableCell className="text-right tabular-nums">{r === "owner" ? "All, plus roles and team" : `${builtInPerms(cat, r).length} of ${cat.all.length}`}</TableCell>
                   <TableCell className="text-right tabular-nums">{people.get(r) ?? 0}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    <Button size="sm" variant="ghost" onClick={() => setEditing({ readOnly: ROLE_LABELS[r], draft: { name: ROLE_LABELS[r], description: "", base_role: r, permissions: builtInPerms(r) } })}>See</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditing({ readOnly: ROLE_LABELS[r], draft: { name: ROLE_LABELS[r], description: "", base_role: r, permissions: builtInPerms(cat, r) } })}>See</Button>
                     {r !== "owner" && <Button size="sm" variant="ghost" onClick={() => startNew(r)} aria-label={`Copy ${ROLE_LABELS[r]}`}><Copy className="h-4 w-4" /></Button>}
                   </TableCell>
                 </TableRow>
@@ -127,13 +144,15 @@ const RolesPage = () => {
       <p className="text-xs text-slate-500 flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />
         Permissions are checked by the database too, not just hidden on screen. Only the owner can make roles and give them to people.</p>
 
-      {editing && <RoleDialog key={editing.draft.id ?? editing.readOnly ?? "new"} editing={editing} people={editing.draft.id ? people.get(`custom:${editing.draft.id}`) ?? 0 : 0}
+      <WhoCan cat={cat} roles={roles.data ?? []} />
+
+      {editing && <RoleDialog cat={cat} isNew={(k) => newPerms.includes(k)} key={editing.draft.id ?? editing.readOnly ?? "new"} editing={editing} people={editing.draft.id ? people.get(`custom:${editing.draft.id}`) ?? 0 : 0}
         onClose={() => setEditing(null)} />}
     </div>
   );
 };
 
-const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing>; people: number; onClose: () => void }) => {
+const RoleDialog = ({ cat, isNew, editing, people, onClose }: { cat: Catalog; isNew: (key: string) => boolean; editing: NonNullable<Editing>; people: number; onClose: () => void }) => {
   const save = useSaveRole();
   const ro = !!editing.readOnly;
   const [d, setD] = useState<RoleDraft>(editing.draft);
@@ -143,7 +162,7 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
     const next = new Set(d.permissions);
     keys.forEach((k) => (on ? next.add(k) : next.delete(k)));
     // anything in an area needs "view" of that area; taking "view" away takes the rest
-    PERMISSIONS.forEach((m) => {
+    cat.modules.forEach((m) => {
       const view = `${m.module}.view`;
       const hasView = m.actions.some((a) => a.key === view);
       if (!hasView) return;
@@ -151,7 +170,7 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
       if (keys.includes(view) && !on) others.forEach((k) => next.delete(k));
       else if (others.some((k) => next.has(k))) next.add(view);
     });
-    setD({ ...d, permissions: ALL_PERMS.filter((k) => next.has(k)) });
+    setD({ ...d, permissions: cat.all.filter((k) => next.has(k)) });
   };
 
   const submit = () => save.mutate(d, { onSuccess: onClose });
@@ -179,7 +198,7 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
               </Select>
               <p className="text-[11px] text-slate-500 leading-tight">Decides which alerts they get and the task lists they appear in. It gives no access by itself.</p></div>
             <div className="space-y-1.5"><Label>Start from</Label>
-              <Select value="" onValueChange={(v) => setD({ ...d, permissions: v === "none" ? [] : builtInPerms(v as HotelRole) })}>
+              <Select value="" onValueChange={(v) => setD({ ...d, permissions: v === "none" ? [] : builtInPerms(cat, v as HotelRole) })}>
                 <SelectTrigger aria-label="Start from"><SelectValue placeholder="Copy ticks from a built-in role" /></SelectTrigger>
                 <SelectContent><SelectItem value="none">Nothing ticked</SelectItem>
                   {JOB_TYPES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
@@ -200,13 +219,14 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
               </TableRow>
             </TableHeader>
             <TableBody>
-              {PERMISSIONS.map((m) => {
+              {cat.modules.map((m) => {
                 const keys = m.actions.map((a) => a.key);
                 const all = keys.every((k) => has.has(k));
                 const extra = m.actions.filter((a) => !COLUMNS.includes(a.action));
                 return (
                   <TableRow key={m.module} data-testid={`perm-row-${m.module}`}>
-                    <TableCell className="font-medium whitespace-nowrap">{m.label}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{m.label}
+                      {m.actions.some((a) => isNew(a.key)) && <Badge className="ml-2 bg-indigo-600 hover:bg-indigo-600 text-[10px] px-1.5 py-0" title={m.actions.filter((a) => isNew(a.key)).map((a) => a.label).join("; ")}>New</Badge>}</TableCell>
                     {COLUMNS.map((c) => {
                       const a = m.actions.find((x) => x.action === c);
                       return (
@@ -221,7 +241,7 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
                         {m.actions.filter((a) => COLUMNS.includes(a.action)).length < m.actions.length && extra.map((a) => (
                           <label key={a.key} className="flex items-center gap-2 text-xs">
                             <Checkbox checked={has.has(a.key)} disabled={ro} aria-label={`${m.label}: ${a.label}`} onCheckedChange={(v) => set([a.key], v === true)} />
-                            {a.label}
+                            {a.label}{isNew(a.key) && <span className="text-indigo-600 font-medium">new</span>}
                           </label>
                         ))}
                         {!extra.length && <span className="text-xs text-slate-400">{m.actions.filter((a) => a.action !== "view").map((a) => a.label).join("; ")}</span>}
@@ -236,7 +256,7 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
         </div>
 
         <DialogFooter className="items-center">
-          <span className="text-sm text-slate-500 mr-auto">{d.permissions.length} of {ALL_PERMS.length} ticked</span>
+          <span className="text-sm text-slate-500 mr-auto">{d.permissions.length} of {cat.all.length} ticked</span>
           {ro ? <Button variant="outline" onClick={onClose}>Close</Button> : (
             <>
               <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -250,3 +270,44 @@ const RoleDialog = ({ editing, people, onClose }: { editing: NonNullable<Editing
 };
 
 export default RolesPage;
+
+/** Pick a permission and see who has it. */
+const WhoCan = ({ cat, roles }: { cat: Catalog; roles: CustomRole[] }) => {
+  const team = useTeam();
+  const [perm, setPerm] = useState("billing.void");
+  const byId = new Map(roles.map((r) => [r.id, r] as const));
+  const holders = (team.data ?? []).filter((t) =>
+    t.role === "owner" || (t.custom_role_id ? !!byId.get(t.custom_role_id)?.permissions.includes(perm) : builtInPerms(cat, t.role).includes(perm)));
+  const row = cat.rows.find((r) => r.key === perm);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2"><Search className="h-4 w-4" />Who can do this?</CardTitle>
+        <CardDescription>Pick anything people can do and see everyone who is allowed to.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Select value={perm} onValueChange={setPerm}>
+          <SelectTrigger className="md:w-[520px]" aria-label="Permission to check"><SelectValue /></SelectTrigger>
+          <SelectContent className="max-h-80">
+            {cat.modules.map((m) => m.actions.map((a) => <SelectItem key={a.key} value={a.key}>{m.label}: {a.label}</SelectItem>))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-slate-600 dark:text-slate-300" data-testid="who-can">
+          {team.isLoading ? "Loading…" : (
+            <>
+              <span className="font-medium">{holders.length} {holders.length === 1 ? "person" : "people"}</span> can {row ? row.label.charAt(0).toLowerCase() + row.label.slice(1) : perm}:
+              <ul className="mt-2 grid md:grid-cols-2 gap-1">
+                {holders.map((t) => (
+                  <li key={t.member_id} className="flex items-center justify-between rounded border px-3 py-1.5 bg-white dark:bg-slate-900">
+                    <span>{t.full_name || t.email}</span>
+                    <Badge variant="secondary">{t.custom_role_name ?? ROLE_LABELS[t.role]}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

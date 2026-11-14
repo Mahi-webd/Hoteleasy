@@ -1,39 +1,39 @@
-// Generated from the permission list in supabase/migrations/20261116090000_roles.sql. Keep the two in step.
+// The permission list lives in the database (table permission_catalog, filled by migrations).
+// The app reads it from there, so there is one list only. `npm run check:perms` checks that every
+// permission named in the code or in SQL role checks exists in that list.
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { HotelRole } from "@/lib/db-types";
 
+export interface PermRow { key: string; module: string; module_label: string; action: string; label: string; sort: number; default_roles: HotelRole[]; added_at: string }
 export interface PermAction { key: string; action: string; label: string; roles: HotelRole[] }
 export interface PermModule { module: string; label: string; actions: PermAction[] }
-
-export const PERMISSIONS: PermModule[] = [
-  { module: "dashboard", label: "Dashboard", actions: [{ key: "dashboard.view", action: "view", label: "See the dashboard", roles: ["owner", "manager", "front_desk", "housekeeping", "restaurant", "accountant", "maintenance", "storekeeper"] }] },
-  { module: "reservations", label: "Reservations", actions: [{ key: "reservations.view", action: "view", label: "See bookings and the calendar", roles: ["owner", "manager", "front_desk", "housekeeping", "restaurant", "accountant", "maintenance", "storekeeper"] }, { key: "reservations.create", action: "create", label: "Make bookings", roles: ["owner", "manager", "front_desk"] }, { key: "reservations.edit", action: "edit", label: "Change bookings, check guests in and out", roles: ["owner", "manager", "front_desk"] }, { key: "reservations.delete", action: "delete", label: "Cancel bookings and mark no-shows", roles: ["owner", "manager", "front_desk"] }] },
-  { module: "precheck", label: "Online check-in", actions: [{ key: "precheck.view", action: "view", label: "See online check-in forms", roles: ["owner", "manager", "front_desk"] }, { key: "precheck.edit", action: "edit", label: "Send links and accept forms", roles: ["owner", "manager", "front_desk"] }] },
-  { module: "requests", label: "Guest requests", actions: [{ key: "requests.view", action: "view", label: "See guest requests", roles: ["owner", "manager", "front_desk", "housekeeping", "maintenance", "restaurant"] }, { key: "requests.edit", action: "edit", label: "Answer and log requests", roles: ["owner", "manager", "front_desk", "housekeeping", "maintenance", "restaurant"] }, { key: "requests.settings", action: "settings", label: "Request types and room QR codes", roles: ["owner", "manager"] }] },
-  { module: "audit", label: "Night audit", actions: [{ key: "audit.view", action: "view", label: "See day checks and manager's reports", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "audit.create", action: "create", label: "Close the day", roles: ["owner", "manager", "front_desk"] }, { key: "audit.delete", action: "delete", label: "Reopen a closed day", roles: ["owner", "manager"] }] },
-  { module: "rates", label: "Rates & seasons", actions: [{ key: "rates.view", action: "view", label: "See prices, seasons and meal plans", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "rates.edit", action: "edit", label: "Change prices, seasons and meal plans", roles: ["owner", "manager"] }] },
-  { module: "rooms", label: "Rooms", actions: [{ key: "rooms.view", action: "view", label: "See rooms", roles: ["owner", "manager", "front_desk", "housekeeping", "restaurant", "accountant", "maintenance", "storekeeper"] }, { key: "rooms.status", action: "status", label: "Change room status (clean, dirty, out of order)", roles: ["owner", "manager", "front_desk", "housekeeping"] }, { key: "rooms.create", action: "create", label: "Add rooms and room types", roles: ["owner", "manager"] }, { key: "rooms.edit", action: "edit", label: "Edit rooms and room types", roles: ["owner", "manager"] }, { key: "rooms.delete", action: "delete", label: "Delete rooms", roles: ["owner", "manager"] }] },
-  { module: "guests", label: "Guests", actions: [{ key: "guests.view", action: "view", label: "See guest profiles", roles: ["owner", "manager", "front_desk", "accountant", "restaurant"] }, { key: "guests.create", action: "create", label: "Add guests", roles: ["owner", "manager", "front_desk"] }, { key: "guests.edit", action: "edit", label: "Edit guest profiles", roles: ["owner", "manager", "front_desk"] }, { key: "guests.delete", action: "delete", label: "Delete guests", roles: ["owner", "manager"] }] },
-  { module: "billing", label: "Billing & payments", actions: [{ key: "billing.view", action: "view", label: "See bills, payments and invoices", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "billing.create", action: "create", label: "Add charges, take payments, issue invoices", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "billing.void", action: "void", label: "Void any charge or payment", roles: ["owner", "manager", "accountant"] }] },
-  { module: "companies", label: "Company accounts", actions: [{ key: "companies.view", action: "view", label: "See companies and their rates", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "companies.ledger", action: "ledger", label: "See company balances and statements", roles: ["owner", "manager", "accountant"] }, { key: "companies.edit", action: "edit", label: "Add companies and rates, ledger entries, go over credit limits", roles: ["owner", "manager", "accountant"] }] },
-  { module: "online", label: "Online booking & reviews", actions: [{ key: "online.view", action: "view", label: "See online bookings, reviews and sent emails", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "online.reply", action: "reply", label: "Reply to reviews, send feedback links, resend emails", roles: ["owner", "manager", "front_desk"] }, { key: "online.edit", action: "edit", label: "Booking page and email settings", roles: ["owner", "manager"] }] },
-  { module: "pos", label: "Restaurant & bar POS", actions: [{ key: "pos.view", action: "view", label: "See orders and bills", roles: ["owner", "manager", "front_desk", "restaurant", "accountant"] }, { key: "pos.create", action: "create", label: "Take orders and payments, run own cash shift", roles: ["owner", "manager", "front_desk", "restaurant"] }, { key: "pos.admin", action: "admin", label: "Menu and tables, voids and discounts, approve with PIN", roles: ["owner", "manager"] }, { key: "pos.shifts", action: "shifts", label: "See everyone's cash shifts", roles: ["owner", "manager", "accountant"] }] },
-  { module: "kds", label: "Kitchen & bar screen", actions: [{ key: "kds.view", action: "view", label: "Use the kitchen and bar screen", roles: ["owner", "manager", "front_desk", "restaurant"] }] },
-  { module: "owner", label: "Owner overview", actions: [{ key: "owner.view", action: "view", label: "See the owner overview", roles: ["owner", "manager", "accountant"] }] },
-  { module: "reports", label: "Reports", actions: [{ key: "reports.view", action: "view", label: "See reports", roles: ["owner", "manager", "accountant"] }] },
-  { module: "finance", label: "Expenses & profit", actions: [{ key: "finance.view", action: "view", label: "See expenses and profit", roles: ["owner", "manager", "accountant"] }, { key: "finance.edit", action: "edit", label: "Add and edit expenses", roles: ["owner", "manager", "accountant"] }, { key: "finance.admin", action: "admin", label: "Approve expenses, categories and budget", roles: ["owner", "manager"] }] },
-  { module: "housekeeping", label: "Housekeeping", actions: [{ key: "housekeeping.view", action: "view", label: "See cleaning tasks", roles: ["owner", "manager", "front_desk", "housekeeping"] }, { key: "housekeeping.edit", action: "edit", label: "Create, assign and complete tasks", roles: ["owner", "manager", "front_desk", "housekeeping"] }] },
-  { module: "maintenance", label: "Maintenance", actions: [{ key: "maintenance.view", action: "view", label: "See and report problems", roles: ["owner", "manager", "front_desk", "housekeeping", "restaurant", "accountant", "maintenance", "storekeeper"] }, { key: "maintenance.edit", action: "edit", label: "Assign and update tickets", roles: ["owner", "manager", "maintenance", "front_desk"] }] },
-  { module: "inventory", label: "Inventory", actions: [{ key: "inventory.view", action: "view", label: "See stock", roles: ["owner", "manager", "accountant", "storekeeper", "restaurant"] }, { key: "inventory.waste", action: "waste", label: "Record waste", roles: ["owner", "manager", "storekeeper", "restaurant"] }, { key: "inventory.edit", action: "edit", label: "Stock moves, receiving, counts, suppliers and orders", roles: ["owner", "manager", "storekeeper"] }, { key: "inventory.admin", action: "admin", label: "Approve orders, recipes and store locations", roles: ["owner", "manager"] }] },
-  { module: "staff", label: "Staff & rota", actions: [{ key: "staff.view", action: "view", label: "See staff and the rota", roles: ["owner", "manager", "front_desk", "accountant"] }, { key: "staff.clock", action: "clock", label: "Clock staff in and out", roles: ["owner", "manager", "front_desk"] }, { key: "staff.edit", action: "edit", label: "Staff list, rota and leave", roles: ["owner", "manager"] }] },
-  { module: "payroll", label: "Payroll", actions: [{ key: "payroll.view", action: "view", label: "See pay rates, payroll and payslips", roles: ["owner", "manager", "accountant"] }, { key: "payroll.edit", action: "edit", label: "Run and approve payroll", roles: ["owner", "manager", "accountant"] }, { key: "payroll.rates", action: "rates", label: "Statutory rates (PAYE, NSSF, SHIF)", roles: ["owner"] }] },
-  { module: "settings", label: "Settings", actions: [{ key: "settings.view", action: "view", label: "See hotel settings", roles: ["owner", "manager", "front_desk", "housekeeping", "restaurant", "accountant", "maintenance", "storekeeper"] }, { key: "settings.edit", action: "edit", label: "Hotel details, tax and bill settings", roles: ["owner", "manager"] }] },
-  { module: "team", label: "Team", actions: [{ key: "team.invite", action: "invite", label: "Invite people and cancel invitations", roles: ["owner", "manager"] }] },
-];
-
-export const ALL_PERMS: string[] = PERMISSIONS.flatMap((m) => m.actions.map((a) => a.key));
-
-/** What a built-in role can do (used until the server answers, and on the roles page). */
-export const builtInPerms = (role: HotelRole): string[] =>
-  role === "owner" ? ALL_PERMS : PERMISSIONS.flatMap((m) => m.actions.filter((a) => a.roles.includes(role)).map((a) => a.key));
+export interface Catalog { modules: PermModule[]; all: string[]; rows: PermRow[] }
 
 export const ACTION_LABELS: Record<string, string> = { view: "View", create: "Create", edit: "Edit", delete: "Delete" };
+
+export const toCatalog = (rows: PermRow[]): Catalog => {
+  const sorted = [...rows].sort((a, b) => a.sort - b.sort);
+  const modules: PermModule[] = [];
+  sorted.forEach((r) => {
+    let m = modules.find((x) => x.module === r.module);
+    if (!m) modules.push((m = { module: r.module, label: r.module_label, actions: [] }));
+    m.actions.push({ key: r.key, action: r.action, label: r.label, roles: r.default_roles });
+  });
+  return { modules, all: sorted.map((r) => r.key), rows: sorted };
+};
+
+/** What a built-in role can do. */
+export const builtInPerms = (c: Catalog, role: HotelRole): string[] =>
+  role === "owner" ? c.all : c.rows.filter((r) => r.default_roles.includes(role)).map((r) => r.key);
+
+export const useCatalog = () =>
+  useQuery({
+    queryKey: ["permission-catalog"],
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("permission_catalog" as never) as unknown as ReturnType<typeof supabase.from>).select("*");
+      if (error) throw error;
+      return toCatalog((data ?? []) as unknown as PermRow[]);
+    },
+  });

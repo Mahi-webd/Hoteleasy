@@ -14,13 +14,15 @@ const QUICK_REASONS = ["Wrong item entered", "Guest changed mind", "Spilled / dr
  * manager. `onSubmit` throws WrongPinError when the PIN is wrong.
  */
 export const ApprovalDialog = ({
-  title, description, confirmLabel = "Confirm", children, reasons = QUICK_REASONS, needsReason = true, onSubmit, onClose,
+  title, description, confirmLabel = "Confirm", children, reasons = QUICK_REASONS, needsReason = true, onSubmit, onClose, perm = "pos.admin",
 }: {
+  /** The permission that approves this without a PIN. */
+  perm?: string;
   title: string; description?: string; confirmLabel?: string; children?: ReactNode; reasons?: string[]; needsReason?: boolean;
   onSubmit: (reason: string, pin?: string) => Promise<unknown>; onClose: () => void;
 }) => {
   const { allowed } = useCurrentHotel();
-  const isManager = allowed("pos.admin");
+  const isManager = allowed(perm);
   const [reason, setReason] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);

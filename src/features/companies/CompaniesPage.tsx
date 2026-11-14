@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useRoomTypes } from "@/hooks/useHotelQueries";
 import { useCompanyAccounts, useCompanyEntry, useCompanyStatement, useSaveCompany, useVoidCompanyEntry } from "@/hooks/useCompanies";
 import { BILL_TO, PAYMENT_METHODS, formatMoney, formatMoney2, todayIn } from "@/lib/format";
@@ -23,6 +23,7 @@ const n = (v: number | null | undefined) => Number(v ?? 0);
 const BUCKETS: [keyof NonNullable<CompanyAccount["ageing"]>, string][] = [["current", "Not yet due"], ["d30", "1–30 days late"], ["d60", "31–60"], ["d90", "61–90"], ["d90p", "Over 90"]];
 
 const CompaniesPage = () => {
+  const canExport = useCanExport();
   const { hotel, allowed } = useCurrentHotel();
   const money = allowed("companies.ledger");
   const canEditCo = allowed("companies.edit");
@@ -60,7 +61,7 @@ const CompaniesPage = () => {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Company, contact or KRA PIN" className="pl-9" />
         </div>
         <label className="flex items-center gap-2 text-sm"><Switch checked={showClosed} onCheckedChange={setShowClosed} />Show closed accounts</label>
-        {money && all.length > 0 && (
+        {money && canExport && all.length > 0 && (
           <Button variant="ghost" size="sm" className="ml-auto" onClick={() => downloadCsv(`company_ageing_${todayIn(hotel.timezone)}`,
             ["Company", "KRA PIN", "Balance", "Not yet due", "1-30", "31-60", "61-90", "Over 90", "Credit limit", "Terms (days)", "Last payment"],
             all.map((c) => [c.name, c.kra_pin, n(c.balance), n(c.ageing?.current), n(c.ageing?.d30), n(c.ageing?.d60), n(c.ageing?.d90), n(c.ageing?.d90p),

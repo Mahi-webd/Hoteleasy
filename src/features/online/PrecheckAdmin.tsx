@@ -112,7 +112,7 @@ const PrecheckAdmin = () => {
                         </>}
                         {st === "review" && <Button size="sm" onClick={() => setReviewing(a)}><ClipboardCheck className="mr-1 h-4 w-4" />Review</Button>}
                         {st === "accepted" && <Button size="sm" variant="ghost" onClick={() => setReviewing(a)}>Details</Button>}
-                        {allowed("reservations.edit") && a.status === "confirmed" && a.check_in <= today && st !== "review" && (
+                        {allowed("reservations.checkin") && a.status === "confirmed" && a.check_in <= today && st !== "review" && (
                           <Button size="sm" className="ml-1 bg-green-600 hover:bg-green-700" onClick={() => setCheckingIn(a.id)}><LogIn className="mr-1 h-4 w-4" />Check in</Button>
                         )}
                         <Button size="sm" variant="ghost" asChild aria-label={`Registration card for ${guestLabel(a)}`}><a href={`/reg-card/${a.id}`} target="_blank" rel="noreferrer"><Printer className="h-4 w-4" /></a></Button>

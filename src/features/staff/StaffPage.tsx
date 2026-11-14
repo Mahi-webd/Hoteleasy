@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmButton } from "@/components/common/ConfirmButton";
 import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useTeam } from "@/hooks/useHotelQueries";
 import {
   useClock, useCopyWeek, useDeleteShift, useDeleteTemplate, useFixTime, useHoursReport, useImportMembers, useLeave, useOpenEntries,
@@ -456,6 +456,7 @@ export const LeaveDialog = ({ staff, admin, fixedStaffId, onClose }: { staff: St
 
 // ======================================================================= hours
 const Hours = () => {
+  const canExport = useCanExport();
   const { hotel, allowed } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const [from, setFrom] = useState(`${today.slice(0, 7)}-01`);
@@ -475,10 +476,10 @@ const Hours = () => {
           {presets.map(([l, f, t]) => <Button key={l} size="sm" variant={from === f && to === t ? "default" : "outline"} onClick={() => { setFrom(f); setTo(t); }}>{l}</Button>)}
           <div className="space-y-1 ml-auto"><Label htmlFor="hr-f" className="text-xs">From</Label><Input id="hr-f" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className="w-40" /></div>
           <div className="space-y-1"><Label htmlFor="hr-t" className="text-xs">To</Label><Input id="hr-t" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className="w-40" /></div>
-          <Button size="sm" variant="outline" disabled={!rows.length} onClick={() => downloadCsv(`staff-hours_${from}_${to}`,
+          {canExport && (<Button size="sm" variant="outline" disabled={!rows.length} onClick={() => downloadCsv(`staff-hours_${from}_${to}`,
             ["Name", "Department", "Employment", "Shifts", "Scheduled hours", "Days worked", "Hours worked", "Overtime hours", "Late", "Absent", "Leave days", "Sick days", "Pay type", "Rate", "Pay estimate"],
             rows.map((x) => [x.name, x.department, EMPLOYMENT[x.employment], x.shifts, x.scheduled_hours, x.worked_days, x.worked_hours, x.overtime_hours, x.late, x.absent, x.leave_days, x.sick_days, x.pay_type ?? "", x.rate ?? "", x.pay_estimate ?? ""]))}>
-            <Download className="mr-1 h-4 w-4" />CSV for payroll</Button>
+            <Download className="mr-1 h-4 w-4" />CSV for payroll</Button>)}
         </CardContent>
       </Card>
       {r.isLoading ? <LoadingBlock /> : (

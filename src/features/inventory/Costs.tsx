@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingBlock } from "@/components/common/PageHeader";
-import { useCurrentHotel } from "@/contexts/HotelContext";
+import { useCanExport, useCurrentHotel } from "@/contexts/HotelContext";
 import { useCostReport } from "@/hooks/useInventory";
 import { MOVE_KINDS, addDays, formatMoney, friendlyError, todayIn } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
@@ -17,6 +17,7 @@ const pct = (a: number, b: number) => (b && a ? `${((a / b) * 100).toFixed(1)}%`
 const KIND = { food: "Food", drinks: "Drinks", other: "Other", service: "Service" } as Record<string, string>;
 
 export const StockCosts = () => {
+  const canExport = useCanExport();
   const { hotel } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const [from, setFrom] = useState(format(startOfMonth(parseISO(today)), "yyyy-MM-dd"));
@@ -105,10 +106,10 @@ export const StockCosts = () => {
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <div><CardTitle className="text-lg">Menu items: margin</CardTitle><CardDescription>Price, recipe cost and profit for each item sold. High cost % items are candidates for a price or recipe change.</CardDescription></div>
-              <Button size="sm" variant="ghost" onClick={() => downloadCsv(`menu-margins_${from}_${to}`, ["Item", "Type", "Sold", "Sales", "Cost", "Cost %", "Profit", "Has recipe"],
+              {canExport && (<Button size="sm" variant="ghost" onClick={() => downloadCsv(`menu-margins_${from}_${to}`, ["Item", "Type", "Sold", "Sales", "Cost", "Cost %", "Profit", "Has recipe"],
                 d.items.map((i) => [i.item, KIND[i.kind] ?? i.kind, Number(i.qty), Number(i.sales), Number(i.cost), Number(i.sales) ? Number((Number(i.cost) / Number(i.sales) * 100).toFixed(1)) : "", Number(i.sales) - Number(i.cost), i.has_recipe ? "yes" : "no"]))}>
                 <Download className="mr-1 h-4 w-4" />CSV
-              </Button>
+              </Button>)}
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table>

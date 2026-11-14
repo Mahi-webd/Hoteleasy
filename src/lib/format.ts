@@ -150,6 +150,7 @@ export const friendlyError = (err: unknown): string => {
   if (msg.includes("rate_plans_code_check")) return "The plan code must be 1–6 letters or numbers, e.g. BB or HB.";
   if (msg.includes("reservations_rate_plan_id_fkey")) return "Bookings use this plan, so it can't be deleted; switch it off instead.";
   if (msg.includes("DAY_CLOSED:")) return msg.replace(/^.*DAY_CLOSED:\s*/, "");
+  if (msg.includes("RATE:")) return msg.replace(/^.*RATE:\s*/, "");
   if (msg.includes("CREDIT_LIMIT:")) return msg.replace(/^.*CREDIT_LIMIT:\s*/, "");
   if (msg.includes("companies_kra_pin_check")) return "A KRA PIN is a letter, 9 digits and a letter, e.g. P051234567X.";
   if (msg.includes("companies_hotel_id_name_key")) return "There is already a company with that name.";
