@@ -44,13 +44,13 @@ const useClock = () => {
 
 const Dashboard = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const { user } = useAuth();
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, can, allowed } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const now = useClock();
   const rooms = useRooms();
   const res = useReservations({ from: addDays(today, -40), to: addDays(today, 30) });
   const activity = useActivity();
-  const seeMoney = can("owner", "manager", "accountant", "front_desk");
+  const seeMoney = allowed("billing.view");
 
   const stats = useMemo(() => {
     const list = res.data ?? [];
@@ -117,7 +117,7 @@ const Dashboard = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
           <span className="flex items-center"><Clock className="mr-1 h-4 w-4" />
             {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: hotel.timezone })}
           </span>
-          {can("owner", "manager", "front_desk") && (
+          {allowed("reservations.create") && (
             <Button size="sm" variant="secondary" className="ml-auto" onClick={() => onNavigate?.("reservations")}>
               <Plus className="mr-1 h-4 w-4" />Reservations
             </Button>

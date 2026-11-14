@@ -29,8 +29,8 @@ const pct = (a: number, b: number) => (b ? `${((a / b) * 100).toFixed(1)}%` : "â
 const OPEX: ExpenseGroup[] = ["payroll", "utilities", "repairs", "marketing", "admin", "other"];
 
 const FinancePage = () => {
-  const { can } = useCurrentHotel();
-  const admin = can("owner", "manager");
+  const { allowed } = useCurrentHotel();
+  const admin = allowed("finance.admin");
   const [tab, setTab] = useState("pnl");
   const unpaid = useUnpaidBills();
   return (
@@ -396,7 +396,7 @@ const Expenses = ({ admin }: { admin: boolean }) => {
 };
 
 const ExpenseDialog = ({ e, cats, onClose }: { e: ExpenseInput; cats: ExpenseCategory[]; onClose: () => void }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const inv = useInventory();
   const save = useSaveExpense();
   const [f, setF] = useState<ExpenseInput>(e);
@@ -473,7 +473,7 @@ const ExpenseDialog = ({ e, cats, onClose }: { e: ExpenseInput; cats: ExpenseCat
 };
 
 const PayDialog = ({ e, onClose }: { e: Expense; onClose: () => void }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const pay = usePayExpense();
   const [method, setMethod] = useState<ExpenseMethod>("bank_transfer");
   const [on, setOn] = useState(todayIn(hotel.timezone));
@@ -513,7 +513,7 @@ const VoidDialog = ({ e, onClose }: { e: Expense; onClose: () => void }) => {
 
 // ======================================================================= bills
 const Bills = ({ admin }: { admin: boolean }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const bills = useUnpaidBills();
   const cats = useExpenseCategories();

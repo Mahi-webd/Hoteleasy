@@ -1,3 +1,4 @@
+import { LoadingBlock } from "@/components/common/PageHeader";
 import { useEffect, useState, type ComponentType } from "react";
 import { Building2, Check, ChevronDown, Home, Info, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import CompaniesPage from "@/features/companies/CompaniesPage";
 import RequestsPage from "@/features/requests/RequestsPage";
 import OwnerOverview from "@/features/owner/OwnerOverview";
 import AuditPage from "@/features/audit/AuditPage";
+import RolesPage from "@/features/roles/RolesPage";
 import { AlertsBell } from "@/features/owner/Alerts";
 
 // Demo modules (still showing sample data)
@@ -61,6 +63,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   finance: FinancePage,
   owner: OwnerOverview,
   audit: AuditPage,
+  roles: RolesPage,
   inventory: InventoryPage,
 };
 
@@ -68,19 +71,21 @@ const ALL_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { hotel, role, memberships, switchHotel } = useCurrentHotel();
+  const { hotel, role, memberships, switchHotel, allowed: may, customRole, permsReady } = useCurrentHotel();
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem("hoteleasy.tab") || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useRealtimeSync();
 
   const item = ALL_ITEMS.find((i) => i.key === activeTab);
-  const allowed = item && canSee(item, role);
+  const allowed = item && canSee(item, role, may);
+  const home = ALL_ITEMS.find((i) => canSee(i, role, may))?.key ?? "my-shifts";
   useEffect(() => {
-    if (!allowed) setActiveTab("dashboard");
+    if (!permsReady) return;
+    if (!allowed) setActiveTab(home);
     sessionStorage.setItem("hoteleasy.tab", activeTab);
-  }, [activeTab, allowed]);
+  }, [activeTab, allowed, home, permsReady]);
 
-  const Screen = SCREENS[allowed ? activeTab : "dashboard"];
+  const Screen = permsReady ? SCREENS[allowed ? activeTab : home] : null;
   const name = (user?.user_metadata?.full_name as string) || user?.email || "";
   const initials = name.split(/[\s@]/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 
@@ -132,7 +137,7 @@ const Index = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="truncate">{name}</div>
-                  <div className="text-xs font-normal text-slate-500">{role ? ROLE_LABELS[role] : ""}</div>
+                  <div className="text-xs font-normal text-slate-500">{customRole ? customRole.name : role ? ROLE_LABELS[role] : ""}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut}>
@@ -152,6 +157,7 @@ const Index = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           role={role}
+          allowed={may}
         />
         </div>
         <main className="flex-1 min-w-0 p-4 md:p-6 space-y-4">
@@ -164,7 +170,7 @@ const Index = () => {
               </span>
             </div>
           )}
-          <Screen onNavigate={setActiveTab} />
+          {Screen ? <Screen onNavigate={setActiveTab} /> : <LoadingBlock />}
         </main>
       </div>
     </div>

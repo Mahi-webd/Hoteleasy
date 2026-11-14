@@ -24,11 +24,11 @@ import { StockCounts } from "./Counts";
 import { StockCosts } from "./Costs";
 
 const InventoryPage = () => {
-  const { can } = useCurrentHotel();
+  const { can, allowed } = useCurrentHotel();
   const inv = useInventory();
-  const staff = can("owner", "manager", "storekeeper");
-  const admin = can("owner", "manager");
-  const seesCost = can("owner", "manager", "storekeeper", "accountant");
+  const staff = allowed("inventory.edit");
+  const admin = allowed("inventory.admin");
+  const seesCost = allowed("inventory.edit", "reports.view");
   const [tab, setTab] = useState("stock");
   const [receivePo, setReceivePo] = useState<string | null>(null);
   const [draftFromLow, setDraftFromLow] = useState<{ item_id: string; qty: number }[] | null>(null);
@@ -41,7 +41,7 @@ const InventoryPage = () => {
       <Button variant="outline" onClick={() => setTab("move")}>Transfer / issue</Button>
       <Button onClick={() => { setReceivePo(null); setTab("receive"); }}><Plus className="mr-1 h-4 w-4" />Receive goods</Button>
     </>
-  ) : can("restaurant") ? <Button variant="outline" onClick={() => setTab("move")}>Record waste</Button> : null;
+  ) : allowed("inventory.waste") ? <Button variant="outline" onClick={() => setTab("move")}>Record waste</Button> : null;
 
   return (
     <div className="space-y-4">
@@ -110,7 +110,7 @@ const StockList = ({ items, levels, locations, suppliers, staff, seesCost, onOrd
   items: StockItem[]; levels: StockLevel[]; locations: StockLocation[]; suppliers: Supplier[]; staff: boolean; seesCost: boolean;
   onOrderLow: (lines: { item_id: string; qty: number }[]) => void;
 }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const [store, setStore] = useState("");
   const [cat, setCat] = useState("all");
   const [q, setQ] = useState("");

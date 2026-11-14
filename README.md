@@ -43,6 +43,7 @@ staff only see their own hotel's data.
 | Guest requests: printable QR code per room; guests confirm their last name and ask for towels, cleaning, repairs, wake-up calls, taxis, late check-out or room service from their phone, with live status and replies; requests go to housekeeping, maintenance, front desk or the restaurant (repairs open a maintenance ticket); staff board with sound alerts; "good to know" info for guests; links stop working at check-out | ✅ Live |
 | Owner overview & alerts: every hotel you own or manage on one page (occupancy tonight, arrivals/departures, revenue today and month to date vs last month, collected, owed, bills due, next 7 nights); live alerts by job (overstays, no-shows, rooms not ready, unanswered guest requests, open bills and cash shifts, low stock, guest and company debts, overdue bills, payroll and statutory deadlines, leave requests, failed emails) in a header bell and on the dashboard | ✅ Live |
 | Night audit & day close: checks before closing (arrivals not checked in, guests past check-out, missing room nights, open bills and cash shifts), one-click no-show, close the day to lock its payments, charges and bills, printable daily manager's report (occupancy, ADR, RevPAR, revenue, money taken by method, guest and company balances, cash shifts, notes), reopen the latest day with a reason, alert when yesterday is not closed | ✅ Live |
+| Roles & permissions: the owner makes custom roles (name, job type, description) and ticks what each can do in a grid of 23 areas × view / create / edit / delete plus special rights (void payments, close/reopen the day, approve with PIN, see balances…), 60 permissions in all; copy a built-in role as a starting point; give roles in Settings & Team or when inviting; checked by the database, not just hidden on screen; the 8 built-in roles work as before | ✅ Live |
 
 ### Roles
 
@@ -56,6 +57,8 @@ staff only see their own hotel's data.
 | Maintenance | Repair tickets; no guest details or money |
 | Accountant | Guests, money screens, reports, stock costs, expenses and profit & loss (budgets and voiding are for owners/managers) |
 | Storekeeper | Inventory: receiving, purchase orders, transfers, issues, waste and counts (no guest details or money screens) |
+
+Owners can also make **custom roles** (Roles & permissions). For developers: every role check in the database names the permission it protects, e.g. `has_hotel_role(hotel_id, array['owner','manager']::hotel_role[], 'billing.void')`. Built-in roles use the role list, custom roles use their ticked permissions. A check without a permission (two arguments) is for built-in roles only. When adding a new check, add its permission to `permission_catalog` (in a migration) and to `src/lib/permissions.ts`.
 
 These rules are enforced in the database (Row Level Security), not just hidden in the UI.
 
@@ -89,6 +92,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    17. `20261115090000_guest_requests.sql`
    18. `20261115120000_alerts.sql`
    19. `20261115150000_night_audit.sql`
+   20. `20261116090000_roles.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -168,4 +172,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 16. ~~Guest requests & concierge~~
 17. ~~Owner overview & alerts~~ (next: daily summary email once email sending is set up)
 18. ~~Night audit & day close~~ (next: email the manager's report to the owner once email sending is set up)
-18. M-Pesa STK push, channel managers (Booking.com etc.)
+19. ~~Roles & permissions~~
+20. M-Pesa STK push, channel managers (Booking.com etc.)

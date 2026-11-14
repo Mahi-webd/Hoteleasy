@@ -29,14 +29,14 @@ const MANUAL_KINDS = (Object.keys(CHARGE_KINDS) as ChargeKind[]).filter((k) => k
 /** A guest's bill: charges, payments, balance; optionally the check-out flow. */
 export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation: Mini; checkout?: boolean; onClose: () => void }) => {
   const { user } = useAuth();
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, can, allowed } = useCurrentHotel();
   const cur = hotel.currency;
   const folio = useFolio(r.id);
   const issue = useIssueInvoice();
   const checkOut = useCheckOutSettled();
   const voidCharge = useVoidCharge();
   const voidPayment = useVoidPayment();
-  const isManager = can("owner", "manager", "accountant");
+  const isManager = allowed("billing.void");
   const today = todayIn(hotel.timezone);
   const [tab, setTab] = useState(checkout ? "pay" : "bill");
   const [owing, setOwing] = useState(false);
@@ -249,7 +249,7 @@ export const FolioDialog = ({ reservation: r, checkout, onClose }: { reservation
                     <a href={`/folio/${r.id}`} target="_blank" rel="noreferrer"><Printer className="mr-1 h-4 w-4" />Print interim bill</a>
                   </Button>
                 )}
-                {(r.status === "checked_in" || r.status === "checked_out") && balance > 0.009 && can("owner", "manager", "front_desk", "accountant") && (
+                {(r.status === "checked_in" || r.status === "checked_out") && balance > 0.009 && allowed("billing.create") && (
                   <Button variant="outline" size="sm" onClick={() => setMoving(true)}><Building2 className="mr-1 h-4 w-4" />Move to company account</Button>
                 )}
               </div>

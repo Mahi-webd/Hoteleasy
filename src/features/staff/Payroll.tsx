@@ -27,9 +27,9 @@ const STATUS = {
 };
 
 export const Payroll = () => {
-  const { hotel, can } = useCurrentHotel();
-  const approver = can("owner", "manager");
-  const owner = can("owner");
+  const { hotel, can, allowed, customRole } = useCurrentHotel();
+  const approver = customRole ? allowed("payroll.edit") : can("owner", "manager");
+  const owner = allowed("payroll.rates");
   const today = todayIn(hotel.timezone);
   const [month, setMonth] = useState(today.slice(0, 7));
   const monthDate = `${month}-01`;

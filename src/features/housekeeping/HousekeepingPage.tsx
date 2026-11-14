@@ -22,14 +22,14 @@ const TYPE_ORDER: Record<HkTaskType, number> = { checkout_clean: 0, deep_clean: 
 
 const HousekeepingPage = () => {
   const { user } = useAuth();
-  const { hotel, can } = useCurrentHotel();
-  const isSupervisor = can("owner", "manager", "front_desk");
+  const { hotel, can, allowed, customRole, role } = useCurrentHotel();
+  const isSupervisor = customRole ? allowed("housekeeping.edit") : can("owner", "manager", "front_desk");
   const tasks = useHousekeepingTasks();
   const team = useTeam();
   const stayovers = useCreateStayovers();
   const names = useMemo(() => new Map(team.data?.map((m) => [m.user_id, m.full_name || m.email]) ?? []), [team.data]);
   const housekeepers = (team.data ?? []).filter((m) => m.role === "housekeeping" || m.role === "manager" || m.role === "owner");
-  const [view, setView] = useState<"all" | "mine">(can("housekeeping") ? "mine" : "all");
+  const [view, setView] = useState<"all" | "mine">(role === "housekeeping" && !customRole ? "mine" : "all");
   const [adding, setAdding] = useState(false);
   const [reportRoom, setReportRoom] = useState<string | null>(null);
   const today = todayIn(hotel.timezone);
@@ -136,7 +136,7 @@ const TaskCard = ({
   t, names, housekeepers, canAssign, onReport,
 }: { t: HkTask; names: Map<string, string>; housekeepers: { user_id: string; full_name: string | null; email: string }[]; canAssign: boolean; onReport: (roomId: string) => void }) => {
   const { user } = useAuth();
-  const { can } = useCurrentHotel();
+  const { can, allowed, customRole } = useCurrentHotel();
   const update = useUpdateTask();
   const room = t.rooms;
   const blocked = room?.status === "maintenance" || room?.status === "out_of_order";
@@ -195,7 +195,7 @@ const TaskCard = ({
                 <RotateCcw className="h-3.5 w-3.5" />Undo start
               </button>
             )}
-            {can("owner", "manager", "front_desk") && (
+            {(customRole ? allowed("housekeeping.edit") : can("owner", "manager", "front_desk")) && (
               <button className="text-slate-500 hover:text-red-700 flex items-center gap-1"
                 onClick={() => confirm(`Cancel this ${HK_TYPES[t.task_type].toLowerCase()} for room ${room?.room_number}?`) && update.mutate({ id: t.id, patch: { status: "cancelled" }, message: "Task cancelled" })}>
                 <X className="h-3.5 w-3.5" />Cancel

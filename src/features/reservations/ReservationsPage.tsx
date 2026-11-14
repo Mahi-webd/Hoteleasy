@@ -27,8 +27,9 @@ import { waNumber } from "@/hooks/useOnline";
 type View = "arrivals" | "inhouse" | "departures" | "upcoming" | "all" | "calendar";
 
 const ReservationsPage = () => {
-  const { hotel, can } = useCurrentHotel();
-  const canEdit = can("owner", "manager", "front_desk");
+  const { hotel, allowed } = useCurrentHotel();
+  const canEdit = allowed("reservations.edit");
+  const canCreate = allowed("reservations.create");
   const today = todayIn(hotel.timezone);
   const [view, setView] = useState<View>("arrivals");
   const [search, setSearch] = useState("");
@@ -38,7 +39,7 @@ const ReservationsPage = () => {
   const [editing, setEditing] = useState<{ r?: Reservation; defaults?: { check_in?: string; room_id?: string; room_type_id?: string } } | null>(null);
   const [checkingIn, setCheckingIn] = useState<Reservation | null>(null);
   const [billing, setBilling] = useState<{ r: Reservation; checkout?: boolean } | null>(null);
-  const seeMoney = can("owner", "manager", "front_desk", "accountant");
+  const seeMoney = allowed("billing.view");
 
   // One query covering today's operational views; a ranged one for "all".
   const active = useReservations({ from: addDays(today, -60), to: addDays(today, 365) });
@@ -81,7 +82,7 @@ const ReservationsPage = () => {
       <PageHeader
         title="Reservations"
         subtitle="Bookings, arrivals, in-house guests and departures"
-        actions={canEdit && (
+        actions={canCreate && (
           <Button onClick={() => setEditing({})} className="bg-gradient-to-r from-blue-600 to-indigo-600">
             <Plus className="mr-2 h-4 w-4" />New reservation
           </Button>
@@ -104,7 +105,7 @@ const ReservationsPage = () => {
           reservations={active.data ?? []}
           today={today}
           onOpen={(r) => canEdit && setEditing({ r })}
-          onNew={(d) => canEdit && setEditing({ defaults: d })}
+          onNew={(d) => canCreate && setEditing({ defaults: d })}
         />
       ) : (
         <>

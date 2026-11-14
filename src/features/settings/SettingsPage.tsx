@@ -17,7 +17,8 @@ import {
 import { ConfirmButton } from "@/components/common/ConfirmButton";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ROLE_LABELS, formatDate } from "@/lib/format";
-import type { HotelRole } from "@/lib/db-types";
+import type { CustomRole, HotelRole } from "@/lib/db-types";
+import { useCustomRoles } from "@/hooks/useRoles";
 
 const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "maintenance", "restaurant", "accountant", "storekeeper"];
 
@@ -34,17 +35,21 @@ const ROLE_HELP: Record<HotelRole, string> = {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, can, allowed } = useCurrentHotel();
   const isOwner = can("owner");
-  const canManage = can("owner", "manager");
+  const canManage = allowed("settings.edit");
+  const canInvite = allowed("team.invite");
   const updateHotel = useUpdateHotel();
   const team = useTeam();
-  const invites = useInvitations(canManage);
+  const invites = useInvitations(canInvite);
   const invite = useInvite();
   const revoke = useRevokeInvite();
   const changeRole = useChangeMemberRole();
   const removeMember = useRemoveMember();
-  const [inviteRole, setInviteRole] = useState<HotelRole>("front_desk");
+  const [inviteRole, setInviteRole] = useState<string>("front_desk");
+  const customRoles = useCustomRoles();
+  const roleById = new Map((customRoles.data ?? []).map((c) => [c.id, c] as const));
+  const inviteCustom = inviteRole.startsWith("custom:") ? roleById.get(inviteRole.slice(7)) : undefined;
 
   const saveHotel = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,7 +71,8 @@ const SettingsPage = () => {
     e.preventDefault();
     const form = e.currentTarget;
     const email = String(new FormData(form).get("email")).trim();
-    invite.mutate({ email, role: inviteRole }, { onSuccess: () => form.reset() });
+    invite.mutate(inviteCustom ? { email, role: inviteCustom.base_role, customRoleId: inviteCustom.id } : { email, role: inviteRole },
+      { onSuccess: () => form.reset() });
   };
 
   return (
@@ -157,14 +163,15 @@ const SettingsPage = () => {
                       <TableCell>{m.email}</TableCell>
                       <TableCell>
                         {editable ? (
-                          <Select value={m.role} onValueChange={(role) => changeRole.mutate({ memberId: m.member_id, role })}>
-                            <SelectTrigger className="w-40 h-8"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {ASSIGNABLE.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}
-                            </SelectContent>
+                          <Select value={m.custom_role_id ? `custom:${m.custom_role_id}` : m.role}
+                            onValueChange={(v) => changeRole.mutate(v.startsWith("custom:")
+                              ? { memberId: m.member_id, role: null, customRoleId: v.slice(7) }
+                              : { memberId: m.member_id, role: v, customRoleId: null })}>
+                            <SelectTrigger className="w-48 h-8" aria-label={`Role of ${m.full_name || m.email}`}><SelectValue /></SelectTrigger>
+                            <RoleOptions roles={customRoles.data ?? []} owner />
                           </Select>
                         ) : (
-                          <Badge variant="secondary">{ROLE_LABELS[m.role]}</Badge>
+                          <Badge variant="secondary">{m.custom_role_name ?? ROLE_LABELS[m.role]}</Badge>
                         )}
                       </TableCell>
                       <TableCell>{formatDate(m.joined_at)}</TableCell>
@@ -190,25 +197,21 @@ const SettingsPage = () => {
             </Table>
           </div>
 
-          {canManage && (
+          {canInvite && (
             <div className="space-y-3 rounded-lg border p-4 bg-slate-50/60 dark:bg-slate-800/40">
               <div className="font-medium flex items-center gap-2">
                 <UserPlus className="h-4 w-4" />Invite someone
               </div>
               <form onSubmit={sendInvite} className="flex flex-col md:flex-row gap-2">
                 <Input name="email" type="email" required placeholder="staff@email.com" className="md:flex-1" />
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as HotelRole)}>
-                  <SelectTrigger className="md:w-44"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ASSIGNABLE.filter((r) => isOwner || r !== "manager").map((r) => (
-                      <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                    ))}
-                  </SelectContent>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger className="md:w-52" aria-label="Role for the invitation"><SelectValue /></SelectTrigger>
+                  <RoleOptions roles={customRoles.data ?? []} owner={isOwner} />
                 </Select>
                 <Button type="submit" disabled={invite.isPending}>Invite</Button>
               </form>
               <p className="text-xs text-slate-500">
-                {ROLE_LABELS[inviteRole]}: {ROLE_HELP[inviteRole]}. Tell them to create an account at this site with
+                {inviteCustom ? `${inviteCustom.name}: ${inviteCustom.permissions.length} permissions${inviteCustom.description ? `, ${inviteCustom.description}` : ""}` : `${ROLE_LABELS[inviteRole as HotelRole]}: ${ROLE_HELP[inviteRole as HotelRole]}`}. Tell them to create an account at this site with
                 that email address; they'll be added automatically when they sign in.
               </p>
               {!!invites.data?.length && (
@@ -218,7 +221,7 @@ const SettingsPage = () => {
                     <div key={i.id} className="flex items-center justify-between text-sm bg-white dark:bg-slate-900 rounded-md px-3 py-2 border">
                       <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-slate-400" />{i.email}</span>
                       <span className="flex items-center gap-2">
-                        <Badge variant="outline">{ROLE_LABELS[i.role]}</Badge>
+                        <Badge variant="outline">{(i.custom_role_id && roleById.get(i.custom_role_id)?.name) || ROLE_LABELS[i.role]}</Badge>
                         <Button size="sm" variant="ghost" onClick={() => revoke.mutate(i.id)}><Trash2 className="h-4 w-4" /></Button>
                       </span>
                     </div>
@@ -234,8 +237,9 @@ const SettingsPage = () => {
 };
 
 const BillingSettings = () => {
-  const { hotel, can } = useCurrentHotel();
-  const canManage = can("owner", "manager");
+  const { hotel, can, allowed } = useCurrentHotel();
+  const canManage = allowed("settings.edit");
+  const canInvite = allowed("team.invite");
   const updateHotel = useUpdateHotel();
   const [inclusive, setInclusive] = useState(hotel.prices_include_vat);
 
@@ -336,3 +340,12 @@ const BillingSettings = () => {
 };
 
 export default SettingsPage;
+
+/** Built-in roles, then the hotel's custom roles (owner only). */
+const RoleOptions = ({ roles, owner }: { roles: CustomRole[]; owner: boolean }) => (
+  <SelectContent>
+    {ASSIGNABLE.filter((r) => owner || r !== "manager").map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}
+    {owner && roles.length > 0 && <div className="px-2 pt-2 pb-1 text-xs font-medium text-slate-500 border-t mt-1">Custom roles</div>}
+    {owner && roles.map((c) => <SelectItem key={c.id} value={`custom:${c.id}`}>{c.name}</SelectItem>)}
+  </SelectContent>
+);

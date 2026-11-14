@@ -28,9 +28,9 @@ import type { Room, RoomStatus, RoomType } from "@/lib/db-types";
 const MANUAL_STATUSES: RoomStatus[] = ["available", "dirty", "cleaning", "maintenance", "out_of_order"];
 
 const RoomsPage = () => {
-  const { hotel, can } = useCurrentHotel();
-  const canManage = can("owner", "manager");
-  const canSetStatus = can("owner", "manager", "front_desk", "housekeeping");
+  const { hotel, allowed } = useCurrentHotel();
+  const canManage = allowed("rooms.edit", "rooms.create");
+  const canSetStatus = allowed("rooms.status", "rooms.edit");
   const rooms = useRooms();
   const types = useRoomTypes();
   const today = todayIn(hotel.timezone);

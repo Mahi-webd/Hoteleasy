@@ -25,11 +25,11 @@ const PRIORITY_ORDER: Record<Priority, number> = { urgent: 0, high: 1, normal: 2
 
 const MaintenancePage = () => {
   const { user } = useAuth();
-  const { can } = useCurrentHotel();
+  const { can, role } = useCurrentHotel();
   const tickets = useTickets();
   const team = useTeam();
   const names = useMemo(() => new Map(team.data?.map((m) => [m.user_id, m.full_name || m.email]) ?? []), [team.data]);
-  const [view, setView] = useState<View>(can("maintenance") ? "mine" : "open");
+  const [view, setView] = useState<View>(role === "maintenance" ? "mine" : "open");
   const [search, setSearch] = useState("");
   const [reporting, setReporting] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -125,10 +125,10 @@ const MaintenancePage = () => {
 
 const TicketSheet = ({ ticket: t, names, onClose }: { ticket: MtTicket; names: Map<string, string>; onClose: () => void }) => {
   const { user } = useAuth();
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, can, allowed } = useCurrentHotel();
   const team = useTeam();
   const update = useUpdateTicket();
-  const canWork = can("owner", "manager", "maintenance", "front_desk") || t.assigned_to === user?.id;
+  const canWork = allowed("maintenance.edit") || t.assigned_to === user?.id;
   const [status, setStatus] = useState<MtStatus>(t.status);
   const [priority, setPriority] = useState<Priority>(t.priority);
   const [assignee, setAssignee] = useState<string>(t.assigned_to ?? "none");

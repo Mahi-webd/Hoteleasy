@@ -32,8 +32,8 @@ const PRIORITY: Record<string, string> = { "0": "Normal", "5": "Higher", "10": "
 const short = (n: number) => Number(n).toLocaleString("en-KE", { maximumFractionDigits: 0 });
 
 const RatesPage = () => {
-  const { can } = useCurrentHotel();
-  const admin = can("owner", "manager");
+  const { allowed } = useCurrentHotel();
+  const admin = allowed("rates.edit");
   return (
     <div className="space-y-4">
       <PageHeader title="Rates & seasons" subtitle="Prices per night by season, meal plans and packages, used by front desk and your booking page" />
@@ -293,7 +293,7 @@ const PLAN_TEMPLATES: { label: string; p: Partial<RatePlan> }[] = [
 ];
 
 const Plans = ({ admin }: { admin: boolean }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const plans = useRatePlans();
   const types = useRoomTypes();
   const del = useDeletePlan();

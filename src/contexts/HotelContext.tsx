@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import type { Hotel, HotelRole, Membership } from "@/lib/db-types";
+import { builtInPerms } from "@/lib/permissions";
 
 const STORAGE_KEY = "hoteleasy.currentHotel";
 
@@ -13,8 +14,15 @@ interface HotelState {
   loading: boolean;
   switchHotel: (hotelId: string) => void;
   refresh: () => Promise<void>;
-  /** True if the current user has one of the given roles in the current hotel. */
+  /** True if the current user has one of these built-in roles. Always false on a custom role. */
   can: (...roles: HotelRole[]) => boolean;
+  /** True if the current user has any of these permissions (e.g. "billing.void"). The owner has them all. */
+  allowed: (...perms: string[]) => boolean;
+  /** The custom role the user is on in this hotel, if any. */
+  customRole: { id: string; name: string } | null;
+  perms: Set<string>;
+  /** False while a custom role's permissions are still loading. */
+  permsReady: boolean;
 }
 
 const HotelContext = createContext<HotelState | undefined>(undefined);
@@ -32,7 +40,7 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
       await supabase.rpc("accept_pending_invitations");
       const { data, error } = await supabase
         .from("hotel_members")
-        .select("id, hotel_id, role, hotels(*)")
+        .select("id, hotel_id, role, custom_role_id, hotels(*)")
         .eq("user_id", user!.id)
         .order("created_at");
       if (error) throw error;
@@ -44,6 +52,22 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
     () => memberships.find((m) => m.hotel_id === currentId) ?? memberships[0] ?? null,
     [memberships, currentId],
   );
+
+  const { data: mine } = useQuery({
+    queryKey: ["my-permissions", current?.hotel_id, current?.role, current?.custom_role_id],
+    enabled: !!current,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("my_permissions", { _hotel_id: current!.hotel_id });
+      if (error) throw error;
+      return data as unknown as { permissions: string[]; custom_role_id: string | null; custom_role_name: string | null } | null;
+    },
+  });
+  const perms = useMemo(() => new Set<string>(
+    mine?.permissions ?? (current && !current.custom_role_id ? builtInPerms(current.role) : []),
+  ), [mine, current]);
+  const customRole = current?.custom_role_id ? { id: current.custom_role_id, name: mine?.custom_role_name ?? "" } : null;
 
   useEffect(() => {
     if (current) localStorage.setItem(STORAGE_KEY, current.hotel_id);
@@ -62,7 +86,11 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
     refresh: async () => {
       await qc.invalidateQueries({ queryKey: ["memberships"] });
     },
-    can: (...roles) => !!current && roles.includes(current.role),
+    can: (...roles) => !!current && !current.custom_role_id && roles.includes(current.role),
+    allowed: (...ps) => !!current && (current.role === "owner" || ps.some((p) => p.split("|").some((x) => perms.has(x)))),
+    customRole,
+    perms,
+    permsReady: !current?.custom_role_id || !!mine,
   };
 
   return <HotelContext.Provider value={value}>{children}</HotelContext.Provider>;

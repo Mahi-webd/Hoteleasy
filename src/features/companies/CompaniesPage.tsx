@@ -23,8 +23,9 @@ const n = (v: number | null | undefined) => Number(v ?? 0);
 const BUCKETS: [keyof NonNullable<CompanyAccount["ageing"]>, string][] = [["current", "Not yet due"], ["d30", "1–30 days late"], ["d60", "31–60"], ["d90", "61–90"], ["d90p", "Over 90"]];
 
 const CompaniesPage = () => {
-  const { hotel, can } = useCurrentHotel();
-  const money = can("owner", "manager", "accountant");
+  const { hotel, allowed } = useCurrentHotel();
+  const money = allowed("companies.ledger");
+  const canEditCo = allowed("companies.edit");
   const q = useCompanyAccounts();
   const [search, setSearch] = useState("");
   const [showClosed, setShowClosed] = useState(false);
@@ -44,7 +45,7 @@ const CompaniesPage = () => {
   return (
     <div className="space-y-4">
       <PageHeader title="Company accounts" subtitle="Businesses that book on account: negotiated rates, credit limits, what they owe and when it's due"
-        actions={money ? <Button onClick={() => setEditing({ terms_days: 30, default_bill_to: "company_all", active: true })}><Plus className="mr-1 h-4 w-4" />Add company</Button> : null} />
+        actions={canEditCo ? <Button onClick={() => setEditing({ terms_days: 30, default_bill_to: "company_all", active: true })}><Plus className="mr-1 h-4 w-4" />Add company</Button> : null} />
       {money && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[["Owed by companies", formatMoney(owed, cur), ""], ["Overdue", formatMoney(overdue, cur), overdue > 0 ? "text-red-700" : ""],
@@ -131,7 +132,7 @@ export default CompaniesPage;
 
 // ---------------------------------------------------------------- add / edit
 const CompanyDialog = ({ c, onClose }: { c: Partial<CompanyAccount>; onClose: () => void }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const types = useRoomTypes();
   const save = useSaveCompany();
   const [f, setF] = useState<Partial<CompanyAccount>>(c);

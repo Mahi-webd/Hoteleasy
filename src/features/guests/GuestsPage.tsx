@@ -25,8 +25,9 @@ const useDebounced = (value: string, ms = 300) => {
 };
 
 const GuestsPage = () => {
-  const { can } = useCurrentHotel();
-  const canEdit = can("owner", "manager", "front_desk");
+  const { allowed } = useCurrentHotel();
+  const canEdit = allowed("guests.edit");
+  const canCreate = allowed("guests.create");
   const [search, setSearch] = useState("");
   const guests = useGuests(useDebounced(search));
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
@@ -37,7 +38,7 @@ const GuestsPage = () => {
       <PageHeader
         title="Guests"
         subtitle="Every guest who has stayed or booked, with their history"
-        actions={canEdit && (
+        actions={canCreate && (
           <Button onClick={() => setEditing({})} className="bg-gradient-to-r from-blue-600 to-indigo-600">
             <Plus className="mr-2 h-4 w-4" />Add guest
           </Button>
@@ -109,7 +110,7 @@ const GuestsPage = () => {
         <GuestProfile
           guest={viewing}
           canEdit={canEdit}
-          canDelete={can("owner", "manager")}
+          canDelete={allowed("guests.delete")}
           onEdit={() => setEditing(viewing)}
           onClose={() => setViewing(null)}
         />

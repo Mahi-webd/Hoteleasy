@@ -14,7 +14,7 @@ import type { PosPaymentMethod, PosShift, ShiftReport } from "@/lib/db-types";
 
 /** Open a cash shift with a float; X report while open; blind count to close → Z report. */
 export const ShiftPanel = () => {
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
   const shift = useMyShift();
   const openShift = useOpenShift();
   const [float, setFloat] = useState("2000");
@@ -40,7 +40,7 @@ export const ShiftPanel = () => {
       ) : (
         <OpenShift shift={shift.data} currency={hotel.currency} onClosed={setClosed} />
       )}
-      {can("owner", "manager", "accountant") && <ShiftHistory />}
+      {allowed("pos.shifts") && <ShiftHistory />}
     </div>
   );
 };

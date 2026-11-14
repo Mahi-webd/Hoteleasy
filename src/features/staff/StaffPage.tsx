@@ -33,10 +33,10 @@ import { Payroll } from "./Payroll";
 const MAX_WEEK_HOURS = 52;
 
 const StaffPage = () => {
-  const { can } = useCurrentHotel();
-  const admin = can("owner", "manager");
-  const clocker = can("owner", "manager", "front_desk");
-  const money = can("owner", "manager", "accountant");
+  const { allowed } = useCurrentHotel();
+  const admin = allowed("staff.edit");
+  const clocker = allowed("staff.clock");
+  const money = allowed("payroll.view");
   const [tab, setTab] = useState(admin ? "rota" : clocker ? "today" : "hours");
   return (
     <div className="space-y-4">
@@ -75,7 +75,7 @@ export const ShiftChip = ({ s, tpl, tz, onClick }: { s: Shift; tpl?: ShiftTempla
 );
 
 const Rota = () => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const tz = hotel.timezone;
   const today = todayIn(tz);
   const [monday, setMonday] = useState(mondayOf(today));
@@ -205,7 +205,7 @@ const AddShift = ({ staff, date, templates, onCustom }: { staff: Staff; date: st
 };
 
 const ShiftDialog = ({ shift, staff, date, templates, onClose }: { shift?: Shift; staff: Staff; date: string; templates: ShiftTemplate[]; onClose: () => void }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const tz = hotel.timezone;
   const save = useSaveShift();
   const del = useDeleteShift();
@@ -252,7 +252,7 @@ const ShiftDialog = ({ shift, staff, date, templates, onClose }: { shift?: Shift
 
 // ======================================================================= today
 const Today = ({ admin }: { admin: boolean }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const tz = hotel.timezone;
   const today = todayIn(tz);
   const [wf, wt] = windowIso(addDays(today, -1), today);
@@ -418,7 +418,7 @@ const LeaveAdmin = () => {
 };
 
 export const LeaveDialog = ({ staff, admin, fixedStaffId, onClose }: { staff: Staff[]; admin?: boolean; fixedStaffId?: string; onClose: () => void }) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const save = useSaveLeave();
   const today = todayIn(hotel.timezone);
   const [sid, setSid] = useState(fixedStaffId ?? "");
@@ -456,7 +456,7 @@ export const LeaveDialog = ({ staff, admin, fixedStaffId, onClose }: { staff: St
 
 // ======================================================================= hours
 const Hours = () => {
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const [from, setFrom] = useState(`${today.slice(0, 7)}-01`);
   const [to, setTo] = useState(today);
@@ -517,7 +517,7 @@ const Hours = () => {
         </Card>
       )}
       <p className="text-xs text-slate-500">Hours worked come from clock in/out, less the shift's break. "Absent" counts published shifts that ended with no clock-in. Pay estimates: daily rate × days in, hourly rate × hours, monthly salary × share of the month. They are a guide; the Payroll tab works out payslips with PAYE, NSSF, SHIF and housing levy.
-        {can("owner", "manager", "accountant") && casualTotal > 0 && ` Casual wages in this period: ${formatMoney(casualTotal, hotel.currency)}; record them under Expenses & profit → Casual labour when paid.`}</p>
+        {allowed("payroll.view") && casualTotal > 0 && ` Casual wages in this period: ${formatMoney(casualTotal, hotel.currency)}; record them under Expenses & profit → Casual labour when paid.`}</p>
     </div>
   );
 };

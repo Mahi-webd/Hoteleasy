@@ -92,7 +92,7 @@ export const useMenu = () => {
 };
 
 export const useSetupDefaults = () => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   return usePosAction(
     async (withMenu: boolean) => unwrap(await supabase.rpc("pos_setup_defaults", { _hotel_id: hotel.id, _with_menu: withMenu })),
     "POS set up: outlets, tables and menu are ready",
@@ -101,7 +101,7 @@ export const useSetupDefaults = () => {
 
 /** Generic upsert/delete for setup tables (managers only, enforced by RLS). */
 export const useSaveRow = (table: string, label: string) => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
   return usePosAction(
     async (row: Record<string, unknown>) => {
       const { id, ...rest } = row;
@@ -134,10 +134,10 @@ export const useToggleAvailable = () =>
 
 // ------------------------------------------------------------------ PIN
 export const useHasPin = () => {
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
   return useQuery({
     queryKey: ["pos", "pin", hotel.id],
-    enabled: can("owner", "manager"),
+    enabled: allowed("pos.admin"),
     queryFn: async () => unwrap(await supabase.rpc("has_my_pin", { _hotel_id: hotel.id })) as boolean,
   });
 };

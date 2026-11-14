@@ -35,9 +35,9 @@ const beep = () => {
 };
 
 const RequestsPage = () => {
-  const { role, can } = useCurrentHotel();
-  const admin = can("owner", "manager");
-  const desk = can("owner", "manager", "front_desk");
+  const { role, can, allowed, customRole } = useCurrentHotel();
+  const admin = allowed("requests.settings");
+  const desk = customRole ? allowed("requests.edit") : can("owner", "manager", "front_desk");
   const since = useMemo(() => subDays(new Date(), 1).toISOString(), []);
   const q = useRequests(since);
   const onNew = useCallback((r: GuestRequest) => { beep(); toast.info(`New request: ${r.label}`); }, []);
@@ -156,7 +156,7 @@ const AddDialog = ({ onClose }: { onClose: () => void }) => {
 
 // ---------------------------------------------------------------- setup
 const Setup = () => {
-  const { hotel } = useCurrentHotel();
+  const { hotel, can } = useCurrentHotel();
   const types = useRequestTypes();
   const save = useSaveRequestType();
   const del = useDeleteRequestType();

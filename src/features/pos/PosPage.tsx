@@ -23,8 +23,8 @@ const OUTLET_KEY = "hoteleasy.pos.outlet";
 
 const PosPage = () => {
   usePosRealtime();
-  const { can } = useCurrentHotel();
-  const isManager = can("owner", "manager");
+  const { can, allowed, customRole } = useCurrentHotel();
+  const isManager = allowed("pos.admin");
   const setup = usePosSetup();
   const defaults = useSetupDefaults();
   const shift = useMyShift();
@@ -95,7 +95,7 @@ const PosPage = () => {
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="floor"><UtensilsCrossed className="mr-1 h-4 w-4" />{outlet?.name}</TabsTrigger>
           <TabsTrigger value="shift"><Clock className="mr-1 h-4 w-4" />Shift{shift.data ? " · open" : ""}</TabsTrigger>
-          {can("owner", "manager", "accountant", "front_desk") && <TabsTrigger value="sales">Sales</TabsTrigger>}
+          {(customRole ? allowed("pos.shifts") : can("owner", "manager", "accountant", "front_desk")) && <TabsTrigger value="sales">Sales</TabsTrigger>}
           {isManager && <TabsTrigger value="setup"><Settings2 className="mr-1 h-4 w-4" />Setup</TabsTrigger>}
         </TabsList>
         <TabsContent value="floor">{outlet && <Floor outletId={outlet.id} tables={setup.data!.tables.filter((t) => t.outlet_id === outlet.id && t.active)} kind={outlet.kind} onOpen={setOrderId} />}</TabsContent>

@@ -68,6 +68,7 @@ export interface Membership {
   id: string;
   hotel_id: string;
   role: HotelRole;
+  custom_role_id: string | null;
   hotels: Hotel;
 }
 
@@ -78,6 +79,8 @@ export interface TeamMember {
   email: string;
   role: HotelRole;
   joined_at: string;
+  custom_role_id: string | null;
+  custom_role_name: string | null;
 }
 
 export interface Invitation {
@@ -85,6 +88,7 @@ export interface Invitation {
   hotel_id: string;
   email: string;
   role: HotelRole;
+  custom_role_id: string | null;
   accepted_at: string | null;
   created_at: string;
 }
@@ -595,3 +599,15 @@ export interface DayReport {
   guest_ledger: number; deposits: number; guest_debts: number; city_ledger: number; voids: number;
 }
 export interface BusinessDay { hotel_id: string; day: string; closed_at: string; closed_by: string | null; summary: DayReport; notes: string | null }
+
+// ---------- custom roles ----------
+export interface CustomRole {
+  id: string;
+  hotel_id: string;
+  name: string;
+  description: string | null;
+  base_role: HotelRole;
+  permissions: string[];
+  created_at: string;
+  updated_at: string;
+}

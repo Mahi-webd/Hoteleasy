@@ -58,7 +58,7 @@ export const DayFigures = ({ r }: { r: DayReport }) => {
 };
 
 const AuditPage = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, can, allowed } = useCurrentHotel();
   const today = todayIn(hotel.timezone);
   const first = useDayChecks(today);
   const [day, setDay] = useState<string | null>(null);
@@ -72,7 +72,7 @@ const AuditPage = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const [notes, setNotes] = useState("");
   const c = checks.data;
   const closedAlready = !!c?.last_closed && !!day && day <= c.last_closed;
-  const canClose = can("owner", "manager", "front_desk");
+  const canClose = allowed("audit.create");
 
   return (
     <div className="space-y-4">
@@ -140,7 +140,7 @@ const AuditPage = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
                     <TableCell className="text-xs text-slate-500 whitespace-nowrap">{format(parseISO(d.closed_at), "d MMM HH:mm")}{d.notes ? " · has notes" : ""}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="sm" variant="ghost" asChild><a href={`/day-report/${d.day}`} target="_blank" rel="noreferrer" aria-label={`Report for ${d.day}`}><Printer className="h-4 w-4" /></a></Button>
-                      {i === 0 && can("owner", "manager") && (
+                      {i === 0 && allowed("audit.delete") && (
                         <Button size="sm" variant="ghost" onClick={() => { const reason = prompt(`Reopen ${d.day}? Say why (it will be logged):`); if (reason?.trim()) reopen.mutate({ day: d.day, reason: reason.trim() }); }}>
                           <RotateCcw className="mr-1 h-4 w-4" />Reopen</Button>
                       )}

@@ -355,8 +355,10 @@ export const useInvitations = (enabled: boolean) => {
 export const useInvite = () => {
   const { hotel } = useCurrentHotel();
   return useAction(
-    async ({ email, role }: { email: string; role: string }) =>
-      unwrap(await supabase.from("hotel_invitations").insert({ hotel_id: hotel.id, email: email.trim().toLowerCase(), role })),
+    async ({ email, role, customRoleId }: { email: string; role: string; customRoleId?: string | null }) =>
+      unwrap(await supabase.from("hotel_invitations").insert({
+        hotel_id: hotel.id, email: email.trim().toLowerCase(), role, custom_role_id: customRoleId ?? null,
+      } as never)),
     { invalidate: ["team"], success: (a) => `Invitation saved for ${a.email}` },
   );
 };
@@ -369,9 +371,9 @@ export const useRevokeInvite = () =>
 
 export const useChangeMemberRole = () =>
   useAction(
-    async ({ memberId, role }: { memberId: string; role: string }) =>
-      unwrap(await supabase.from("hotel_members").update({ role }).eq("id", memberId)),
-    { invalidate: ["team"], success: "Role updated" },
+    async ({ memberId, role, customRoleId }: { memberId: string; role: string | null; customRoleId?: string | null }) =>
+      unwrap(await supabase.rpc("member_set_role" as never, { _member_id: memberId, _role: role, _custom_role_id: customRoleId ?? null } as never)),
+    { invalidate: ["team", "roles"], success: "Role updated" },
   );
 
 export const useRemoveMember = () =>

@@ -19,8 +19,8 @@ export const ApprovalDialog = ({
   title: string; description?: string; confirmLabel?: string; children?: ReactNode; reasons?: string[]; needsReason?: boolean;
   onSubmit: (reason: string, pin?: string) => Promise<unknown>; onClose: () => void;
 }) => {
-  const { can } = useCurrentHotel();
-  const isManager = can("owner", "manager");
+  const { allowed } = useCurrentHotel();
+  const isManager = allowed("pos.admin");
   const [reason, setReason] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);

@@ -1,72 +1,74 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar } from "lucide-react";
+  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar, ShieldCheck } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
   key: string;
   label: string;
   icon: LucideIcon;
-  /** Roles allowed to open it. Omit = everyone. */
-  roles?: HotelRole[];
+  /** Permission needed to open it (any of, "a|b"). Omit = everyone. */
+  perm?: string;
+  /** Only the hotel owner. */
+  ownerOnly?: boolean;
   /** Still showing demo data — not connected to the database yet. */
   preview?: boolean;
 }
-
-const FRONT: HotelRole[] = ["owner", "manager", "front_desk"];
-const MGMT: HotelRole[] = ["owner", "manager"];
-const MONEY: HotelRole[] = ["owner", "manager", "accountant"];
 
 export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Front office",
     items: [
-      { key: "dashboard", label: "Dashboard", icon: Home },
-      { key: "reservations", label: "Reservations", icon: Calendar },
-      { key: "online-checkin", label: "Online check-in", icon: Smartphone, roles: FRONT },
-      { key: "requests", label: "Guest requests", icon: BellRing, roles: ["owner", "manager", "front_desk", "housekeeping", "maintenance", "restaurant"] },
-      { key: "audit", label: "Night audit", icon: MoonStar, roles: [...FRONT, "accountant"] },
-      { key: "rates", label: "Rates & seasons", icon: CalendarRange, roles: [...FRONT, "accountant"] },
-      { key: "rooms", label: "Rooms", icon: MapPin },
-      { key: "guests", label: "Guests", icon: Users, roles: [...FRONT, "accountant", "restaurant"] },
-      { key: "billing", label: "Billing & Payments", icon: CreditCard, roles: [...FRONT, "accountant"] },
-      { key: "companies", label: "Company accounts", icon: Building2, roles: [...FRONT, "accountant"] },
-      { key: "online", label: "Online booking & reviews", icon: Globe, roles: [...FRONT, "accountant"] },
+      { key: "dashboard", label: "Dashboard", icon: Home, perm: "dashboard.view" },
+      { key: "reservations", label: "Reservations", icon: Calendar, perm: "reservations.view" },
+      { key: "online-checkin", label: "Online check-in", icon: Smartphone, perm: "precheck.view" },
+      { key: "requests", label: "Guest requests", icon: BellRing, perm: "requests.view" },
+      { key: "audit", label: "Night audit", icon: MoonStar, perm: "audit.view" },
+      { key: "rates", label: "Rates & seasons", icon: CalendarRange, perm: "rates.view" },
+      { key: "rooms", label: "Rooms", icon: MapPin, perm: "rooms.view" },
+      { key: "guests", label: "Guests", icon: Users, perm: "guests.view" },
+      { key: "billing", label: "Billing & Payments", icon: CreditCard, perm: "billing.view" },
+      { key: "companies", label: "Company accounts", icon: Building2, perm: "companies.view" },
+      { key: "online", label: "Online booking & reviews", icon: Globe, perm: "online.view" },
     ],
   },
   {
     title: "Food & beverage",
     items: [
-      { key: "pos", label: "Restaurant & Bar POS", icon: ShoppingCart, roles: [...FRONT, "restaurant", "accountant"] },
-      { key: "kds", label: "Kitchen & bar screen", icon: ChefHat, roles: [...MGMT, "front_desk", "restaurant"] },
+      { key: "pos", label: "Restaurant & Bar POS", icon: ShoppingCart, perm: "pos.view" },
+      { key: "kds", label: "Kitchen & bar screen", icon: ChefHat, perm: "kds.view" },
     ],
   },
   {
     title: "Management",
     items: [
-      { key: "owner", label: "Owner overview", icon: LayoutDashboard, roles: ["owner", "manager", "accountant"] },
-      { key: "reports", label: "Reports", icon: BarChart3, roles: MONEY },
-      { key: "finance", label: "Expenses & profit", icon: Wallet, roles: MONEY },
+      { key: "owner", label: "Owner overview", icon: LayoutDashboard, perm: "owner.view" },
+      { key: "reports", label: "Reports", icon: BarChart3, perm: "reports.view" },
+      { key: "finance", label: "Expenses & profit", icon: Wallet, perm: "finance.view" },
     ],
   },
   {
     title: "Operations",
     items: [
-      { key: "housekeeping", label: "Housekeeping", icon: UserCheck, roles: [...FRONT, "housekeeping"] },
-      { key: "maintenance", label: "Maintenance", icon: Wrench },
-      { key: "inventory", label: "Inventory", icon: Package, roles: ["owner", "manager", "storekeeper", "accountant", "restaurant"] },
-      { key: "staff", label: "Staff & rota", icon: Users, roles: ["owner", "manager", "front_desk", "accountant"] },
+      { key: "housekeeping", label: "Housekeeping", icon: UserCheck, perm: "housekeeping.view" },
+      { key: "maintenance", label: "Maintenance", icon: Wrench, perm: "maintenance.view" },
+      { key: "inventory", label: "Inventory", icon: Package, perm: "inventory.view" },
+      { key: "staff", label: "Staff & rota", icon: Users, perm: "staff.view" },
       { key: "my-shifts", label: "My shifts", icon: Clock },
     ],
   },
   {
     title: "Admin",
-    items: [{ key: "settings", label: "Settings & Team", icon: Settings }],
+    items: [
+      { key: "settings", label: "Settings & Team", icon: Settings, perm: "settings.view" },
+      { key: "roles", label: "Roles & permissions", icon: ShieldCheck, ownerOnly: true },
+    ],
   },
 ];
 
-export const canSee = (item: NavItem, role: HotelRole | null) => !item.roles || (!!role && item.roles.includes(role));
+export const canSee = (item: NavItem, role: HotelRole | null, allowed: (...p: string[]) => boolean) =>
+  !!role && (item.ownerOnly ? role === "owner" : !item.perm || allowed(item.perm));
 
 interface AppSidebarProps {
   isOpen: boolean;
@@ -74,9 +76,10 @@ interface AppSidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   role: HotelRole | null;
+  allowed: (...p: string[]) => boolean;
 }
 
-const AppSidebar = ({ isOpen, onToggle, activeTab, setActiveTab, role }: AppSidebarProps) => (
+const AppSidebar = ({ isOpen, onToggle, activeTab, setActiveTab, role, allowed }: AppSidebarProps) => (
   <>
     {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onToggle} />}
     <aside
@@ -91,7 +94,7 @@ const AppSidebar = ({ isOpen, onToggle, activeTab, setActiveTab, role }: AppSide
       </div>
       <nav className="p-4 h-full overflow-y-auto space-y-5 pb-24">
         {NAV_SECTIONS.map((section) => {
-          const items = section.items.filter((i) => canSee(i, role));
+          const items = section.items.filter((i) => canSee(i, role, allowed));
           if (!items.length) return null;
           return (
             <div key={section.title} className="space-y-1">

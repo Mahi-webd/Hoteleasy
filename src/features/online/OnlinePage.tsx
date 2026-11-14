@@ -28,9 +28,9 @@ const copy = async (text: string, what = "Link") => {
 import { EmailsTab } from "./EmailsTab";
 
 const OnlinePage = () => {
-  const { can } = useCurrentHotel();
-  const admin = can("owner", "manager");
-  const canEmail = can("owner", "manager", "front_desk");
+  const { allowed } = useCurrentHotel();
+  const admin = allowed("online.edit");
+  const canEmail = allowed("online.reply", "online.edit");
   const settings = useBookingSettings();
   const [tab, setTab] = useState("bookings");
   if (settings.isLoading) return <LoadingBlock />;
@@ -61,7 +61,7 @@ const OnlinePage = () => {
           {admin && <TabsTrigger value="setup">Setup</TabsTrigger>}
         </TabsList>
         <TabsContent value="bookings"><Bookings /></TabsContent>
-        <TabsContent value="reviews"><Reviews canReply={admin} /></TabsContent>
+        <TabsContent value="reviews"><Reviews canReply={allowed("online.reply")} /></TabsContent>
         {canEmail && <TabsContent value="emails"><EmailsTab admin={admin} /></TabsContent>}
         {admin && s && <TabsContent value="setup"><Setup s={s} url={url} /></TabsContent>}
       </Tabs>

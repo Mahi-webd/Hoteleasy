@@ -24,7 +24,7 @@ const poTotal = (po: PurchaseOrder) => po.purchase_order_lines.reduce((s, l) => 
 
 // ---------------------------------------------------------------- receive goods
 export const ReceiveGoods = ({ data, poId, onDone }: { data: InvData; poId: string | null; onDone: () => void }) => {
-  const { hotel, can } = useCurrentHotel();
+  const { hotel, allowed } = useCurrentHotel();
   const pos = usePurchaseOrders();
   const receive = useReceive();
   const open = (pos.data ?? []).filter((p) => p.status === "approved" || p.status === "partly_received");
@@ -104,7 +104,7 @@ export const ReceiveGoods = ({ data, poId, onDone }: { data: InvData; poId: stri
               <Input type="number" min={0} className="w-16 h-8" value={dueDays} onChange={(e) => setDueDays(e.target.value)} aria-label="Bill due in days" disabled={!bill} />days
             </label>
           )}
-          {can("owner", "manager", "storekeeper") && !po ? (
+          {allowed("inventory.edit") && !po ? (
             <label className="flex items-center gap-2 text-sm"><Switch checked={opening} onCheckedChange={setOpening} />This is opening stock (no supplier)</label>
           ) : <span />}
           <Button onClick={submit} disabled={!ready || receive.isPending}><PackageCheck className="mr-2 h-4 w-4" />{opening ? "Save opening stock" : "Receive into store"}</Button>
