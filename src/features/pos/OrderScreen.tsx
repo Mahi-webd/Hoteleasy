@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  ArrowLeft, Ban, BedDouble, ChefHat, Gift, Minus, MoreVertical, Percent, Plus, Printer, Scissors, Search, Send, Trash2, Users, Wallet, Wine,
+  ArrowLeft, Ban, BedDouble, ChefHat, Coffee, Gift, X, Minus, MoreVertical, Percent, Plus, Printer, Scissors, Search, Send, Trash2, Users, Wallet, Wine,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import {
   useAddItem, useDiscount, useMenu, useMoveItems, useOrder, usePosSetup, useRemoveNewItem, useSendOrder, useServiceCharge, useSetQty,
-  useToggleAvailable, useUpdateOrder, useVoidItem, useVoidOrder,
+  useToggleAvailable, useUpdateOrder, useVoidItem, useVoidOrder, useBoardGuests, useCloseBoard, useSetBoard,
 } from "@/hooks/usePos";
 import { LoadingBlock } from "@/components/common/PageHeader";
 import { ITEM_STATUS, formatMoney, formatMoney2, guestName, minutesSince } from "@/lib/format";
-import type { MenuItem, PosOrder, PosOrderItem } from "@/lib/db-types";
+import type { BoardGuest, BoardMeal, MenuItem, PosOrder, PosOrderItem } from "@/lib/db-types";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ApprovalDialog } from "./ApprovalDialog";
 import { ModifierDialog } from "./ModifierDialog";
 import { PayDialog } from "./PayDialog";
@@ -30,7 +31,7 @@ export const orderTitle = (o: PosOrder) =>
 
 type Dialog =
   | { kind: "void" | "comp"; item: PosOrderItem }
-  | { kind: "discount" | "service" | "void-bill" | "pay" }
+  | { kind: "discount" | "service" | "void-bill" | "pay" | "board" }
   | null;
 
 export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () => void }) => {
@@ -50,6 +51,8 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
   const move = useMoveItems();
   const update = useUpdateOrder();
   const sold = useToggleAvailable();
+  const setBoard = useSetBoard();
+  const closeBoard = useCloseBoard();
 
   const [cat, setCat] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -105,6 +108,7 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="Bill options"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setDialog({ kind: "board" })}><Coffee className="mr-2 h-4 w-4" />Board meal (meal plan guest)</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setDialog({ kind: "discount" })}><Percent className="mr-2 h-4 w-4" />Discount</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setSvcRate(String(Number(o.service_charge_rate) * 100)); setDialog({ kind: "service" }); }}><Percent className="mr-2 h-4 w-4" />Service charge</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setSplitMode(true); setSelected([]); setMobileTab("bill"); }}><Scissors className="mr-2 h-4 w-4" />Split items to new bill</DropdownMenuItem>
@@ -200,6 +204,17 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
 
         <div className="border-t p-3 space-y-1 text-sm">
           <Row label="Items" value={formatMoney2(o.items_gross, cur)} />
+          {o.board_reservation_id && (
+            <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 px-2 py-1.5 flex items-center gap-2" data-testid="board-banner">
+              <Coffee className="h-4 w-4 text-emerald-700 shrink-0" />
+              <div className="flex-1 text-xs">
+                <div className="font-medium">{o.board_meal ? o.board_meal[0].toUpperCase() + o.board_meal.slice(1) : ""} on meal plan · {o.board_covers} {o.board_covers === 1 ? "person" : "people"}</div>
+                <div className="text-slate-600">{o.board_allowance != null ? `Food covered up to ${formatMoney2(Number(o.board_allowance), cur)}` : "All food covered"}; drinks charged</div>
+              </div>
+              <span className="text-sm font-semibold text-emerald-700 whitespace-nowrap">− {formatMoney2(Number(o.board_covered ?? 0), cur)}</span>
+              {open && <Button size="icon" variant="ghost" className="h-6 w-6" aria-label="Remove board meal" onClick={() => setBoard.mutate({ orderId: o.id, reservationId: null })}><X className="h-3 w-3" /></Button>}
+            </div>
+          )}
           {Number(o.discount_amount) > 0 && <Row label={`Discount${o.discount_kind === "percent" ? ` ${Number(o.discount_value)}%` : ""}`} value={`− ${formatMoney2(o.discount_amount, cur)}`} />}
           {Number(o.service_charge) > 0 && <Row label={`Service charge ${(Number(o.service_charge_rate) * 100).toFixed(1).replace(/\.0$/, "")}%`} value={formatMoney2(Number(o.service_charge) * (1 + Number(hotel.vat_rate)), cur)} />}
           <Row label={`incl. VAT ${formatMoney2(o.vat_amount, cur)}${Number(o.levy_amount) ? ` · levy ${formatMoney2(o.levy_amount, cur)}` : ""}`} value="" muted />
@@ -214,10 +229,17 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
               <Send className="mr-1 h-4 w-4" />Send{newLines.length ? ` (${newLines.length})` : ""}
             </Button>
             <Button className="h-12" variant="outline" asChild><a href={`/pos-bill/${o.id}`} target="_blank" rel="noreferrer"><Printer className="mr-1 h-4 w-4" />Bill</a></Button>
+            {o.board_reservation_id && due <= 0.009 ? (
+              <Button className="h-12 bg-green-600 hover:bg-green-700" disabled={!lines.some((l) => l.status !== "void") || newLines.length > 0 || closeBoard.isPending}
+                title={newLines.length ? "Send the new items first" : undefined} onClick={() => closeBoard.mutate(o.id)}>
+                <Coffee className="mr-1 h-4 w-4" />Close (plan)
+              </Button>
+            ) : (
             <Button className="h-12 bg-green-600 hover:bg-green-700" disabled={!lines.some((l) => l.status !== "void") || newLines.length > 0}
               title={newLines.length ? "Send the new items first" : undefined} onClick={() => setDialog({ kind: "pay" })}>
               <Wallet className="mr-1 h-4 w-4" />Pay
             </Button>
+            )}
           </div>
         )}
         {!open && (
@@ -320,6 +342,7 @@ export const OrderScreen = ({ orderId, onBack }: { orderId: string; onBack: () =
           )}
         </ApprovalDialog>
       )}
+      {dialog?.kind === "board" && <BoardDialog orderId={o.id} onClose={() => setDialog(null)} />}
       {dialog?.kind === "discount" && (
         <ApprovalDialog title="Discount this bill" confirmLabel="Apply discount" reasons={["Returning guest", "Staff", "Corporate rate", "Promotion", "Complaint"]}
           onClose={() => setDialog(null)}
@@ -360,3 +383,55 @@ const Row = ({ label, value, muted }: { label: string; value: string; muted?: bo
 const CatChip = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button onClick={onClick} className={`shrink-0 rounded-full border px-3 py-1.5 text-sm ${on ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900" : "bg-white dark:bg-slate-900 hover:bg-slate-50"}`}>{children}</button>
 );
+
+const mealNow = (): BoardMeal => { const h = new Date().getHours(); return h < 11 ? "breakfast" : h < 16 ? "lunch" : "dinner"; };
+
+const BoardDialog = ({ orderId, onClose }: { orderId: string; onClose: () => void }) => {
+  const { hotel } = useCurrentHotel();
+  const [meal, setMeal] = useState<BoardMeal>(mealNow());
+  const [search, setSearch] = useState("");
+  const [pick, setPick] = useState<BoardGuest | null>(null);
+  const [covers, setCovers] = useState("1");
+  const guests = useBoardGuests(meal);
+  const set = useSetBoard();
+  const list = (guests.data ?? []).filter((g) => !search.trim() || [g.room, g.guest, g.code].some((v) => v?.toLowerCase().includes(search.trim().toLowerCase())));
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Board meal</DialogTitle>
+          <DialogDescription>A guest on bed & breakfast, half board or full board eating a meal their plan includes. Food is covered up to the plan's allowance; drinks are charged as usual.</DialogDescription></DialogHeader>
+        <div className="space-y-3">
+          <div className="flex gap-1">{(["breakfast", "lunch", "dinner"] as BoardMeal[]).map((m) => (
+            <Button key={m} size="sm" variant={meal === m ? "default" : "outline"} className="capitalize" onClick={() => { setMeal(m); setPick(null); }}>{m}</Button>
+          ))}</div>
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Room or guest name" aria-label="Find guest" />
+          <div className="max-h-64 overflow-y-auto divide-y rounded-md border">
+            {guests.isLoading ? <div className="p-3 text-sm text-slate-500">Loading…</div> : !list.length ? (
+              <div className="p-3 text-sm text-slate-500">No checked-in guests have {meal} on their plan.</div>
+            ) : list.map((g) => {
+              const left = g.pax - g.used;
+              return (
+                <button key={g.reservation_id} type="button" disabled={left < 1}
+                  onClick={() => { setPick(g); setCovers(String(left)); }}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-3 disabled:opacity-50 ${pick?.reservation_id === g.reservation_id ? "bg-blue-50 dark:bg-blue-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-900"}`}>
+                  <span className="font-semibold w-12">{g.room ?? "—"}</span>
+                  <span className="flex-1"><span className="block text-sm">{g.guest}</span><span className="text-xs text-slate-500">{g.plan} · {g.pax} {g.pax === 1 ? "guest" : "guests"}{g.allowance != null ? ` · up to ${formatMoney2(Number(g.allowance), hotel.currency)} each` : ""}</span></span>
+                  <span className="text-xs">{left < 1 ? `already had ${meal}` : g.used ? `${left} left` : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          {pick && (
+            <div className="flex items-center gap-2 text-sm"><Label htmlFor="board-covers">People eating</Label>
+              <Input id="board-covers" type="number" min={1} max={pick.pax - pick.used} className="w-20" value={covers} onChange={(e) => setCovers(e.target.value)} /></div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button disabled={!pick || !(Number(covers) >= 1) || set.isPending}
+            onClick={() => set.mutate({ orderId, reservationId: pick!.reservation_id, meal, covers: Number(covers) }, { onSuccess: onClose })}>Apply</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

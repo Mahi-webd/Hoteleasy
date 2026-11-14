@@ -57,6 +57,7 @@ export const PosBillPage = () => {
       ))}
       <div className="border-t border-dashed border-black my-2" />
       <div className="flex justify-between"><span>Subtotal</span><span>{money(o.items_gross)}</span></div>
+      {Number(o.board_covered ?? 0) > 0 && <div className="flex justify-between"><span>{o.board_meal ? o.board_meal[0].toUpperCase() + o.board_meal.slice(1) : "Meal"} on meal plan ({o.board_covers})</span><span>-{money(Number(o.board_covered))}</span></div>}
       {Number(o.discount_amount) > 0 && <div className="flex justify-between"><span>Discount</span><span>-{money(o.discount_amount)}</span></div>}
       {Number(o.service_charge) > 0 && <div className="flex justify-between"><span>Service {(Number(o.service_charge_rate) * 100).toFixed(1).replace(/\.0$/, "")}%</span><span>{money(svcGross)}</span></div>}
       <div className="flex justify-between text-[14px] font-bold mt-1"><span>TOTAL {hotel.currency}</span><span>{money(o.total)}</span></div>

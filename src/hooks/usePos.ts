@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
-import type {
+import type { BoardGuest, BoardMeal,
   MenuCategory, MenuItem, ModifierGroup, PosItemStatus, PosOrder, PosOutlet, PosPaymentMethod, PosShift, PosTable, ShiftReport,
 } from "@/lib/db-types";
 
@@ -149,7 +149,7 @@ export const useSetPin = () => {
 
 // ------------------------------------------------------------------ orders
 const ORDER_SELECT =
-  "*, pos_order_items(*), pos_payments(*), pos_tables(name), pos_outlets(name, kind), reservations(id, code, rooms(room_number), guests(first_name, last_name))";
+  "*, pos_order_items(*), pos_payments(*), pos_tables(name), pos_outlets(name, kind), reservations!pos_orders_reservation_id_fkey(id, code, rooms(room_number), guests(first_name, last_name))";
 
 export const useOpenOrders = (outletId?: string) => {
   const { hotel } = useCurrentHotel();
@@ -306,7 +306,7 @@ export const useKds = () => {
       unwrap(
         await supabase
           .from("pos_orders")
-          .select("id, number, outlet_id, order_type, label, guests, opened_at, pos_tables(name), pos_outlets(name, kind), reservations(rooms(room_number)), pos_order_items(*)")
+          .select("id, number, outlet_id, order_type, label, guests, opened_at, pos_tables(name), pos_outlets(name, kind), reservations!pos_orders_reservation_id_fkey(rooms(room_number)), pos_order_items(*)")
           .eq("hotel_id", hotel.id)
           .in("status", ["open", "paid"])
           .gte("opened_at", new Date(Date.now() - 18 * 3600_000).toISOString()),
@@ -372,3 +372,21 @@ export const useSales = (fromIso: string, toIso: string) => {
       ) as PosOrder[],
   });
 };
+
+// ---------------------------------------------------------------- board meals
+export const useBoardGuests = (meal: BoardMeal | null) => {
+  const { hotel } = useCurrentHotel();
+  return useQuery({
+    queryKey: ["pos", "board", hotel.id, meal],
+    enabled: !!meal,
+    queryFn: async () => unwrap(await supabase.rpc("board_guests", { _hotel_id: hotel.id, _meal: meal! })) as BoardGuest[],
+  });
+};
+export const useSetBoard = () =>
+  usePosAction(
+    async (a: { orderId: string; reservationId: string | null; meal?: BoardMeal; covers?: number }) =>
+      unwrap(await supabase.rpc("pos_set_board", { _order_id: a.orderId, _reservation_id: a.reservationId, _meal: a.meal ?? null, _covers: a.covers ?? null })) as PosOrder,
+    (a) => (a.reservationId ? `Marked as ${a.meal} on the guest's meal plan` : "Board meal removed"),
+  );
+export const useCloseBoard = () =>
+  usePosAction(async (orderId: string) => unwrap(await supabase.rpc("pos_close_board", { _order_id: orderId })) as PosOrder, "Bill closed: covered by the meal plan");

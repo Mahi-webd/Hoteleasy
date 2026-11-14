@@ -328,6 +328,9 @@ const Plans = ({ admin }: { admin: boolean }) => {
             <div className="text-sm text-right">
               <div><b>{formatMoney(Number(p.adult_night), hotel.currency)}</b> per adult / night{Number(p.child_night) > 0 && <>, {formatMoney(Number(p.child_night), "")} per child</>}</div>
               {Number(p.adult_stay) > 0 && <div className="text-slate-600">+ {formatMoney(Number(p.adult_stay), "")} per adult per stay{p.stay_label ? ` (${p.stay_label})` : ""}</div>}
+              {(["breakfast", "lunch", "dinner"] as const).some((m) => p[m] && p[`${m}_allowance`] != null) && (
+                <div className="text-xs text-slate-500">Restaurant allowance: {(["breakfast", "lunch", "dinner"] as const).filter((m) => p[m]).map((m) => `${m} ${p[`${m}_allowance`] != null ? formatMoney(Number(p[`${m}_allowance`]), "") : "full"}`).join(", ")}</div>
+              )}
             </div>
             {admin && (
               <div className="flex gap-1 ml-auto">
@@ -369,6 +372,17 @@ const PlanDialog = ({ p, onClose }: { p: Partial<RatePlan>; onClose: () => void 
             <div className="flex gap-4">{(["breakfast", "lunch", "dinner"] as const).map((m) => (
               <label key={m} className="flex items-center gap-2 text-sm capitalize"><Switch checked={!!f[m]} onCheckedChange={(v) => set(m, v)} aria-label={m} />{m}</label>
             ))}</div></div>
+          {(f.breakfast || f.lunch || f.dinner) && (
+            <div className="space-y-1">
+              <Label>Covered at the restaurant, per person (leave blank to cover the whole meal)</Label>
+              <div className="grid grid-cols-3 gap-2">{(["breakfast", "lunch", "dinner"] as const).filter((m) => f[m]).map((m) => {
+                const k = `${m}_allowance` as "breakfast_allowance" | "lunch_allowance" | "dinner_allowance";
+                return <Input key={m} type="number" min={0} aria-label={`${m} allowance`} placeholder={`${m[0].toUpperCase()}${m.slice(1)}: no limit`}
+                  value={f[k] ?? ""} onChange={(e) => set(k, e.target.value === "" ? null : Number(e.target.value))} />;
+              })}</div>
+              <p className="text-xs text-slate-500">e.g. dinner up to {hotel.currency} 1,500: a guest who orders more pays the difference. Drinks are never covered.</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">{num("adult_night", "Per adult per night")}{num("child_night", "Per child per night")}</div>
           <div className="rounded-md border p-3 space-y-3">
             <div className="text-sm font-medium">Package extras (optional, once per stay)</div>
@@ -398,7 +412,9 @@ const PlanDialog = ({ p, onClose }: { p: Partial<RatePlan>; onClose: () => void 
           <Button disabled={!valid || save.isPending} onClick={() => save.mutate({
             id: f.id, name: f.name!.trim(), code: f.code!.toUpperCase(), description: f.description?.trim() || null, breakfast: !!f.breakfast, lunch: !!f.lunch, dinner: !!f.dinner,
             adult_night: Number(f.adult_night) || 0, child_night: Number(f.child_night) || 0, adult_stay: Number(f.adult_stay) || 0, child_stay: Number(f.child_stay) || 0,
-            stay_label: f.stay_label?.trim() || null, room_type_ids: only.length ? only : null, online: f.online ?? true, min_nights: f.min_nights || null,
+            stay_label: f.stay_label?.trim() || null, room_type_ids: only.length ? only : null,
+            breakfast_allowance: f.breakfast ? f.breakfast_allowance ?? null : null, lunch_allowance: f.lunch ? f.lunch_allowance ?? null : null,
+            dinner_allowance: f.dinner ? f.dinner_allowance ?? null : null, online: f.online ?? true, min_nights: f.min_nights || null,
             active: f.active ?? true, sort: f.sort ?? 5,
           }, { onSuccess: onClose })}>Save plan</Button>
         </DialogFooter>

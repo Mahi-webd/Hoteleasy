@@ -342,6 +342,7 @@ export interface PosOrder {
   discount_kind: "percent" | "amount" | null; discount_value: number; discount_reason: string | null; service_charge_rate: number;
   items_gross: number; discount_amount: number; net_amount: number; vat_amount: number; levy_amount: number; service_charge: number;
   total: number; paid_total: number; notes: string | null; opened_at: string; closed_at: string | null; void_reason: string | null;
+  board_reservation_id?: string | null; board_meal?: BoardMeal | null; board_covers?: number | null; board_allowance?: number | null; board_covered?: number;
   pos_order_items?: PosOrderItem[]; pos_payments?: PosPayment[];
   pos_tables?: { name: string } | null; pos_outlets?: { name: string; kind: OutletKind } | null;
   reservations?: { id: string; code: string; rooms?: { room_number: string } | null; guests?: { first_name: string; last_name: string } | null } | null;
@@ -538,7 +539,10 @@ export interface Statement {
 export interface FolioTransfer { id: string; reservation_id: string; company_id: string; amount: number; created_at: string; voided_at: string | null; void_reason: string | null; companies?: { name: string } | null }
 
 // ---------------------------------------------------------------- rate plans
+export type BoardMeal = "breakfast" | "lunch" | "dinner";
+export interface BoardGuest { reservation_id: string; code: string; room: string | null; guest: string; pax: number; plan: string; plan_code: string; allowance: number | null; used: number }
 export interface RatePlan {
+  breakfast_allowance?: number | null; lunch_allowance?: number | null; dinner_allowance?: number | null;
   id: string; hotel_id: string; name: string; code: string; description: string | null; breakfast: boolean; lunch: boolean; dinner: boolean;
   adult_night: number; child_night: number; adult_stay: number; child_stay: number; stay_label: string | null; room_type_ids: string[] | null;
   online: boolean; min_nights: number | null; active: boolean; sort: number; created_at: string;
