@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart3, Bot, Calendar, Clock, CreditCard, Home, MapPin, MessageCircle, Package, Settings, ShoppingCart,
-  Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, Zap, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing } from "lucide-react";
+  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard,
+} from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
@@ -45,6 +45,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Management",
     items: [
+      { key: "owner", label: "Owner overview", icon: LayoutDashboard, roles: ["owner", "manager", "accountant"] },
       { key: "reports", label: "Reports", icon: BarChart3, roles: MONEY },
       { key: "finance", label: "Expenses & profit", icon: Wallet, roles: MONEY },
     ],
@@ -57,13 +58,6 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "inventory", label: "Inventory", icon: Package, roles: ["owner", "manager", "storekeeper", "accountant", "restaurant"] },
       { key: "staff", label: "Staff & rota", icon: Users, roles: ["owner", "manager", "front_desk", "accountant"] },
       { key: "my-shifts", label: "My shifts", icon: Clock },
-    ],
-  },
-  {
-    title: "Coming next",
-    items: [
-      { key: "quick-actions", label: "Quick Actions", icon: Zap, roles: MGMT, preview: true },
-      { key: "task-automation", label: "Task Automation", icon: Bot, roles: MGMT, preview: true },
     ],
   },
   {

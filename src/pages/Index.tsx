@@ -33,10 +33,10 @@ import PrecheckAdmin from "@/features/online/PrecheckAdmin";
 import RatesPage from "@/features/rates/RatesPage";
 import CompaniesPage from "@/features/companies/CompaniesPage";
 import RequestsPage from "@/features/requests/RequestsPage";
+import OwnerOverview from "@/features/owner/OwnerOverview";
+import { AlertsBell } from "@/features/owner/Alerts";
 
 // Demo modules (still showing sample data)
-import QuickActionsDashboard from "@/components/QuickActionsDashboard";
-import TaskAutomation from "@/components/TaskAutomation";
 
 const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void }>> = {
   dashboard: Dashboard,
@@ -58,8 +58,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   online: OnlinePage,
   requests: RequestsPage,
   finance: FinancePage,
-  "quick-actions": QuickActionsDashboard,
-  "task-automation": TaskAutomation,
+  owner: OwnerOverview,
   inventory: InventoryPage,
 };
 
@@ -118,6 +117,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <AlertsBell onNavigate={setActiveTab} />
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

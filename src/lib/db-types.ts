@@ -570,3 +570,13 @@ export interface GuestRequest {
   reservations?: { code: string; check_out: string; guests: { first_name: string; last_name: string; phone: string | null } | null } | null;
 }
 export const DEPT_LABEL: Record<RequestDept, string> = { housekeeping: "Housekeeping", maintenance: "Maintenance", front_desk: "Front desk", restaurant: "Restaurant" };
+
+// ---------------------------------------------------------------- alerts & owner overview
+export interface HotelAlert { key: string; severity: "high" | "medium" | "low"; count: number; title: string; detail: string; page: string }
+export interface Kpis { occupancy: number; room_revenue: number; fnb_revenue: number; other_revenue: number; total_revenue: number; adr: number; revpar: number; collected: number; room_nights_sold: number }
+export interface OwnerHotel {
+  hotel_id: string; name: string; city: string | null; currency: string; role: string; today: Kpis & { from: string };
+  rooms: number; in_house: number; arrivals: number; arrivals_left: number; departures: number; out_of_service: number;
+  mtd: Kpis; last_month: Kpis; debtors: number; bills_due: number; next_7_days: { date: string; occupied: number }[];
+  alerts: HotelAlert[]; alerts_high: number;
+}

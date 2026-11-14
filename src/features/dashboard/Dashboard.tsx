@@ -1,3 +1,4 @@
+import { AlertsCard } from "@/features/owner/Alerts";
 import { useEffect, useMemo, useState } from "react";
 import { BedDouble, Calendar, Clock, DollarSign, Home, LogIn, LogOut, Percent, Plus, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,6 +135,8 @@ const Dashboard = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
           </CardContent>
         </Card>
       )}
+
+      <AlertsCard onNavigate={onNavigate} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((k) => (

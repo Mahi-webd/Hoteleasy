@@ -41,7 +41,7 @@ staff only see their own hotel's data.
 | Meal plans & packages: bed & breakfast, half board, full board or packages (e.g. safari with game drives), priced per adult/child per night and per stay, limited to room types if needed; meals posted to the bill night by night as food; plan choice on the booking page and at the desk; daily meal counts for the kitchen; at the restaurant POS a bill can be marked as a guest's board meal so food is covered up to the plan's allowance per person (drinks and extras still charged, no double-counted revenue) | ✅ Live |
 | Company accounts (city ledger): companies with KRA PIN, negotiated rates (fixed per room type or % off), credit limits and payment terms; bookings billed to the company (room only or everything) with LPO number; at check-out the company's share moves to its account and the invoice is addressed to the company; payments, credit notes, ageing (current / 30 / 60 / 90 / 90+), printable statements, ageing CSV | ✅ Live |
 | Guest requests: printable QR code per room; guests confirm their last name and ask for towels, cleaning, repairs, wake-up calls, taxis, late check-out or room service from their phone, with live status and replies; requests go to housekeeping, maintenance, front desk or the restaurant (repairs open a maintenance ticket); staff board with sound alerts; "good to know" info for guests; links stop working at check-out | ✅ Live |
-| Quick actions, task automation | 🟡 Demo screens (marked "demo"), next phases |
+| Owner overview & alerts: every hotel you own or manage on one page (occupancy tonight, arrivals/departures, revenue today and month to date vs last month, collected, owed, bills due, next 7 nights); live alerts by job (overstays, no-shows, rooms not ready, unanswered guest requests, open bills and cash shifts, low stock, guest and company debts, overdue bills, payroll and statutory deadlines, leave requests, failed emails) in a header bell and on the dashboard | ✅ Live |
 
 ### Roles
 
@@ -86,6 +86,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    15. `20261114200000_rate_plans.sql`
    16. `20261114220000_board_pos.sql`
    17. `20261115090000_guest_requests.sql`
+   18. `20261115120000_alerts.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -163,4 +164,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 14. ~~Corporate accounts~~ (next: emailing statements, company booking portal)
 15. ~~Meal plans & packages~~, including board meals at the POS
 16. ~~Guest requests & concierge~~
-17. M-Pesa STK push, channel managers (Booking.com etc.)
+17. ~~Owner overview & alerts~~ (next: daily summary email once email sending is set up)
+18. M-Pesa STK push, channel managers (Booking.com etc.)
