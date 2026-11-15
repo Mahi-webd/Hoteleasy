@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentHotel } from "@/contexts/HotelContext";
+import { MpesaPrompt } from "@/components/common/MpesaPrompt";
+import { createFolioPrompt, useMpesaSettings } from "@/hooks/useMpesa";
 import { useAddCharge, useAddPayment, useCheckOutSettled, useFolio, useIssueInvoice, useVoidCharge, useVoidPayment } from "@/hooks/useBilling";
 import { LoadingBlock } from "@/components/common/PageHeader";
 import {
@@ -377,6 +379,9 @@ const PaymentForm = ({
   }, [suggested, canRefund, touched]);
 
   const mpesaOk = method !== "mpesa" || /^[A-Z0-9]{10}$/.test(ref.trim().toUpperCase());
+  const mpesa = useMpesaSettings();
+  const [typeCode, setTypeCode] = useState(false);
+  const prompting = method === "mpesa" && !refund && !!mpesa.data?.ready && !typeCode;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -409,6 +414,7 @@ const PaymentForm = ({
           <Label htmlFor={`pay-amount-${reservationId}`} className="text-xs">Amount ({currency})</Label>
           <Input id={`pay-amount-${reservationId}`} type="number" min={0.01} step="0.01" value={amount} onChange={(e) => { setTouched(true); setAmount(e.target.value); }} required />
         </div>
+        {!prompting && <>
         <div className="space-y-1">
           <Label htmlFor={`pay-ref-${reservationId}`} className="text-xs">{method === "mpesa" ? "M-Pesa code *" : method === "card" ? "Card slip / approval no." : "Reference"}</Label>
           <Input
@@ -429,13 +435,26 @@ const PaymentForm = ({
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           )}
         </div>
+        </>}
       </div>
-      {method === "mpesa" && ref && !mpesaOk && <p className="text-xs text-amber-700">M-Pesa codes are 10 letters/numbers, from the guest's confirmation SMS.</p>}
-      <div className="flex justify-end">
+      {method === "mpesa" && !refund && mpesa.data?.ready && (
+        <div className="text-xs">
+          {prompting
+            ? <button type="button" className="text-blue-700 underline" onClick={() => setTypeCode(true)}>Guest already paid? Type the M-Pesa code instead</button>
+            : <button type="button" className="text-blue-700 underline" onClick={() => setTypeCode(false)}>Send a pay prompt to the guest's phone instead</button>}
+        </div>
+      )}
+      {prompting && (
+        <MpesaPrompt amount={Math.abs(Number(amount || 0))} currency={currency} defaultPhone={payer}
+          create={(ph, a) => createFolioPrompt(reservationId, ph, a)} invalidate={["folio", "balances", "reservations", "payments", "activity"]}
+          onPaid={() => setTouched(false)} />
+      )}
+      {!prompting && method === "mpesa" && ref && !mpesaOk && <p className="text-xs text-amber-700">M-Pesa codes are 10 letters/numbers, from the guest's confirmation SMS.</p>}
+      {!prompting && <div className="flex justify-end">
         <Button type="submit" disabled={add.isPending || !amount || !mpesaOk} variant={refund ? "destructive" : "default"}>
           {refund ? "Record refund" : "Record payment"} {amount && formatMoney2(Number(amount), currency)}
         </Button>
-      </div>
+      </div>}
     </form>
   );
 };

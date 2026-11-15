@@ -44,6 +44,7 @@ staff only see their own hotel's data.
 | Owner overview & alerts: every hotel you own or manage on one page (occupancy tonight, arrivals/departures, revenue today and month to date vs last month, collected, owed, bills due, next 7 nights); live alerts by job (overstays, no-shows, rooms not ready, unanswered guest requests, open bills and cash shifts, low stock, guest and company debts, overdue bills, payroll and statutory deadlines, leave requests, failed emails) in a header bell and on the dashboard | ✅ Live |
 | Night audit & day close: checks before closing (arrivals not checked in, guests past check-out, missing room nights, open bills and cash shifts), one-click no-show, close the day to lock its payments, charges and bills, printable daily manager's report (occupancy, ADR, RevPAR, revenue, money taken by method, guest and company balances, cash shifts, notes), reopen the latest day with a reason, alert when yesterday is not closed | ✅ Live |
 | Roles & permissions: the owner makes custom roles (name, job type, description) and ticks what each can do in a grid of 23 areas × view / create / edit / delete plus special rights (void payments, close/reopen the day, approve with PIN, see balances…), 66 permissions in all (separate rights for check-in, check-out, changing the room rate, refunds, POS discounts and spreadsheet downloads); copy a built-in role as a starting point; give roles in Settings & Team or when inviting; checked by the database, not just hidden on screen; "Who can do this?" lists everyone who has a permission; new permissions from updates are flagged until the owner reviews them; the 8 built-in roles work as before | ✅ Live |
+| M-Pesa prompts (STK push): each hotel enters its own paybill or till and Daraja keys (test or live); staff send a pay prompt to the guest's phone from a bill or a POS order, the guest enters their PIN and the payment posts itself with the M-Pesa receipt (once, even if Safaricom calls twice; still recorded if staff stopped waiting); cancelled or timed-out prompts are shown; online guests can pay the first night or the whole stay from their booking; keys can't be read back by anyone | ✅ Live |
 
 ### Roles
 
@@ -70,6 +71,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
 
 ## Still to do
 
+- [ ] **M-Pesa Edge Function**: deploy `mpesa` once (see "M-Pesa prompts" below). Until then the M-Pesa settings save but prompts can't be sent.
 - [ ] **Email sending setup**: waiting for the domain. Do steps 1–4 of "Sending guest emails" below, *then* switch emails on per hotel. Until then keep "Send guest emails" off in every hotel.
 
 ## Setup
@@ -99,6 +101,8 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    18. `20261115120000_alerts.sql`
    19. `20261115150000_night_audit.sql`
    20. `20261116090000_roles.sql`
+   21. `20261116120000_roles_more.sql`
+   22. `20261116150000_mpesa.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -115,7 +119,21 @@ npm run dev               # http://localhost:8080
 
 Open the app, create an account, and set up your hotel.
 
-### 3. Sending guest emails (one time, for the whole platform)
+### 3. M-Pesa prompts (one time, for the whole platform)
+
+1. **Edge Function**: Supabase → **Edge Functions → Deploy a new function → Via editor**, name it `mpesa`,
+   paste `supabase/functions/mpesa/index.ts`, deploy, then turn **Verify JWT** off in its settings
+   (Safaricom calls it without a login; it checks its own tokens). CLI: `supabase functions deploy mpesa --no-verify-jwt`.
+   No secrets are needed: each hotel's keys are saved in the app.
+2. **Each hotel**, under **Settings & Team → M-Pesa prompts**:
+   - *Trying it*: create a free account at developer.safaricom.co.ke, create an app with **Lipa na M-Pesa Sandbox**,
+     copy its Consumer Key and Secret, choose **Test**, click "Fill in the test paybill and passkey", save,
+     **Test the keys**, switch on. Sandbox prompts go to Safaricom's test phones/simulator, no real money.
+   - *Going live*: the hotel applies to Safaricom for **Lipa na M-Pesa Online (STK push)** on its paybill or till
+     (via the Daraja "Go Live" process). Safaricom gives a live app and a **passkey**. Enter them, choose **Live**.
+     For a till, enter the store (head office) number as the shortcode and the till number guests pay to.
+
+### 4. Sending guest emails (one time, for the whole platform)
 
 Emails are queued in the database and sent by a small Supabase Edge Function through [Resend](https://resend.com).
 
@@ -179,4 +197,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 17. ~~Owner overview & alerts~~ (next: daily summary email once email sending is set up)
 18. ~~Night audit & day close~~ (next: email the manager's report to the owner once email sending is set up)
 19. ~~Roles & permissions~~
-20. M-Pesa STK push, channel managers (Booking.com etc.)
+20. ~~M-Pesa STK push~~ (next: M-Pesa refunds/reversals, C2B confirmation for payments made straight to the paybill)
+21. Channel managers (Booking.com, Airbnb), group bookings, KRA eTIMS

@@ -16,6 +16,10 @@ import {
   type BookingLookup, type BookingResult, type Offer, type OfferPlan,
 } from "@/hooks/useOnline";
 import { addDays, formatMoney, friendlyError } from "@/lib/format";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { MpesaPrompt } from "@/components/common/MpesaPrompt";
+import { createOnlinePrompt } from "@/hooks/useMpesa";
 import { mealsOf, planPrice } from "@/lib/db-types";
 import type { PublicHotel, PublicRoomType } from "@/lib/db-types";
 
@@ -233,10 +237,10 @@ const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack
     const v = (k: string) => String(f.get(k) ?? "").trim();
     setBusy(true); setError("");
     try {
-      onDone(await bookRoom({
+      onDone({ ...(await bookRoom({
         slug, roomTypeId: offer.room_type_id, checkIn, checkOut, adults, children, ratePlanId: offer.plan?.id ?? null,
         firstName: v("first"), lastName: v("last"), email: v("email"), phone: v("phone"), nationality: v("nat"), requests: v("req"), website: v("website"),
-      }));
+      })), phone: v("phone") });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       const m = friendlyError(err);
@@ -299,6 +303,7 @@ const Confirmation = ({ h, r, slug }: { h: PublicHotel; r: BookingResult; slug: 
         <dt className="text-slate-500">Check-out</dt><dd>{nice(r.check_out)} by {h.checkout_time}</dd>
         <dt className="text-slate-500">Total</dt><dd className="font-semibold">{formatMoney(r.total, r.currency)} <span className="font-normal text-slate-500">({r.nights} night{r.nights === 1 ? "" : "s"})</span></dd>
       </dl>
+      <OnlineDeposit slug={slug} code={r.code} keyValue={r.email} phone={r.phone} />
       {h.payment_instructions && (
         <div className="rounded-md border p-3 text-sm"><div className="font-medium mb-1">Payment</div><p className="whitespace-pre-line text-slate-700">{h.payment_instructions}</p></div>
       )}
@@ -316,6 +321,34 @@ const Confirmation = ({ h, r, slug }: { h: PublicHotel; r: BookingResult; slug: 
     </CardContent>
   </Card>
 );
+
+/** "Pay the deposit now with M-Pesa", when the hotel takes it online. */
+const OnlineDeposit = ({ slug, code, keyValue, phone }: { slug: string; code: string; keyValue: string; phone?: string | null }) => {
+  const info = useQuery({
+    queryKey: ["public-mpesa", slug, code, keyValue],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("public_mpesa_info" as never, { _slug: slug, _code: code, _email_or_last_name: keyValue } as never);
+      if (error) throw error;
+      return data as unknown as { available: boolean; amount: number; paid: number; deposit: string };
+    },
+  });
+  const [paid, setPaid] = useState<string | null>(null);
+  if (paid) return (
+    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm" data-testid="deposit-paid">
+      <div className="font-medium">Payment received, thank you.</div><div className="text-slate-600">M-Pesa receipt <span className="font-mono">{paid}</span>. The hotel has it on your booking.</div>
+    </div>
+  );
+  if (!info.data?.available) return null;
+  return (
+    <div className="rounded-md border p-3 space-y-2 print:hidden" data-testid="online-deposit">
+      <div className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4 text-green-600" />
+        {info.data.deposit === "full" ? "Pay for your stay now with M-Pesa" : "Secure your booking: pay the first night with M-Pesa"}</div>
+      <p className="text-sm text-slate-600">We'll send a prompt to your phone. Enter your M-Pesa PIN to pay {formatMoney(info.data.amount, "KES")}.</p>
+      <MpesaPrompt compact amount={info.data.amount} currency="KES" defaultPhone={phone}
+        create={(ph) => createOnlinePrompt(slug, code, keyValue, ph)} onPaid={(p) => setPaid(p.receipt ?? "")} />
+    </div>
+  );
+};
 
 /** Opens the guest's online check-in for this booking. */
 const CheckInOnline = ({ slug, code, keyValue }: { slug: string; code: string; keyValue: string }) => {
@@ -364,6 +397,7 @@ const Manage = ({ h, slug }: { h: PublicHotel; slug: string }) => {
                 <Button variant="destructive" size="sm" disabled={busy} onClick={() => { if (window.confirm("Cancel this booking?")) run(true); }}>Cancel booking</Button>
               </div>
             ) : <p className="text-sm text-slate-600">To change or cancel this booking, please contact the hotel{h.phone ? ` on ${h.phone}` : ""}.</p>)}
+            {b.status === "confirmed" && <OnlineDeposit slug={slug} code={b.code} keyValue={key} />}
             {b.status === "confirmed" && <div className="pt-1"><CheckInOnline slug={slug} code={b.code} keyValue={key} /></div>}
           </div>
         )}

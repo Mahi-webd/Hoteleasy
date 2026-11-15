@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { ROLE_LABELS, formatDate } from "@/lib/format";
 import type { CustomRole, HotelRole } from "@/lib/db-types";
 import { useCustomRoles } from "@/hooks/useRoles";
+import { MpesaSettings } from "./MpesaSettings";
 
 const ASSIGNABLE: HotelRole[] = ["manager", "front_desk", "housekeeping", "maintenance", "restaurant", "accountant", "storekeeper"];
 
@@ -134,6 +135,8 @@ const SettingsPage = () => {
       </Card>
 
       <BillingSettings />
+
+      <MpesaSettings />
 
       <Card>
         <CardHeader>

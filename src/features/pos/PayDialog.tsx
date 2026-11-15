@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MpesaPrompt } from "@/components/common/MpesaPrompt";
+import { createPosPrompt, useMpesaSettings } from "@/hooks/useMpesa";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { useChargeToRoom, useInHouseGuests, usePay } from "@/hooks/usePos";
 import { POS_METHODS, formatMoney2, formatShortDate, guestName } from "@/lib/format";
@@ -16,6 +18,7 @@ export const PayDialog = ({ order, onPaid, onClose }: { order: PosOrder; onPaid:
   const cur = hotel.currency;
   const due = Math.round((Number(order.total) - Number(order.paid_total)) * 100) / 100;
   const pay = usePay();
+  const mpesa = useMpesaSettings();
   const charge = useChargeToRoom();
   const guests = useInHouseGuests();
   const [method, setMethod] = useState<PosPaymentMethod | "room">(order.order_type === "room_service" && order.reservation_id ? "room" : "cash");
@@ -108,6 +111,13 @@ export const PayDialog = ({ order, onPaid, onClose }: { order: PosOrder; onPaid:
             {change > 0 && <div className="text-lg font-semibold text-green-700">Change: {formatMoney2(change, cur)}</div>}
           </TabsContent>
           <TabsContent value="mpesa" className="space-y-2">
+            {mpesa.data?.ready && (
+              <>
+                <MpesaPrompt amount={amt} currency={cur} compact create={(ph, a) => createPosPrompt(order.id, ph, a)}
+                  invalidate={["pos"]} onPaid={() => setTimeout(onPaid, 1200)} />
+                <div className="text-xs text-slate-500 text-center">or, if the guest paid by till/paybill already</div>
+              </>
+            )}
             <Label htmlFor="pay-ref">M-Pesa code (from the guest's SMS)</Label>
             <Input id="pay-ref" value={ref} onChange={(e) => setRef(e.target.value.toUpperCase().replace(/\s/g, ""))} maxLength={10} placeholder="e.g. TK45ABC1XY" className="font-mono text-lg" />
             {hotel.mpesa_till && <p className="text-xs text-slate-500">Till number: {hotel.mpesa_till}</p>}

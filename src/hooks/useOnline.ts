@@ -83,7 +83,7 @@ export interface OfferPlan { id: string; name: string; code: string; description
 export const fetchAvailability = async (slug: string, checkIn: string, checkOut: string, guests: number) =>
   unwrap(await supabase.rpc("public_availability", { _slug: slug, _check_in: checkIn, _check_out: checkOut, _guests: guests })) as Offer[];
 
-export interface BookingResult { code: string; room_type: string; check_in: string; check_out: string; nights: number; rate: number; total: number; currency: string; guest: string; email: string; plan?: string | null }
+export interface BookingResult { code: string; room_type: string; check_in: string; check_out: string; nights: number; rate: number; total: number; currency: string; guest: string; email: string; plan?: string | null; phone?: string | null }
 
 export const bookRoom = async (a: {
   slug: string; roomTypeId: string; checkIn: string; checkOut: string; adults: number; children: number;
