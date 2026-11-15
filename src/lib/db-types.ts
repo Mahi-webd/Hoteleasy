@@ -151,6 +151,7 @@ export interface Reservation {
   nightly_rates?: Record<string, number> | null;
   company_id?: string | null;
   rate_plan_id?: string | null;
+  channel_link_id?: string | null;
   plan_night?: number;
   plan_stay?: number;
   rate_plans?: { name: string; code: string } | null;
@@ -610,4 +611,18 @@ export interface CustomRole {
   permissions: string[];
   created_at: string;
   updated_at: string;
+}
+
+// ---------- calendar sync (iCal) ----------
+export type ChannelKind = "booking_com" | "airbnb" | "expedia" | "vrbo" | "other";
+export interface ChannelLink {
+  id: string; hotel_id: string; channel: ChannelKind; name: string | null; room_id: string; import_url: string | null;
+  import_blocks: boolean; export_token: string; enabled: boolean; last_sync_at: string | null; last_sync_ok: boolean | null;
+  last_sync_message: string | null; last_event_count: number | null; last_export_at: string | null; created_at: string;
+  rooms?: { room_number: string; room_types?: { name: string } | null } | null;
+}
+export interface ChannelEvent {
+  id: string; link_id: string; uid: string; check_in: string; check_out: string; summary: string | null;
+  status: "booked" | "skipped" | "conflict" | "cancelled" | "past"; reservation_id: string | null; message: string | null;
+  last_seen: string; reservations?: { code: string; status: string; room_id: string | null } | null;
 }

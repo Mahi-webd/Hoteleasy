@@ -36,6 +36,8 @@ import CompaniesPage from "@/features/companies/CompaniesPage";
 import RequestsPage from "@/features/requests/RequestsPage";
 import OwnerOverview from "@/features/owner/OwnerOverview";
 import AuditPage from "@/features/audit/AuditPage";
+import ChannelsPage from "@/features/channels/ChannelsPage";
+import { useBackgroundCalendarSync } from "@/hooks/useChannels";
 import RolesPage from "@/features/roles/RolesPage";
 import { AlertsBell } from "@/features/owner/Alerts";
 
@@ -63,6 +65,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   finance: FinancePage,
   owner: OwnerOverview,
   audit: AuditPage,
+  channels: ChannelsPage,
   roles: RolesPage,
   inventory: InventoryPage,
 };
@@ -72,6 +75,7 @@ const ALL_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 const Index = () => {
   const { user, signOut } = useAuth();
   const { hotel, role, memberships, switchHotel, allowed: may, customRole, permsReady } = useCurrentHotel();
+  useBackgroundCalendarSync(permsReady && may("reservations.view"));
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem("hoteleasy.tab") || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useRealtimeSync();

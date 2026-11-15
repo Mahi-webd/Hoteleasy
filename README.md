@@ -45,6 +45,7 @@ staff only see their own hotel's data.
 | Night audit & day close: checks before closing (arrivals not checked in, guests past check-out, missing room nights, open bills and cash shifts), one-click no-show, close the day to lock its payments, charges and bills, printable daily manager's report (occupancy, ADR, RevPAR, revenue, money taken by method, guest and company balances, cash shifts, notes), reopen the latest day with a reason, alert when yesterday is not closed | ✅ Live |
 | Roles & permissions: the owner makes custom roles (name, job type, description) and ticks what each can do in a grid of 23 areas × view / create / edit / delete plus special rights (void payments, close/reopen the day, approve with PIN, see balances…), 66 permissions in all (separate rights for check-in, check-out, changing the room rate, refunds, POS discounts and spreadsheet downloads); copy a built-in role as a starting point; give roles in Settings & Team or when inviting; checked by the database, not just hidden on screen; "Who can do this?" lists everyone who has a permission; new permissions from updates are flagged until the owner reviews them; the 8 built-in roles work as before | ✅ Live |
 | M-Pesa prompts (STK push): each hotel enters its own paybill or till and Daraja keys (test or live); staff send a pay prompt to the guest's phone from a bill or a POS order, the guest enters their PIN and the payment posts itself with the M-Pesa receipt (once, even if Safaricom calls twice; still recorded if staff stopped waiting); cancelled or timed-out prompts are shown; online guests can pay the first night or the whole stay from their booking; keys can't be read back by anyone | ✅ Live |
+| Booking.com & Airbnb calendar sync (iCal), both ways, one room per link: our calendar closes the room on the sites (our bookings, bookings from other sites, nights the room type is full); the sites' bookings arrive as reservations on that room (source shown, "add name & price" hint), date changes and cancellations follow, double bookings are flagged and kept without a room, Airbnb's echoed "Not available" blocks are skipped; read every 10 minutes, on "Sync now", and whenever someone has HotelEasy open | ✅ Live |
 
 ### Roles
 
@@ -72,6 +73,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
 ## Still to do
 
 - [ ] **M-Pesa Edge Function**: deploy `mpesa` once (see "M-Pesa prompts" below). Until then the M-Pesa settings save but prompts can't be sent.
+- [ ] **Calendar sync Edge Function**: deploy `ical` once (see "Booking.com & Airbnb calendar sync" below). Optional: the 10-minute schedule.
 - [ ] **Email sending setup**: waiting for the domain. Do steps 1–4 of "Sending guest emails" below, *then* switch emails on per hotel. Until then keep "Send guest emails" off in every hotel.
 
 ## Setup
@@ -103,6 +105,7 @@ These rules are enforced in the database (Row Level Security), not just hidden i
    20. `20261116090000_roles.sql`
    21. `20261116120000_roles_more.sql`
    22. `20261116150000_mpesa.sql`
+   23. `20261116180000_channels.sql`
 3. **Authentication → URL Configuration**: set **Site URL** to where the app is hosted
    (e.g. `https://your-app.lovable.app` or `http://localhost:8080`) and add the same address under
    **Redirect URLs**, plus `<that address>/reset-password`.
@@ -133,7 +136,18 @@ Open the app, create an account, and set up your hotel.
      (via the Daraja "Go Live" process). Safaricom gives a live app and a **passkey**. Enter them, choose **Live**.
      For a till, enter the store (head office) number as the shortcode and the till number guests pay to.
 
-### 4. Sending guest emails (one time, for the whole platform)
+### 4. Booking.com & Airbnb calendar sync (one time, for the whole platform)
+
+1. **Edge Function**: deploy `supabase/functions/ical/index.ts` as `ical` (same way as `mpesa`) with **Verify JWT** off
+   (Booking.com and Airbnb read the room calendars without a login). CLI: `supabase functions deploy ical --no-verify-jwt`.
+2. Calendars are read whenever someone has HotelEasy open (every 10 minutes) and with **Sync now**. To also read
+   them at night: add a `CRON_SECRET` secret to the `ical` function, enable `pg_cron` and `pg_net`, put the secret
+   into `supabase/channel_cron.sql` and run it.
+3. Each hotel: **Booking.com & Airbnb → Add calendar link** for each room it sells on a site (the page has the steps).
+   Booking.com only offers calendar sync when each room is its own room type (1 unit). Hotels selling many rooms of
+   one type on Booking.com need a real channel manager connection (Booking.com Connectivity partner), a later phase.
+
+### 5. Sending guest emails (one time, for the whole platform)
 
 Emails are queued in the database and sent by a small Supabase Edge Function through [Resend](https://resend.com).
 
@@ -198,4 +212,5 @@ Every check prints `PASS (blocked)`; any `FAIL` stops the script.
 18. ~~Night audit & day close~~ (next: email the manager's report to the owner once email sending is set up)
 19. ~~Roles & permissions~~
 20. ~~M-Pesa STK push~~ (next: M-Pesa refunds/reversals, C2B confirmation for payments made straight to the paybill)
-21. Channel managers (Booking.com, Airbnb), group bookings, KRA eTIMS
+21. ~~Booking.com & Airbnb calendar sync (iCal)~~ (next: full channel manager API for multi-unit room types and rates)
+22. Group bookings, KRA eTIMS

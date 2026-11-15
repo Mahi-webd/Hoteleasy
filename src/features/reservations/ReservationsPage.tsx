@@ -193,6 +193,11 @@ const ReservationRow = ({
       <TableCell>
         <div className="font-medium flex items-center gap-1">{guestName(r.guests)}{r.guests?.is_vip && <Crown className="h-4 w-4 text-amber-500" />}</div>
         <div className="text-xs text-slate-500">{r.code} · {SOURCE_LABELS[r.source]}{r.guests?.phone ? ` · ${r.guests.phone}` : ""}</div>
+        {r.channel_link_id && r.status !== "cancelled" && (Number(r.rate_per_night) === 0 || !r.room_id) && (
+          <div className="text-xs text-amber-700" data-testid="from-calendar">
+            {!r.room_id ? "Double booked from the site's calendar: give this guest a room" : "From the site's calendar: add the guest's name and price"}
+          </div>
+        )}
         {r.rate_plans && <Badge variant="outline" className="mt-0.5 mr-1 font-mono text-[10px] px-1 py-0" title={r.rate_plans.name}>{r.rate_plans.code}</Badge>}
         {r.companies && <div className="text-xs text-violet-700">{r.companies.name}{r.bill_to !== "guest" ? (r.bill_to === "company_room" ? " pays room" : " pays all") : " rate"}{r.company_ref ? ` · ${r.company_ref}` : ""}</div>}
         {r.special_requests && <div className="text-xs text-blue-700 truncate max-w-[240px]" title={r.special_requests}>“{r.special_requests}”</div>}
