@@ -37,6 +37,7 @@ import RequestsPage from "@/features/requests/RequestsPage";
 import OwnerOverview from "@/features/owner/OwnerOverview";
 import AuditPage from "@/features/audit/AuditPage";
 import ChannelsPage from "@/features/channels/ChannelsPage";
+import { HelpAssistant, HelpButton } from "@/components/help/HelpAssistant";
 import { useBackgroundCalendarSync } from "@/hooks/useChannels";
 import RolesPage from "@/features/roles/RolesPage";
 import { AlertsBell } from "@/features/owner/Alerts";
@@ -128,7 +129,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <AlertsBell onNavigate={setActiveTab} />
+            <HelpButton /><AlertsBell onNavigate={setActiveTab} />
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -175,6 +176,7 @@ const Index = () => {
             </div>
           )}
           {Screen ? <Screen onNavigate={setActiveTab} /> : <LoadingBlock />}
+          {permsReady && <HelpAssistant screen={allowed ? activeTab : home} onNavigate={setActiveTab} />}
         </main>
       </div>
     </div>

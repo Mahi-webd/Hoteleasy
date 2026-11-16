@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check:perms": "node scripts/check-permissions.mjs",
-    "prebuild": "node scripts/check-permissions.mjs"
+    "prebuild": "node scripts/check-permissions.mjs && node scripts/build-help.mjs --check",
+    "build:help": "node scripts/build-help.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
