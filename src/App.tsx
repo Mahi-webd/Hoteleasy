@@ -57,6 +57,18 @@ const Protected = ({ children }: { children?: React.ReactNode }) => {
   return <>{children ?? <Index />}</>;
 };
 
+/** Which hotel's website opens at / for visitors who are not signed in (VITE_HOME_HOTEL = its booking-page address).
+ *  In development it falls back to the sample hotel; without it, / goes to sign-in as before. */
+const HOME_HOTEL = (import.meta.env.VITE_HOME_HOTEL as string | undefined)?.trim() || (import.meta.env.DEV ? "demo" : "");
+
+/** Home: signed-in staff get the app; visitors get the hotel website (or sign-in when none is set). */
+const Home = () => {
+  const { session, loading } = useAuth();
+  if (loading) return <FullPageSpinner />;
+  if (!session && HOME_HOTEL) return <BookingPage slug={HOME_HOTEL} />;
+  return <Protected />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="hotel-ui-theme">
@@ -77,7 +89,7 @@ const App = () => (
                   <Route path="/checkin/:token" element={<PrecheckPage />} />
                   <Route path="/r/:token" element={<RoomQrPage />} />
                   <Route path="/stay/:key" element={<GuestStayPage />} />
-                  <Route path="/" element={<Protected />} />
+                  <Route path="/" element={<Home />} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
                   <Route path="/day-report/:day" element={<Protected><DayReportPage /></Protected>} />

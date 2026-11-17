@@ -26,6 +26,13 @@ const copy = async (text: string, what = "Link") => {
 };
 
 import { EmailsTab } from "./EmailsTab";
+import { WebsiteTab } from "./WebsiteTab";
+import { PhotoField, PhotoList } from "@/components/common/PhotoInput";
+
+const isHttps = (u: string) => /^https:\/\/\S+$/i.test(u);
+/** One link per line in a textarea; blank lines are kept while typing and dropped on save. */
+const NL = String.fromCharCode(10);
+const linesOf = (v: string) => v.split(NL);
 
 const OnlinePage = () => {
   const { allowed } = useCurrentHotel();
@@ -58,11 +65,13 @@ const OnlinePage = () => {
           <TabsTrigger value="bookings">Online bookings</TabsTrigger>
           <TabsTrigger value="reviews">Guest reviews</TabsTrigger>
           {canEmail && <TabsTrigger value="emails">Guest emails</TabsTrigger>}
+          {admin && <TabsTrigger value="website">Website</TabsTrigger>}
           {admin && <TabsTrigger value="setup">Setup</TabsTrigger>}
         </TabsList>
         <TabsContent value="bookings"><Bookings /></TabsContent>
         <TabsContent value="reviews"><Reviews canReply={allowed("online.reply")} /></TabsContent>
         {canEmail && <TabsContent value="emails"><EmailsTab admin={admin} /></TabsContent>}
+        {admin && s && <TabsContent value="website"><WebsiteTab s={s} url={url} /></TabsContent>}
         {admin && s && <TabsContent value="setup"><Setup s={s} url={url} /></TabsContent>}
       </Tabs>
     </div>
@@ -273,6 +282,7 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
   useEffect(() => setF(s), [s]);
   const set = <K extends keyof BookingSettings>(k: K, v: BookingSettings[K]) => setF((x) => ({ ...x, [k]: v }));
   const text = (v: string) => (v.trim() ? v : null);
+  const badLinks = [f.photo_url ?? ""].filter((u) => u.trim() && !isHttps(u.trim()));
   const embed = `<a href="${url}" style="display:inline-block;padding:12px 22px;background:#1d4ed8;color:#fff;border-radius:8px;font:600 16px system-ui;text-decoration:none">Book now</a>`;
 
   return (
@@ -293,8 +303,10 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
           </div>
           <div className="space-y-1"><Label htmlFor="bs-head">Headline</Label><Input id="bs-head" value={f.headline ?? ""} onChange={(e) => set("headline", e.target.value)} placeholder="Riverside cottages 10 minutes from the Mara gate" /></div>
           <div className="space-y-1"><Label htmlFor="bs-desc">About the hotel</Label><Textarea id="bs-desc" rows={4} value={f.description ?? ""} onChange={(e) => set("description", e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="bs-photo">Main photo link (https://…)</Label><Input id="bs-photo" value={f.photo_url ?? ""} onChange={(e) => set("photo_url", e.target.value)} placeholder="https://…/hotel.jpg" />
-            <p className="text-xs text-slate-500">Paste the link of a photo already online (your website, Google Photos shared link, Instagram image link).</p></div>
+          <div className="space-y-1"><Label htmlFor="bs-photo">Main photo</Label>
+            <PhotoField id="bs-photo" kind="main" value={f.photo_url ?? ""} onChange={(v) => set("photo_url", v)} />
+            <p className="text-xs text-slate-500">Upload from your phone or computer, or paste the link of a photo already online. It fills the top of the page, so a wide landscape photo works best.</p></div>
+          <p className="text-xs text-slate-500 rounded-md border border-dashed p-3">Colours, slideshow, photo gallery, experiences, offers and more are in the <span className="font-medium">Website</span> tab.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1"><Label htmlFor="bs-wa">WhatsApp number</Label><Input id="bs-wa" value={f.whatsapp ?? ""} onChange={(e) => set("whatsapp", e.target.value)} placeholder="0712 345 678" /></div>
             <div className="space-y-1"><Label htmlFor="bs-cancel">Free online cancellation until (days before arrival)</Label>
@@ -309,8 +321,9 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
             placeholder="Pay on arrival by cash, card or M-Pesa. To secure your room, pay a deposit to Paybill 123456, account = your booking code." /></div>
           <div className="space-y-1"><Label htmlFor="bs-pol">House rules and policies</Label><Textarea id="bs-pol" rows={3} value={f.policies ?? ""} onChange={(e) => set("policies", e.target.value)} placeholder="No smoking in rooms. Children under 5 stay free. ID required at check-in." /></div>
           <label className="flex items-center gap-2 text-sm"><Switch checked={f.show_reviews} onCheckedChange={(v) => set("show_reviews", v)} />Show guest reviews you have chosen on the page</label>
+          {badLinks.length > 0 && <p className="text-sm text-red-600" role="alert">Photo links must start with https:// ({badLinks[0]}).</p>}
           <div className="flex justify-end">
-            <Button disabled={save.isPending} onClick={() => save.mutate({
+            <Button disabled={save.isPending || badLinks.length > 0} onClick={() => save.mutate({
               enabled: f.enabled, slug: f.slug.replace(/^-+|-+$/g, ""), headline: text(f.headline ?? ""), description: text(f.description ?? ""), photo_url: text(f.photo_url ?? ""),
               whatsapp: text(f.whatsapp ?? ""), free_cancel_days: f.free_cancel_days, min_nights: f.min_nights, max_nights: f.max_nights, max_advance_days: f.max_advance_days,
               same_day_cutoff: f.same_day_cutoff, payment_instructions: text(f.payment_instructions ?? ""), policies: text(f.policies ?? ""), show_reviews: f.show_reviews,
@@ -348,6 +361,10 @@ const RoomTypeOnline = ({ t }: { t: RoomType }) => {
   const [photo, setPhoto] = useState(t.photo_url ?? "");
   const [rate, setRate] = useState(t.online_rate != null ? String(t.online_rate) : "");
   const [desc, setDesc] = useState(t.description ?? "");
+  const hasGallery = "gallery" in t;
+  const [gallery, setGallery] = useState<string[]>(t.gallery ?? []);
+  const galleryLinks = gallery.map((u) => u.trim()).filter(Boolean);
+  const badGallery = galleryLinks.some((u) => !isHttps(u)) || galleryLinks.length > 8 || (!!photo.trim() && !isHttps(photo.trim()));
   return (
     <div className="rounded-md border p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -361,9 +378,15 @@ const RoomTypeOnline = ({ t }: { t: RoomType }) => {
         <div className="space-y-2">
           <div className="space-y-1"><Label htmlFor={`rt-rate-${t.id}`} className="text-xs">Online price per night (normal rate {formatMoney(Number(t.base_rate), "")})</Label>
             <Input id={`rt-rate-${t.id}`} type="number" min={0} value={rate} onChange={(e) => setRate(e.target.value)} placeholder="Same as normal rate" /></div>
-          <div className="space-y-1"><Label htmlFor={`rt-photo-${t.id}`} className="text-xs">Photo link (https://…)</Label><Input id={`rt-photo-${t.id}`} value={photo} onChange={(e) => setPhoto(e.target.value)} /></div>
+          <div className="space-y-1"><Label htmlFor={`rt-photo-${t.id}`} className="text-xs">Main photo</Label><PhotoField id={`rt-photo-${t.id}`} kind="room" value={photo} onChange={setPhoto} /></div>
           <div className="space-y-1"><Label htmlFor={`rt-desc-${t.id}`} className="text-xs">Description</Label><Textarea id={`rt-desc-${t.id}`} rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
-          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate({ id: t.id, online_rate: rate === "" ? null : Number(rate), photo_url: photo.trim() || null, description: desc.trim() || null }, { onSuccess: () => setOpen(false) })}>Save</Button>
+          {hasGallery && (
+            <div className="space-y-1"><Label className="text-xs">More photos (up to 8)</Label>
+              <PhotoList kind="room" max={8} label={`${t.name} photos`} value={gallery} onChange={setGallery} />
+              {badGallery && <p className="text-xs text-red-600" role="alert">Photo links must start with https://</p>}</div>
+          )}
+          <Button size="sm" disabled={save.isPending || badGallery} onClick={() => save.mutate({ id: t.id, online_rate: rate === "" ? null : Number(rate), photo_url: photo.trim() || null, description: desc.trim() || null,
+            ...(hasGallery ? { gallery: galleryLinks } : {}) }, { onSuccess: () => setOpen(false) })}>Save</Button>
         </div>
       )}
     </div>

@@ -102,6 +102,7 @@ export interface RoomType {
   max_occupancy: number;
   amenities: string[];
   photo_url?: string | null;
+  gallery?: string[] | null;
   online_bookable?: boolean;
   online_rate?: number | null;
 }
@@ -409,6 +410,29 @@ export interface BookingSettings {
   hotel_id: string; enabled: boolean; slug: string; headline: string | null; description: string | null; photo_url: string | null;
   policies: string | null; payment_instructions: string | null; whatsapp: string | null; free_cancel_days: number | null;
   min_nights: number; max_nights: number; max_advance_days: number; same_day_cutoff: string; show_reviews: boolean;
+  /** Missing until the guest_site migration has run. */
+  gallery?: string[]; features?: SiteFeature[]; site?: SiteSettings;
+}
+/** A block on the guest website, e.g. the restaurant or the pool. */
+export interface SiteFeature { title: string; text?: string | null; photo_url?: string | null }
+
+/** Guest website settings (booking_settings.site), edited in Online → Website. Every field is optional. */
+export type SiteTheme = "lake" | "safari" | "coast" | "sand" | "custom";
+export type SiteFont = "cormorant" | "marcellus" | "playfair" | "jost";
+export type SiteSectionKey = "about" | "experiences" | "marquee" | "rooms" | "offers" | "book" | "gallery" | "reviews";
+export interface SiteOffer {
+  title: string; text?: string | null; photo_url?: string | null; from_date?: string | null; to_date?: string | null;
+  min_nights?: number | null; price?: number | null; price_label?: string | null;
+}
+export interface SiteSettings {
+  theme?: SiteTheme; colors?: { primary?: string; accent?: string; background?: string };
+  heading_font?: SiteFont; logo_url?: string | null;
+  hero?: { photos?: string[]; tagline?: string | null; waves?: boolean };
+  sections?: { key: SiteSectionKey; on: boolean }[];
+  offers?: SiteOffer[]; marquee?: string[];
+  social?: { instagram?: string | null; facebook?: string | null; tiktok?: string | null; tripadvisor?: string | null };
+  notice?: { text?: string | null; link?: string | null };
+  seo?: { title?: string | null; description?: string | null };
 }
 export interface GuestFeedback {
   id: string; hotel_id: string; reservation_id: string; token: string; created_at: string; expires_at: string; shared_at: string | null;
@@ -418,12 +442,13 @@ export interface GuestFeedback {
   reservations?: { code: string; check_in: string; check_out: string; guests?: { first_name: string; last_name: string; phone: string | null; email: string | null } | null;
     rooms?: { room_number: string } | null } | null;
 }
-export interface PublicRoomType { id: string; name: string; description: string | null; max_occupancy: number; amenities: string[]; photo_url: string | null; rate: number }
+export interface PublicRoomType { id: string; name: string; description: string | null; max_occupancy: number; amenities: string[]; photo_url: string | null; gallery?: string[]; rate: number }
 export interface PublicHotel {
   name: string; city: string | null; address: string | null; country: string; phone: string | null; email: string | null; currency: string;
   checkin_time: string; checkout_time: string; prices_include_tax: boolean; tax_rate: number; today: string;
   headline: string | null; description: string | null; photo_url: string | null; policies: string | null; payment_instructions: string | null;
   whatsapp: string | null; free_cancel_days: number | null; min_nights: number; max_nights: number; max_advance_days: number;
+  gallery?: string[]; features?: SiteFeature[]; site?: SiteSettings;
   room_types: PublicRoomType[];
   reviews: { count: number; average: number | null; recent: { name: string; overall: number; comment: string | null; month: string; response: string | null }[] } | null;
 }

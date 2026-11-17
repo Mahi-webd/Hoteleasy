@@ -72,7 +72,11 @@ export const getFeedbackLink = async (reservationId: string) =>
 export const usePublicHotel = (slug: string) =>
   useQuery({
     queryKey: ["public", "hotel", slug],
-    queryFn: async () => unwrap(await supabase.rpc("public_hotel", { _slug: slug })) as PublicHotel | null,
+    queryFn: async () => {
+      // Local preview with sample data: /book/demo (development only, removed from production builds).
+      if (import.meta.env.DEV && slug === "demo") return (await import("@/features/public/demoHotel")).demoHotel;
+      return unwrap(await supabase.rpc("public_hotel", { _slug: slug })) as PublicHotel | null;
+    },
     staleTime: 60_000,
   });
 
@@ -80,20 +84,24 @@ export interface Offer { room_type_id: string; name: string; available: number; 
   plans?: OfferPlan[] }
 export interface OfferPlan { id: string; name: string; code: string; description: string | null; breakfast: boolean; lunch: boolean; dinner: boolean; adult_night: number; child_night: number; adult_stay: number; child_stay: number; stay_label: string | null; min_nights: number | null; too_short: boolean }
 
-export const fetchAvailability = async (slug: string, checkIn: string, checkOut: string, guests: number) =>
-  unwrap(await supabase.rpc("public_availability", { _slug: slug, _check_in: checkIn, _check_out: checkOut, _guests: guests })) as Offer[];
+export const fetchAvailability = async (slug: string, checkIn: string, checkOut: string, guests: number) => {
+  if (import.meta.env.DEV && slug === "demo") return (await import("@/features/public/demoHotel")).demoAvailability(checkIn, checkOut, guests);
+  return unwrap(await supabase.rpc("public_availability", { _slug: slug, _check_in: checkIn, _check_out: checkOut, _guests: guests })) as Offer[];
+};
 
 export interface BookingResult { code: string; room_type: string; check_in: string; check_out: string; nights: number; rate: number; total: number; currency: string; guest: string; email: string; plan?: string | null; phone?: string | null }
 
 export const bookRoom = async (a: {
   slug: string; roomTypeId: string; checkIn: string; checkOut: string; adults: number; children: number;
   firstName: string; lastName: string; email: string; phone: string; nationality?: string; requests?: string; website?: string; ratePlanId?: string | null;
-}) =>
-  unwrap(await supabase.rpc("public_book", {
+}) => {
+  if (import.meta.env.DEV && a.slug === "demo") return (await import("@/features/public/demoHotel")).demoBooking(a);
+  return unwrap(await supabase.rpc("public_book", {
     _slug: a.slug, _room_type_id: a.roomTypeId, _check_in: a.checkIn, _check_out: a.checkOut, _adults: a.adults, _children: a.children,
     _first_name: a.firstName, _last_name: a.lastName, _email: a.email, _phone: a.phone, _nationality: a.nationality || null,
     _requests: a.requests || null, _website: a.website || null, _rate_plan_id: a.ratePlanId ?? null,
   })) as BookingResult;
+};
 
 export interface BookingLookup {
   code: string; status: string; room_type: string; check_in: string; check_out: string; nights: number; total: number; currency: string;

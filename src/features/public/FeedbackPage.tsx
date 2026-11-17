@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitFeedback, usePublicFeedback } from "@/hooks/useOnline";
 import { friendlyError } from "@/lib/format";
-import { PublicShell } from "./BookingPage";
+import { PublicShell } from "./GuestSite";
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 
@@ -48,7 +48,7 @@ const FeedbackPage = () => {
       <PublicShell>
         <Card className="max-w-xl mx-auto"><CardContent className="p-8 text-center space-y-3">
           <CheckCircle2 className="h-12 w-12 text-emerald-600 mx-auto" />
-          <h1 className="text-2xl font-bold">Thank you{sent ? `, ${f.first_name}` : ""}!</h1>
+          <h1 className="gs-display text-3xl">Thank you{sent ? `, ${f.first_name}` : ""}!</h1>
           <p className="text-slate-600">{sent ? `Your feedback goes straight to the ${f.hotel} team.` : "We already have your feedback for this stay."}</p>
         </CardContent></Card>
       </PublicShell>
@@ -72,7 +72,7 @@ const FeedbackPage = () => {
       <Card className="max-w-xl mx-auto">
         <CardContent className="p-6 space-y-5">
           <div>
-            <h1 className="text-2xl font-bold">How was your stay, {f.first_name}?</h1>
+            <h1 className="gs-display text-3xl">How was your stay, {f.first_name}?</h1>
             <p className="text-slate-600">{f.hotel}{f.city ? `, ${f.city}` : ""} · {format(parseISO(f.check_in), "d MMM")} – {format(parseISO(f.check_out), "d MMM yyyy")}</p>
           </div>
           <div className="divide-y">
@@ -88,7 +88,7 @@ const FeedbackPage = () => {
             <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Recommend from 0 to 10">
               {Array.from({ length: 11 }, (_, i) => (
                 <button key={i} type="button" role="radio" aria-checked={recommend === i} onClick={() => setRecommend(i)}
-                  className={`h-9 w-9 rounded-md border text-sm font-medium ${recommend === i ? "bg-blue-600 text-white border-blue-600" : "bg-white hover:bg-slate-50"}`}>{i}</button>
+                  className={`h-9 w-9 rounded-md border text-sm font-medium ${recommend === i ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted"}`}>{i}</button>
               ))}
             </div>
             <div className="flex justify-between text-xs text-slate-500 max-w-[440px]"><span>Not likely</span><span>Very likely</span></div>

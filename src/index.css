@@ -101,3 +101,78 @@
     @apply bg-background text-foreground;
   }
 }
+/* ------------------------------------------------------------------------
+   Guest website (booking page, online check-in, feedback, guest stay).
+   Calm cream and deep navy, thin wide capitals for headings. Scoped to
+   .guest-site so the staff app keeps its own look, and always light even
+   when a staff member's device is in dark mode.
+   ------------------------------------------------------------------------ */
+@layer base {
+  .guest-site {
+    --background: 40 33% 96%;
+    --foreground: 208 40% 17%;
+    --card: 40 40% 98.5%;
+    --card-foreground: 208 40% 17%;
+    --popover: 40 40% 98.5%;
+    --popover-foreground: 208 40% 17%;
+    --primary: 208 52% 19%;
+    --primary-foreground: 40 33% 96%;
+    --secondary: 207 32% 68%;
+    --secondary-foreground: 208 52% 14%;
+    --muted: 40 22% 90%;
+    --muted-foreground: 208 14% 38%;
+    --accent: 40 22% 90%;
+    --accent-foreground: 208 52% 19%;
+    --border: 40 16% 82%;
+    --input: 40 16% 78%;
+    --ring: 208 52% 30%;
+    --radius: 1.25rem;
+    color-scheme: light;
+    font-family: "Jost", ui-sans-serif, system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+  }
+  .guest-site .gs-display {
+    font-family: var(--gs-display-font, "Cormorant Garamond", "Cormorant", Georgia, serif);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+  .guest-site .gs-eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+}
+
+@keyframes gs-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.gs-marquee { animation: gs-marquee 40s linear infinite; }
+.gs-no-scrollbar { scrollbar-width: none; }
+.gs-no-scrollbar::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .gs-marquee { animation: none; }
+}
+
+/* Guest website motion (see GuestMotion.tsx) */
+.gs-reveal { opacity: 0; transform: translate3d(0, 28px, 0); transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1); }
+.gs-reveal.is-shown { opacity: 1; transform: none; }
+.gs-draw path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.6s cubic-bezier(.6,.1,.2,1); }
+.gs-draw path:nth-child(2) { transition-delay: .35s; }
+.gs-draw.is-shown path { stroke-dashoffset: 0; }
+@keyframes gs-kenburns { from { transform: scale(1); } to { transform: scale(1.12); } }
+.gs-kenburns { animation: gs-kenburns 16s ease-in-out infinite alternate; transform-origin: 60% 45%; }
+@keyframes gs-rise { from { opacity: 0; transform: translate3d(0, 0.6em, 0); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+.gs-rise { display: inline-block; opacity: 0; animation: gs-rise 1.3s cubic-bezier(.2,.7,.2,1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .gs-reveal, .gs-reveal.is-shown { opacity: 1; transform: none; transition: none; }
+  .gs-draw path { stroke-dashoffset: 0; transition: none; }
+  .gs-kenburns { animation: none; }
+  .gs-rise { animation: none; opacity: 1; }
+}
+@media print {
+  .gs-reveal { opacity: 1 !important; transform: none !important; }
+}

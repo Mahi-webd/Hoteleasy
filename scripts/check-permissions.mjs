@@ -2,8 +2,9 @@
 // exists in permission_catalog, as filled by the migrations. Run: npm run check:perms
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const migDir = join(root, "supabase/migrations");
 const migrations = readdirSync(migDir).filter((f) => f.endsWith(".sql")).sort();
 

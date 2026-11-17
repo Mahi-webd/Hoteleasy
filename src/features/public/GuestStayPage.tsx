@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cancelGuestRequest, fetchPublicRoom, sendGuestRequest, unlockRoom, usePublicStay, type PublicStay } from "@/hooks/useRequests";
 import { friendlyError } from "@/lib/format";
-import { PublicShell } from "./BookingPage";
+import { PublicShell } from "./GuestSite";
 
 export const REQUEST_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   towel: ShowerHead, sparkles: Sparkles, bed: Bed, soap: Bath, wrench: Wrench, alarm: AlarmClock, car: Car, clock: Clock,
@@ -59,7 +59,7 @@ export const RoomQrPage = () => {
       <Card className="max-w-md mx-auto mt-6">
         <CardContent className="p-6 space-y-4 text-center">
           <div className="text-sm uppercase tracking-wide text-slate-500">{room.hotel}</div>
-          <h1 className="text-2xl font-bold">Room {room.room}</h1>
+          <h1 className="gs-display text-3xl">Room {room.room}</h1>
           {!room.occupied ? (
             <p className="text-slate-600">This page works once you've checked in. Please see reception{room.phone ? ` or call ${room.phone}` : ""}.</p>
           ) : (
@@ -110,7 +110,7 @@ export const GuestStayPage = () => {
       <div className="max-w-xl mx-auto space-y-4">
         <div className="text-center space-y-1 pt-2">
           <div className="text-sm uppercase tracking-wide text-slate-500">{s.hotel.name}</div>
-          <h1 className="text-2xl font-bold">Hello {s.first_name} · Room {s.room}</h1>
+          <h1 className="gs-display text-3xl">Hello {s.first_name} · Room {s.room}</h1>
           <p className="text-sm text-slate-600">Check-out {format(parseISO(s.check_out), "EEEE d MMMM")} by {s.hotel.checkout_time}{s.plan ? ` · ${s.plan}` : ""}</p>
         </div>
         {sent && <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 flex items-center gap-2" role="status"><CheckCircle2 className="h-4 w-4" />{sent}</div>}
@@ -121,8 +121,8 @@ export const GuestStayPage = () => {
               const Icon = REQUEST_ICONS[t.icon] ?? Bell;
               return (
                 <button key={t.id} type="button" onClick={() => setAsking(t)}
-                  className="rounded-lg border p-3 flex flex-col items-center gap-2 text-center text-sm hover:bg-slate-50 active:bg-slate-100 min-h-[88px]">
-                  <Icon className="h-6 w-6 text-blue-600" />{t.label}
+                  className="rounded-lg border p-3 flex flex-col items-center gap-2 text-center text-sm hover:bg-muted active:bg-muted min-h-[88px]">
+                  <Icon className="h-6 w-6 text-primary" />{t.label}
                 </button>
               );
             })}

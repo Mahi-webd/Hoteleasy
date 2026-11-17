@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
-  BedDouble, CalendarCheck, CheckCircle2, Clock, Loader2, MapPin, MessageCircle, Phone, Printer, Search, Star, Users,
-  Smartphone,
+  BedDouble, CalendarCheck, CheckCircle2, Loader2, MessageCircle, Printer, Search, Users, Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,77 +21,122 @@ import { MpesaPrompt } from "@/components/common/MpesaPrompt";
 import { createOnlinePrompt } from "@/hooks/useMpesa";
 import { mealsOf, planPrice } from "@/lib/db-types";
 import type { PublicHotel, PublicRoomType } from "@/lib/db-types";
+import type { SiteFont, SiteSectionKey, SiteSettings, SiteTheme } from "@/lib/db-types";
+import {
+  Features, Footer, Gallery, Hero, Intro, Marquee, NoticeBar, OffersSlider, PublicShell, Reviews, RoomsCarousel, SectionTitle, SiteChrome, scrollToId,
+} from "./GuestSite";
+import { Waves, WavesOn } from "./GuestMotion";
+import { FONTS, SECTIONS, THEMES, currentOffers, sectionList, themeCss } from "./siteTheme";
+
+export { PublicShell } from "./GuestSite";
 
 const nice = (d: string) => format(parseISO(d), "EEE d MMM yyyy");
 
-export const PublicShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-slate-50 text-slate-900">
-    <main className="max-w-4xl mx-auto px-4 py-6 sm:py-10">{children}</main>
-    <footer className="text-center text-xs text-slate-400 pb-8">Bookings powered by HotelEasy</footer>
-  </div>
-);
-
-const Stars = ({ value }: { value: number }) => (
-  <span className="inline-flex" aria-label={`${value} out of 5 stars`}>
-    {[1, 2, 3, 4, 5].map((i) => (
-      <Star key={i} className={`h-4 w-4 ${i <= Math.round(value) ? "fill-amber-400 text-amber-400" : "text-slate-300"}`} />
-    ))}
-  </span>
-);
-
-const BookingPage = () => {
-  const { slug = "" } = useParams();
+/** The hotel website. `slug` is set when it is shown as the home page (/); otherwise it comes from /book/<slug>. */
+const BookingPage = ({ slug: fixedSlug }: { slug?: string }) => {
+  const params0 = useParams();
+  const slug = fixedSlug ?? params0.slug ?? "";
   const [params] = useSearchParams();
   const hotel = usePublicHotel(slug);
   const h = hotel.data;
   const [mode, setMode] = useState<"book" | "manage">(params.get("manage") ? "manage" : "book");
 
-  useEffect(() => { if (h) document.title = `Book · ${h.name}`; }, [h]);
+  // Local preview only: /book/demo?theme=safari&font=marcellus tries a look without saving anything.
+  const site: SiteSettings | undefined = h && import.meta.env.DEV && slug === "demo" ? {
+    ...h.site,
+    ...(params.get("theme") && params.get("theme")! in THEMES ? { theme: params.get("theme") as SiteTheme } : {}),
+    ...(params.get("font") && params.get("font")! in FONTS ? { heading_font: params.get("font") as SiteFont } : {}),
+  } : h?.site;
 
-  if (hotel.isLoading) return <PublicShell><div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div></PublicShell>;
+  useEffect(() => {
+    if (!h) return;
+    const title = site?.seo?.title?.trim() || h.name;
+    document.title = title;
+    const desc = site?.seo?.description?.trim() || h.headline || "";
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    const before = meta?.content;
+    if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
+    if (desc) meta.content = desc;
+    return () => { if (meta && before !== undefined) meta.content = before; };
+  }, [h, site?.seo?.title, site?.seo?.description]);
+  // Links like ?manage=1 open straight at "Find my booking".
+  useEffect(() => { if (h && params.get("manage")) setTimeout(() => scrollToId("book"), 100); }, [h, params]);
+
+  if (hotel.isLoading) return <PublicShell><div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></PublicShell>;
   if (!h) {
     return (
       <PublicShell>
-        <div className="text-center py-24 space-y-2">
-          <h1 className="text-2xl font-bold">Booking page not found</h1>
-          <p className="text-slate-600">This hotel's online booking is switched off, or the link is wrong. Please contact the hotel directly.</p>
+        <div className="text-center py-24 space-y-4">
+          <h1 className="gs-display text-3xl">Page not found</h1>
+          <p className="text-muted-foreground">This hotel's online booking is switched off, or the link is wrong. Please contact the hotel directly.</p>
         </div>
       </PublicShell>
     );
   }
 
+  const hs = { ...h, site };
+  const features = (h.features ?? []).filter((f) => f.title?.trim());
+  const gallery = (h.gallery ?? []).filter(Boolean);
+  const offers = currentOffers(site?.offers, h.today);
+  const words = (site?.marquee ?? []).map((w) => w.trim()).filter(Boolean);
+  const marquee = words.length ? words : features.length > 1 ? features.map((f) => f.title) : [];
+  const book = (m: "book" | "manage" = "book") => { setMode(m); scrollToId("book"); };
+
+  // What each section needs to be worth showing.
+  const has: Record<SiteSectionKey, boolean> = {
+    about: true, experiences: features.length > 0, marquee: marquee.length > 0, rooms: h.room_types.length > 0,
+    offers: offers.length > 0, book: true, gallery: gallery.length > 0, reviews: !!h.reviews?.recent.some((r) => r.comment),
+  };
+  const order = sectionList(site).filter((x) => x.on && has[x.key]).map((x) => x.key);
+  const menuLabel: Partial<Record<SiteSectionKey, string>> = { about: "Welcome", book: "Book" };
+  const links = [
+    ...order.filter((k) => k !== "marquee").map((k) => ({ id: k, label: menuLabel[k] ?? SECTIONS.find((x) => x.key === k)!.label })),
+    { id: "contact", label: "Contact" },
+  ];
+
+  const render = (k: SiteSectionKey) => {
+    switch (k) {
+      case "about": return <Intro key={k} h={hs} />;
+      case "experiences": return <Features key={k} items={features} />;
+      case "marquee": return <Marquee key={k} words={marquee} />;
+      case "rooms": return <RoomsCarousel key={k} h={hs} onBook={() => book()} />;
+      case "offers": return <OffersSlider key={k} h={hs} offers={offers} onBook={() => book()} />;
+      case "gallery": return <Gallery key={k} h={hs} photos={gallery} />;
+      case "reviews": return <Reviews key={k} h={hs} />;
+      case "book": return (
+        <section key={k} id="book" className="relative scroll-mt-0 bg-primary text-primary-foreground px-4 sm:px-8 py-20 sm:py-28 pb-32 sm:pb-40">
+          <Waves fill="primary" edge="top" />
+          <SectionTitle eyebrow="Book direct" title={mode === "book" ? "Plan your stay" : "Your booking"} />
+          <div className="mx-auto mt-10 max-w-4xl">
+            <div className="mb-5 flex justify-center gap-2">
+              <Button variant={mode === "book" ? "secondary" : "ghost"} className="rounded-full px-6 text-inherit data-[on=true]:text-secondary-foreground hover:bg-primary-foreground/10"
+                data-on={mode === "book"} onClick={() => setMode("book")}><CalendarCheck className="mr-2 h-4 w-4" />Book a room</Button>
+              <Button variant={mode === "manage" ? "secondary" : "ghost"} className="rounded-full px-6 text-inherit data-[on=true]:text-secondary-foreground hover:bg-primary-foreground/10"
+                data-on={mode === "manage"} onClick={() => setMode("manage")}>Find my booking</Button>
+            </div>
+            {mode === "book" ? <BookFlow h={hs} slug={slug} /> : <Manage h={hs} slug={slug} />}
+          </div>
+          <Waves fill="primary" edge="bottom" />
+        </section>
+      );
+    }
+  };
+
   return (
-    <PublicShell>
-      <Hero h={h} />
-      <div className="flex gap-2 my-5">
-        <Button variant={mode === "book" ? "default" : "outline"} onClick={() => setMode("book")}><CalendarCheck className="mr-2 h-4 w-4" />Book a room</Button>
-        <Button variant={mode === "manage" ? "default" : "outline"} onClick={() => setMode("manage")}>Find my booking</Button>
+    <WavesOn.Provider value={site?.hero?.waves !== false}>
+      {/* Colours and heading letters from Online → Website. Built from checked numbers only. */}
+      <style>{themeCss(site)}</style>
+      <div className="guest-site min-h-screen">
+        <NoticeBar h={hs} />
+        <Hero h={hs} />
+        {order.map(render)}
+        <Footer h={hs} />
+        <SiteChrome h={hs} links={links} onBook={() => book()} />
       </div>
-      {mode === "book" ? <BookFlow h={h} slug={slug} /> : <Manage h={h} slug={slug} />}
-      <Info h={h} />
-    </PublicShell>
+    </WavesOn.Provider>
   );
 };
 export default BookingPage;
-
-// ---------------------------------------------------------------------------
-const Hero = ({ h }: { h: PublicHotel }) => (
-  <Card className="overflow-hidden">
-    {h.photo_url && <img src={h.photo_url} alt={h.name} className="w-full h-48 sm:h-64 object-cover" />}
-    <CardContent className="p-5 space-y-2">
-      <h1 className="text-2xl sm:text-3xl font-bold">{h.name}</h1>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
-        {(h.city || h.address) && <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{[h.address, h.city].filter(Boolean).join(", ")}</span>}
-        {h.reviews && h.reviews.count > 0 && h.reviews.average != null && (
-          <span className="inline-flex items-center gap-1"><Stars value={Number(h.reviews.average)} /> {Number(h.reviews.average).toFixed(1)} · {h.reviews.count} review{h.reviews.count === 1 ? "" : "s"}</span>
-        )}
-        <span className="inline-flex items-center gap-1"><Clock className="h-4 w-4" />Check-in from {h.checkin_time} · check-out by {h.checkout_time}</span>
-      </div>
-      {h.headline && <p className="text-lg font-medium">{h.headline}</p>}
-      {h.description && <p className="text-slate-600 whitespace-pre-line">{h.description}</p>}
-    </CardContent>
-  </Card>
-);
 
 // ---------------------------------------------------------------------------
 const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
@@ -138,11 +182,11 @@ const BookFlow = ({ h, slug }: { h: PublicHotel; slug: string }) => {
         </CardContent>
       </Card>
 
-      {!offers && !chosen && <RoomList h={h} />}
+      {!offers && !chosen && <p className="text-center text-sm text-primary-foreground/70">Choose your dates to see prices and which rooms are free.</p>}
 
       {offers && !chosen && (
         <div className="space-y-3">
-          <p className="text-sm text-slate-600">{nights} night{nights === 1 ? "" : "s"} · {nice(checkIn)} → {nice(checkOut)} · {adults + children} guest{adults + children === 1 ? "" : "s"}</p>
+          <p className="text-sm text-primary-foreground/80">{nights} night{nights === 1 ? "" : "s"} · {nice(checkIn)} → {nice(checkOut)} · {adults + children} guest{adults + children === 1 ? "" : "s"}</p>
           {offers.filter((o) => types.has(o.room_type_id)).map((o) => {
             const rt = types.get(o.room_type_id)!;
             const ok = o.available > 0 && o.fits;
@@ -217,14 +261,6 @@ const RoomCard = ({ rt, h, children, extra }: { rt: PublicRoomType; h: PublicHot
   </Card>
 );
 
-const RoomList = ({ h }: { h: PublicHotel }) => (
-  <div className="space-y-3">
-    <h2 className="text-lg font-semibold">Rooms</h2>
-    {h.room_types.map((rt) => <RoomCard key={rt.id} rt={rt} h={h} />)}
-    {!h.room_types.length && <p className="text-slate-600">No rooms are offered online at the moment.</p>}
-  </div>
-);
-
 const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack, onDone, onSoldOut }: {
   h: PublicHotel; slug: string; offer: Offer & { rt: PublicRoomType; plan: OfferPlan | null; grand: number }; checkIn: string; checkOut: string; adults: number; children: number;
   onBack: () => void; onDone: (r: BookingResult) => void; onSoldOut: () => void;
@@ -241,7 +277,7 @@ const GuestForm = ({ h, slug, offer, checkIn, checkOut, adults, children, onBack
         slug, roomTypeId: offer.room_type_id, checkIn, checkOut, adults, children, ratePlanId: offer.plan?.id ?? null,
         firstName: v("first"), lastName: v("last"), email: v("email"), phone: v("phone"), nationality: v("nat"), requests: v("req"), website: v("website"),
       })), phone: v("phone") });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToId("book");
     } catch (err) {
       const m = friendlyError(err);
       setError(m);
@@ -405,37 +441,3 @@ const Manage = ({ h, slug }: { h: PublicHotel; slug: string }) => {
     </Card>
   );
 };
-
-// ---------------------------------------------------------------------------
-const Info = ({ h }: { h: PublicHotel }) => (
-  <div className="grid sm:grid-cols-2 gap-4 mt-6">
-    {h.reviews && h.reviews.recent.length > 0 && (
-      <Card className="sm:col-span-2">
-        <CardContent className="p-5 space-y-4">
-          <h2 className="text-lg font-semibold">What guests say</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {h.reviews.recent.map((r, i) => (
-              <div key={i} className="space-y-1">
-                <div className="flex items-center gap-2"><Stars value={r.overall} /><span className="text-sm font-medium">{r.name}</span><span className="text-xs text-slate-500">{r.month}</span></div>
-                {r.comment && <p className="text-sm text-slate-700">“{r.comment}”</p>}
-                {r.response && <p className="text-xs text-slate-500 border-l-2 pl-2">Reply from the hotel: {r.response}</p>}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    )}
-    <Card>
-      <CardContent className="p-5 space-y-2 text-sm">
-        <h2 className="text-lg font-semibold">Contact</h2>
-        {h.phone && <p className="inline-flex items-center gap-2"><Phone className="h-4 w-4" /><a href={`tel:${h.phone}`} className="underline">{h.phone}</a></p>}
-        {h.whatsapp && <p><a className="inline-flex items-center gap-2 underline" href={`https://wa.me/${waNumber(h.whatsapp)}`} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4" />WhatsApp</a></p>}
-        {h.email && <p><a className="underline" href={`mailto:${h.email}`}>{h.email}</a></p>}
-      </CardContent>
-    </Card>
-    {h.policies && (
-      <Card><CardContent className="p-5 space-y-2 text-sm"><h2 className="text-lg font-semibold">House rules</h2><p className="whitespace-pre-line text-slate-700">{h.policies}</p></CardContent></Card>
-    )}
-    <p className="sm:col-span-2 text-center text-xs text-slate-400"><Link to="/login">Hotel staff sign in</Link></p>
-  </div>
-);

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SignaturePad } from "@/components/common/SignaturePad";
 import { submitPrecheck, usePublicPrecheck, type Companion } from "@/hooks/useOnline";
 import { friendlyError } from "@/lib/format";
-import { PublicShell } from "./BookingPage";
+import { PublicShell } from "./GuestSite";
 
 export const NATIONALITIES = ["Kenyan", "Ugandan", "Tanzanian", "Rwandan", "Burundian", "South Sudanese", "Ethiopian", "Somali", "Nigerian", "South African",
   "British", "American", "German", "French", "Italian", "Dutch", "Spanish", "Swiss", "Swedish", "Canadian", "Australian", "Indian", "Chinese", "Japanese"];
@@ -61,7 +61,7 @@ const PrecheckPage = () => {
   const header = (
     <div className="text-center space-y-1 mb-6">
       <div className="text-sm uppercase tracking-wide text-slate-500">Online check-in</div>
-      <h1 className="text-2xl sm:text-3xl font-bold">{h.name}</h1>
+      <h1 className="gs-display text-3xl sm:text-4xl">{h.name}</h1>
       <p className="text-slate-600">{p.room_type} · {nice(p.check_in)} → {nice(p.check_out)} · {p.nights} night{p.nights === 1 ? "" : "s"}</p>
       <p className="text-xs text-slate-500">Booking {p.code}</p>
     </div>
@@ -70,7 +70,7 @@ const PrecheckPage = () => {
     <PublicShell>{header}
       <Card className="max-w-xl mx-auto"><CardContent className="p-8 text-center space-y-3">
         {ok && <CheckCircle2 className="h-12 w-12 text-emerald-600 mx-auto" />}
-        <h2 className="text-xl font-bold">{title}</h2><div className="text-slate-600 space-y-2">{body}</div>
+        <h2 className="gs-display text-2xl">{title}</h2><div className="text-slate-600 space-y-2">{body}</div>
       </CardContent></Card>
     </PublicShell>
   );
@@ -162,7 +162,7 @@ const PrecheckPage = () => {
             </Section>
             <Section title="Registration card">
               {(h.house_rules || h.policies) && (
-                <div className="max-h-48 overflow-y-auto rounded-md bg-slate-50 border p-3 text-sm whitespace-pre-line text-slate-700">{[h.house_rules, h.policies].filter(Boolean).join("\n\n")}</div>
+                <div className="max-h-48 overflow-y-auto rounded-md bg-muted border p-3 text-sm whitespace-pre-line text-slate-700">{[h.house_rules, h.policies].filter(Boolean).join("\n\n")}</div>
               )}
               <p className="text-sm text-slate-600">
                 I confirm the details above are correct. I agree to pay for my stay and any extras charged to my room, and to follow the hotel's rules.{" "}
