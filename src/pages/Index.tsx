@@ -27,6 +27,7 @@ import KitchenDisplay from "@/features/pos/KitchenDisplay";
 import ReportsPage from "@/features/reports/ReportsPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import OnlinePage from "@/features/online/OnlinePage";
+import WhatsAppPage from "@/features/whatsapp/WhatsAppPage";
 import FinancePage from "@/features/finance/FinancePage";
 import StaffPage from "@/features/staff/StaffPage";
 import MyShiftsPage from "@/features/staff/MyShiftsPage";
@@ -62,6 +63,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   rates: RatesPage,
   companies: CompaniesPage,
   online: OnlinePage,
+  whatsapp: WhatsAppPage,
   requests: RequestsPage,
   finance: FinancePage,
   owner: OwnerOverview,

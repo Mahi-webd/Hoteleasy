@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar, ShieldCheck, RefreshCw } from "lucide-react";
+  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar, ShieldCheck, RefreshCw, MessageCircle } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
@@ -31,6 +31,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { key: "billing", label: "Billing & Payments", icon: CreditCard, perm: "billing.view" },
       { key: "companies", label: "Company accounts", icon: Building2, perm: "companies.view" },
       { key: "online", label: "Online booking & reviews", icon: Globe, perm: "online.view" },
+      { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, perm: "whatsapp.view" },
       { key: "channels", label: "Booking.com & Airbnb", icon: RefreshCw, perm: "channels.view" },
     ],
   },
