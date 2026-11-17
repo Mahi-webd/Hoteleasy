@@ -412,6 +412,8 @@ export interface BookingSettings {
   min_nights: number; max_nights: number; max_advance_days: number; same_day_cutoff: string; show_reviews: boolean;
   /** Missing until the guest_site migration has run. */
   gallery?: string[]; features?: SiteFeature[]; site?: SiteSettings;
+  /** The hotel's own web address, e.g. lakesidelodge.co.ke (missing until the site_addresses migration has run). */
+  custom_domain?: string | null;
 }
 /** A block on the guest website, e.g. the restaurant or the pool. */
 export interface SiteFeature { title: string; text?: string | null; photo_url?: string | null }

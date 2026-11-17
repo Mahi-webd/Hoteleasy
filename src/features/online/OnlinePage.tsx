@@ -28,6 +28,7 @@ const copy = async (text: string, what = "Link") => {
 import { EmailsTab } from "./EmailsTab";
 import { WebsiteTab } from "./WebsiteTab";
 import { PhotoField, PhotoList } from "@/components/common/PhotoInput";
+import { RESERVED_SLUGS, SITE_ROOT } from "@/lib/siteHost";
 
 const isHttps = (u: string) => /^https:\/\/\S+$/i.test(u);
 /** One link per line in a textarea; blank lines are kept while typing and dropped on save. */
@@ -283,6 +284,11 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
   const set = <K extends keyof BookingSettings>(k: K, v: BookingSettings[K]) => setF((x) => ({ ...x, [k]: v }));
   const text = (v: string) => (v.trim() ? v : null);
   const badLinks = [f.photo_url ?? ""].filter((u) => u.trim() && !isHttps(u.trim()));
+  const slugClean = f.slug.replace(/^-+|-+$/g, "");
+  const slugProblem = !/^[a-z0-9]([a-z0-9-]{1,46}[a-z0-9])$/.test(slugClean) ? "Use 3–48 lowercase letters, numbers and dashes."
+    : slugClean !== s.slug && RESERVED_SLUGS.has(slugClean) ? `“${slugClean}” is reserved. Please choose another address.` : "";
+  const domain = (f.custom_domain ?? "").trim();
+  const domainProblem = domain && !/^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(domain) ? "Enter a web address like lakesidelodge.co.ke (no https:// or slashes)." : "";
   const embed = `<a href="${url}" style="display:inline-block;padding:12px 22px;background:#1d4ed8;color:#fff;border-radius:8px;font:600 16px system-ui;text-decoration:none">Book now</a>`;
 
   return (
@@ -298,9 +304,29 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
           <div className="space-y-1">
             <Label htmlFor="bs-slug">Page address</Label>
             <div className="flex items-center gap-1 text-sm"><span className="text-slate-500 whitespace-nowrap">{window.location.origin}/book/</span>
-              <Input id="bs-slug" value={f.slug} onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} /></div>
-            <p className="text-xs text-slate-500">Lowercase letters, numbers and dashes. Changing it breaks links you have already shared.</p>
+              <Input id="bs-slug" value={f.slug} maxLength={48} onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} /></div>
+            {slugProblem ? <p className="text-xs text-red-600" role="alert">{slugProblem}</p>
+              : <p className="text-xs text-slate-500">Lowercase letters, numbers and dashes. If you change it, links you already shared keep working: guests are sent to the new address.</p>}
+            {SITE_ROOT && <p className="text-xs text-slate-500">Also at <a className="underline" href={`https://${f.slug}.${SITE_ROOT}`} target="_blank" rel="noreferrer">{f.slug}.{SITE_ROOT}</a></p>}
           </div>
+          {"custom_domain" in s && (
+            <div className="space-y-1">
+              <Label htmlFor="bs-domain">Your own web address (optional)</Label>
+              <Input id="bs-domain" value={f.custom_domain ?? ""} placeholder="lakesidelodge.co.ke"
+                onChange={(e) => set("custom_domain", e.target.value.toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "").trim())} />
+              {domainProblem ? <p className="text-xs text-red-600" role="alert">{domainProblem}</p> : (
+                <details className="text-xs text-slate-500">
+                  <summary className="cursor-pointer">How to connect a web address you own</summary>
+                  <ol className="mt-1 list-decimal space-y-1 pl-4">
+                    <li>Type it here without www (e.g. <code>lakesidelodge.co.ke</code>) and save.</li>
+                    <li>Ask HotelEasy support to add it to the website hosting (Vercel).</li>
+                    <li>At your domain company, add a <code>CNAME</code> record for <code>www</code> pointing to <code>cname.vercel-dns.com</code>, and an <code>A</code> record for the main address pointing to <code>76.76.21.21</code>.</li>
+                    <li>After the change spreads (minutes to a few hours), your address opens your website and staff can still sign in at <code>/login</code>.</li>
+                  </ol>
+                </details>
+              )}
+            </div>
+          )}
           <div className="space-y-1"><Label htmlFor="bs-head">Headline</Label><Input id="bs-head" value={f.headline ?? ""} onChange={(e) => set("headline", e.target.value)} placeholder="Riverside cottages 10 minutes from the Mara gate" /></div>
           <div className="space-y-1"><Label htmlFor="bs-desc">About the hotel</Label><Textarea id="bs-desc" rows={4} value={f.description ?? ""} onChange={(e) => set("description", e.target.value)} /></div>
           <div className="space-y-1"><Label htmlFor="bs-photo">Main photo</Label>
@@ -323,10 +349,11 @@ const Setup = ({ s, url }: { s: BookingSettings; url: string }) => {
           <label className="flex items-center gap-2 text-sm"><Switch checked={f.show_reviews} onCheckedChange={(v) => set("show_reviews", v)} />Show guest reviews you have chosen on the page</label>
           {badLinks.length > 0 && <p className="text-sm text-red-600" role="alert">Photo links must start with https:// ({badLinks[0]}).</p>}
           <div className="flex justify-end">
-            <Button disabled={save.isPending || badLinks.length > 0} onClick={() => save.mutate({
+            <Button disabled={save.isPending || badLinks.length > 0 || !!slugProblem || !!domainProblem} onClick={() => save.mutate({
               enabled: f.enabled, slug: f.slug.replace(/^-+|-+$/g, ""), headline: text(f.headline ?? ""), description: text(f.description ?? ""), photo_url: text(f.photo_url ?? ""),
               whatsapp: text(f.whatsapp ?? ""), free_cancel_days: f.free_cancel_days, min_nights: f.min_nights, max_nights: f.max_nights, max_advance_days: f.max_advance_days,
               same_day_cutoff: f.same_day_cutoff, payment_instructions: text(f.payment_instructions ?? ""), policies: text(f.policies ?? ""), show_reviews: f.show_reviews,
+              ...("custom_domain" in s ? { custom_domain: domain || null } : {}),
             })}>Save</Button>
           </div>
         </CardContent>

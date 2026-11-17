@@ -75,6 +75,18 @@ These rules are enforced in the database (Row Level Security), not just hidden i
 ## Still to do
 
 - [ ] **Guest website**: run `supabase/migrations/20261117140000_guest_site.sql`, `20261117160000_guest_site_settings.sql` and `20261117190000_site_photos.sql` (photo uploads) in the SQL Editor, in that order. Until then the booking page uses the new look with the main photo only, and Online → Website asks for the update.
+- [ ] **Website addresses**: run `supabase/migrations/20261117210000_site_addresses.sql` after the three guest-site updates.
+
+### Many hotels, one live system (guest websites)
+
+Every hotel's website is `/book/<page-address>`, filled from that hotel's data only. For going live:
+- **Changing a page address is safe**: the old address keeps working and sends guests to the new one; another hotel can never take it.
+- **Reserved words** (admin, api, demo, login, …) can't be page addresses; new hotels skip them automatically.
+- **Own web address**: a hotel enters its domain in Online → Setup; add the domain to the Vercel project and point DNS there (A `76.76.21.21`, CNAME `www` → `cname.vercel-dns.com`). Visiting it opens that hotel's website; `/login` still opens the staff app. Add the domain to Supabase → Authentication → URL configuration so password-reset links work there.
+- **Hotel subdomains** (optional): set `VITE_SITE_ROOT_DOMAIN` and add a wildcard domain `*.yourdomain` in Vercel; `<page-address>.yourdomain` opens that hotel's website.
+- **Single-hotel installs**: `VITE_HOME_HOTEL=<page-address>` opens that hotel's website at `/`.
+- Guest pages never go blank: a lost connection shows *Try again*, an unknown or switched-off page says so, and a crash shows a calm error page instead of a white screen.
+
 - [ ] **M-Pesa Edge Function**: deploy `mpesa` once (see "M-Pesa prompts" below). Until then the M-Pesa settings save but prompts can't be sent.
 - [ ] **Calendar sync Edge Function**: deploy `ical` once (see "Booking.com & Airbnb calendar sync" below). Optional: the 10-minute schedule.
 - [ ] **Help assistant**: add the `ANTHROPIC_API_KEY` secret and deploy `assistant` (see "Help assistant" below). The guides work without it.

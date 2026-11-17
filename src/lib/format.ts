@@ -138,6 +138,11 @@ export const guestName = (g?: { first_name: string; last_name: string } | null) 
 export const friendlyError = (err: unknown): string => {
   const msg = (err as { message?: string })?.message ?? String(err);
   if (msg.includes("reservations_no_overlap")) return "That room is already booked for some of those nights.";
+  if (msg.includes("booking_settings_slug_key")) return "Another hotel already uses that page address. Please choose another one.";
+  if (msg.includes("booking_settings_slug_check")) return "The page address can use lowercase letters, numbers and dashes (3–48 characters).";
+  if (msg.includes("booking_settings_domain_unique")) return "Another hotel already uses that web address.";
+  if (msg.includes("booking_settings_domain_ok")) return "Enter a web address like lakesidelodge.co.ke (no https:// or slashes).";
+  if (msg.includes("booking_settings_site_ok")) return "Some website settings aren't valid: check that every link starts with https://.";
   if (msg.includes("reservations_dates_ck")) return "Check-out must be after check-in.";
   if (msg.includes("rooms_hotel_id_room_number_key")) return "A room with that number already exists.";
   if (msg.includes("room_types_hotel_id_name_key")) return "A room type with that name already exists.";

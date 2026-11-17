@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
 import type { BookingSettings, GuestFeedback, PublicHotel, RoomType } from "@/lib/db-types";
+import { normalizePublicHotel } from "@/features/public/normalizeHotel";
 
 const unwrap = <T,>({ data, error }: { data: T | null; error: unknown }): T => {
   if (error) throw error;
@@ -69,15 +70,22 @@ export const getFeedbackLink = async (reservationId: string) =>
   `${window.location.origin}/feedback/${unwrap(await supabase.rpc("feedback_link", { _reservation_id: reservationId })) as string}`;
 
 // ---------------------------------------------------------------- public (no sign-in)
+/** The public data of one hotel's website, by page address. null = no such page; { redirect } = moved. */
 export const usePublicHotel = (slug: string) =>
   useQuery({
-    queryKey: ["public", "hotel", slug],
-    queryFn: async () => {
+    queryKey: ["public", "hotel", slug.trim().toLowerCase()],
+    queryFn: async (): Promise<PublicHotel | { redirect: string } | null> => {
+      const s = slug.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9-]{0,60}$/.test(s)) return null;   // not an address any hotel can have
       // Local preview with sample data: /book/demo (development only, removed from production builds).
-      if (import.meta.env.DEV && slug === "demo") return (await import("@/features/public/demoHotel")).demoHotel;
-      return unwrap(await supabase.rpc("public_hotel", { _slug: slug })) as PublicHotel | null;
+      if (import.meta.env.DEV && s === "demo") return (await import("@/features/public/demoHotel")).demoHotel;
+      return normalizePublicHotel(unwrap(await supabase.rpc("public_hotel", { _slug: s })));
     },
     staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    // a slow or dropped connection gets three tries before the page says so
+    retry: 3,
+    retryDelay: (n) => Math.min(4000, 600 * 2 ** n),
   });
 
 export interface Offer { room_type_id: string; name: string; available: number; fits: boolean; nights: number; rate: number; total: number; uniform?: boolean; seasons?: string[]; restriction?: string | null;

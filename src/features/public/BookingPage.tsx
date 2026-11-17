@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   BedDouble, CalendarCheck, CheckCircle2, Loader2, MessageCircle, Printer, Search, Users, Smartphone,
@@ -38,7 +38,8 @@ const BookingPage = ({ slug: fixedSlug }: { slug?: string }) => {
   const slug = fixedSlug ?? params0.slug ?? "";
   const [params] = useSearchParams();
   const hotel = usePublicHotel(slug);
-  const h = hotel.data;
+  const moved = hotel.data && "redirect" in hotel.data ? hotel.data.redirect : null;
+  const h = hotel.data && !("redirect" in hotel.data) ? hotel.data : undefined;
   const [mode, setMode] = useState<"book" | "manage">(params.get("manage") ? "manage" : "book");
 
   // Local preview only: /book/demo?theme=safari&font=marcellus tries a look without saving anything.
@@ -50,25 +51,41 @@ const BookingPage = ({ slug: fixedSlug }: { slug?: string }) => {
 
   useEffect(() => {
     if (!h) return;
-    const title = site?.seo?.title?.trim() || h.name;
-    document.title = title;
+    const titleBefore = document.title;
+    document.title = site?.seo?.title?.trim() || h.name;
     const desc = site?.seo?.description?.trim() || h.headline || "";
     let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     const before = meta?.content;
     if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
     if (desc) meta.content = desc;
-    return () => { if (meta && before !== undefined) meta.content = before; };
+    return () => { document.title = titleBefore; if (meta && before !== undefined) meta.content = before; };
   }, [h, site?.seo?.title, site?.seo?.description]);
   // Links like ?manage=1 open straight at "Find my booking".
   useEffect(() => { if (h && params.get("manage")) setTimeout(() => scrollToId("book"), 100); }, [h, params]);
 
-  if (hotel.isLoading) return <PublicShell><div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></PublicShell>;
+  if (hotel.isLoading) return <PublicShell><div className="flex justify-center py-24" role="status" aria-label="Loading"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div></PublicShell>;
+  // The hotel changed its page address: send guests (and their ?manage=… etc.) to the new one.
+  if (moved) return <Navigate to={`/book/${moved}${params.toString() ? `?${params}` : ""}`} replace />;
+  if (hotel.isError) {
+    return (
+      <PublicShell>
+        <div className="text-center py-24 space-y-4" role="alert">
+          <h1 className="gs-display text-3xl">We couldn't load this page</h1>
+          <p className="text-muted-foreground">Please check your internet connection and try again.</p>
+          <Button className="rounded-full px-6" onClick={() => hotel.refetch()} disabled={hotel.isFetching}>
+            {hotel.isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Try again
+          </Button>
+        </div>
+      </PublicShell>
+    );
+  }
   if (!h) {
     return (
       <PublicShell>
         <div className="text-center py-24 space-y-4">
           <h1 className="gs-display text-3xl">Page not found</h1>
           <p className="text-muted-foreground">This hotel's online booking is switched off, or the link is wrong. Please contact the hotel directly.</p>
+          <p className="text-xs text-muted-foreground">Hotel staff: <Link to="/login" className="underline">sign in</Link> and switch the booking page on under Online → Setup.</p>
         </div>
       </PublicShell>
     );

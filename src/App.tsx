@@ -2,7 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { hostSite } from "@/lib/siteHost";
 import { Loader2 } from "lucide-react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -57,16 +61,46 @@ const Protected = ({ children }: { children?: React.ReactNode }) => {
   return <>{children ?? <Index />}</>;
 };
 
-/** Which hotel's website opens at / for visitors who are not signed in (VITE_HOME_HOTEL = its booking-page address).
- *  In development it falls back to the sample hotel; without it, / goes to sign-in as before. */
-const HOME_HOTEL = (import.meta.env.VITE_HOME_HOTEL as string | undefined)?.trim() || (import.meta.env.DEV ? "demo" : "");
+/** A hotel's own domain → its page address (null when the domain isn't any hotel's). */
+const HostLookupHome = ({ host }: { host: string }) => {
+  const q = useQuery({
+    queryKey: ["public", "host", host],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("public_site_for_host" as never, { _host: host } as never);
+      if (error) throw error;
+      return (data as unknown as string | null) ?? null;
+    },
+    staleTime: 10 * 60_000, retry: 2,
+  });
+  if (q.isLoading) return <FullPageSpinner />;
+  if (q.data) return <BookingPage slug={q.data} />;
+  return <Navigate to="/login" replace />;
+};
 
-/** Home: signed-in staff get the app; visitors get the hotel website (or sign-in when none is set). */
+/**
+ * Home ("/"): signed-in staff get the app. Visitors get the hotel website for this web address
+ * (see src/lib/siteHost.ts): VITE_HOME_HOTEL, a hotel subdomain, or a hotel's own domain.
+ * On the app's own address visitors get the sign-in page (in development: the sample hotel).
+ */
 const Home = () => {
   const { session, loading } = useAuth();
   if (loading) return <FullPageSpinner />;
-  if (!session && HOME_HOTEL) return <BookingPage slug={HOME_HOTEL} />;
-  return <Protected />;
+  if (session) return <Protected />;
+  const site = hostSite();
+  if (site.kind === "slug") return <BookingPage slug={site.slug} />;
+  if (site.kind === "lookup") return <HostLookupHome host={site.host} />;
+  if (import.meta.env.DEV) return <BookingPage slug="demo" />;
+  return <Navigate to="/login" replace />;
+};
+
+/** Guest pages: a crash shows a calm "try again" page, not a blank screen. */
+const Guest = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  return <ErrorBoundary guest resetKey={pathname}>{children}</ErrorBoundary>;
+};
+const Staff = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  return <ErrorBoundary resetKey={pathname}>{children}</ErrorBoundary>;
 };
 
 const App = () => (
@@ -84,12 +118,12 @@ const App = () => (
                 <Routes>
                   <Route path="/login" element={<AuthPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/book/:slug" element={<BookingPage />} />
-                  <Route path="/feedback/:token" element={<FeedbackPage />} />
-                  <Route path="/checkin/:token" element={<PrecheckPage />} />
-                  <Route path="/r/:token" element={<RoomQrPage />} />
-                  <Route path="/stay/:key" element={<GuestStayPage />} />
-                  <Route path="/" element={<Home />} />
+                  <Route path="/book/:slug" element={<Guest><BookingPage /></Guest>} />
+                  <Route path="/feedback/:token" element={<Guest><FeedbackPage /></Guest>} />
+                  <Route path="/checkin/:token" element={<Guest><PrecheckPage /></Guest>} />
+                  <Route path="/r/:token" element={<Guest><RoomQrPage /></Guest>} />
+                  <Route path="/stay/:key" element={<Guest><GuestStayPage /></Guest>} />
+                  <Route path="/" element={<Staff><Home /></Staff>} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
                   <Route path="/day-report/:day" element={<Protected><DayReportPage /></Protected>} />
