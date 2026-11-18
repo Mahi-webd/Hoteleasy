@@ -24,7 +24,7 @@
 // Each hotel's own WhatsApp keys are entered in HotelEasy (WhatsApp → Setup), not here.
 
 import Anthropic from "npm:@anthropic-ai/sdk@^1.10.0";
-import { MENU, menuReply, type MenuState, type Reply } from "./menu.ts";
+import { MENU, choiceOf, menuReply, type MenuState, type Reply } from "./menu.ts";
 
 const env = (k: string) => Deno.env.get(k) ?? "";
 const GRAPH = () => env("WHATSAPP_GRAPH_VERSION") || "v23.0";
@@ -261,7 +261,14 @@ export const botReply = async (hook: Hook, history: Line[]): Promise<{ text: str
   return { text: "", handoff: state.handoff ?? "the assistant needed too many steps" };
 };
 
-const DEFAULT_HANDOFF = "Thank you! A member of our team will reply to you here shortly. 🙏";
+const DEFAULT_HANDOFF = "Thank you! A member of our team will reply to you here shortly. 🙏\nType *menu* anytime to see the options again.";
+
+/** A chat with staff goes back to the bot when the guest asks for the menu and no staff member replied for 30 minutes. */
+export const wantsMenuBack = (h: { last_guest_text?: string | null; last_staff_at?: string | null }) => {
+  if (choiceOf(h.last_guest_text ?? "") !== "menu") return false;
+  const quietMs = Number(env("WHATSAPP_STAFF_QUIET_MIN") || 30) * 60_000;
+  return !h.last_staff_at || Date.now() - new Date(h.last_staff_at).getTime() > quietMs;
+};
 const CANT_READ = "Thank you! I can only read text messages for now, so a member of our team will look at this and reply shortly.";
 
 /** The free menu bot's answer to the guest's newest message (no AI, HotelEasy data only). */
@@ -287,6 +294,10 @@ export const handleGuestMessage = async (hook: Hook, conversationId: string, mes
   await sleep(Number(env("WHATSAPP_WAIT_MS") || 2500));
   if (!(await rpc("whatsapp_is_latest", { _conversation_id: conversationId, _message_id: messageId }))) return;
   const h = await rpc("whatsapp_chat_state", { _conversation_id: conversationId });
+  if (h?.mode === "staff" && wantsMenuBack(h)) {
+    await rpc("whatsapp_resume_bot", { _conversation_id: conversationId });
+    h.mode = "bot"; h.menu_state = null;
+  }
   if (h?.mode !== "bot") return;
 
   // ---- free menu bot (default, and whenever there is no AI key)

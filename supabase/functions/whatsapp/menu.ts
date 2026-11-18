@@ -213,7 +213,10 @@ export const menuReply = async (deps: Deps, state: MenuState, raw: string): Prom
       return { kind: "buttons", body: cut(lines.join("\n"), 1000), buttons: [B.avail, B.staff, B.menu], state: null };
     }
     case "staff":
-      return { kind: "text", body: deps.handoffMessage || "Thank you! A member of our team will reply to you here shortly. 🙏", state: null, handoff: "guest asked for a person" };
+      return {
+        kind: "text", state: null, handoff: "guest asked for a person",
+        body: `${deps.handoffMessage || "Thank you! A member of our team will reply to you here shortly. 🙏"}\nType *menu* anytime to see the options again.`,
+      };
     default:
       return { kind: "menu", body: menuText(name), state: null };
   }

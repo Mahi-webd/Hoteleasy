@@ -88,7 +88,7 @@ Every hotel's website is `/book/<page-address>`, filled from that hotel's data o
 - **Single-hotel installs**: `VITE_HOME_HOTEL=<page-address>` opens that hotel's website at `/`.
 - Guest pages never go blank: a lost connection shows *Try again*, an unknown or switched-off page says so, and a crash shows a calm error page instead of a white screen.
 
-- [ ] **WhatsApp**: run the three `whatsapp` updates, deploy the `whatsapp` function (see "WhatsApp bot" below).
+- [ ] **WhatsApp**: run the `whatsapp` updates (including `20261118090000_whatsapp_resume.sql`), deploy the `whatsapp` function (see "WhatsApp bot" below).
 - [ ] **M-Pesa Edge Function**: deploy `mpesa` once (see "M-Pesa prompts" below). Until then the M-Pesa settings save but prompts can't be sent.
 - [ ] **Calendar sync Edge Function**: deploy `ical` once (see "Booking.com & Airbnb calendar sync" below). Optional: the 10-minute schedule.
 - [ ] **Help assistant**: add the `ANTHROPIC_API_KEY` secret and deploy `assistant` (see "Help assistant" below). The guides work without it.
