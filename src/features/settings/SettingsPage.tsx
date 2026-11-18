@@ -204,6 +204,7 @@ const SettingsPage = () => {
             <div className="space-y-3 rounded-lg border p-4 bg-slate-50/60 dark:bg-slate-800/40">
               <div className="font-medium flex items-center gap-2">
                 <UserPlus className="h-4 w-4" />Invite someone
+                <LicenceUsers />
               </div>
               <form onSubmit={sendInvite} className="flex flex-col md:flex-row gap-2">
                 <Input name="email" type="email" required placeholder="staff@email.com" className="md:flex-1" />
@@ -352,3 +353,15 @@ const RoleOptions = ({ roles, owner }: { roles: CustomRole[]; owner: boolean }) 
     {owner && roles.map((c) => <SelectItem key={c.id} value={`custom:${c.id}`}>{c.name}</SelectItem>)}
   </SelectContent>
 );
+
+/** "4 of 5 users" from the hotel's HotelEasy licence (logins, owner and pending invitations included). */
+const LicenceUsers = () => {
+  const { license } = useCurrentHotel();
+  if (!license?.staff_limit) return null;
+  const full = license.staff_used >= license.staff_limit;
+  return (
+    <span className={`ml-auto text-xs font-normal ${full ? "text-red-600" : "text-slate-500"}`}>
+      {license.staff_used} of {license.staff_limit} users{full ? ": ask your HotelEasy provider for more" : ""}
+    </span>
+  );
+};

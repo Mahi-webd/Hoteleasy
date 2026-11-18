@@ -137,6 +137,7 @@ export const guestName = (g?: { first_name: string; last_name: string } | null) 
 /** Turn Supabase/Postgres errors into something a receptionist can read. */
 export const friendlyError = (err: unknown): string => {
   const msg = (err as { message?: string })?.message ?? String(err);
+  if (msg.includes("LICENCE:")) return msg.replace(/^.*LICENCE:\s*/, "");
   if (msg.includes("reservations_no_overlap")) return "That room is already booked for some of those nights.";
   if (msg.includes("booking_settings_slug_key")) return "Another hotel already uses that page address. Please choose another one.";
   if (msg.includes("booking_settings_slug_check")) return "The page address can use lowercase letters, numbers and dashes (3–48 characters).";

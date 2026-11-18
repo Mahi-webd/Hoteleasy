@@ -7,6 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { hostSite } from "@/lib/siteHost";
+import { useIsProvider } from "@/hooks/useProvider";
+import { LicenceBlocked } from "@/features/provider/LicenceScreens";
+import ProviderConsole from "@/features/provider/ProviderConsole";
+import ProviderLogin from "@/features/provider/ProviderLogin";
 import { Loader2 } from "lucide-react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -54,10 +58,17 @@ const NotConfigured = () => (
 /** Signed in + belongs to a hotel → the app. Otherwise login or onboarding. */
 const Protected = ({ children }: { children?: React.ReactNode }) => {
   const { session, loading } = useAuth();
-  const { memberships, loading: hotelsLoading } = useHotel();
+  const { memberships, loading: hotelsLoading, licenseBlocked } = useHotel();
+  const isProvider = useIsProvider();
   if (loading || hotelsLoading) return <FullPageSpinner />;
   if (!session) return <Navigate to="/login" replace />;
-  if (memberships.length === 0) return <Onboarding />;
+  if (memberships.length === 0) {
+    if (isProvider.isLoading) return <FullPageSpinner />;
+    // the HotelEasy provider team goes to its console; everyone else sets up (or waits for) a hotel
+    return isProvider.data ? <Navigate to="/provider" replace /> : <Onboarding />;
+  }
+  // licence ended, suspended or not started: a clear stop screen (the database refuses the data anyway)
+  if (licenseBlocked) return <LicenceBlocked />;
   return <>{children ?? <Index />}</>;
 };
 
@@ -108,7 +119,7 @@ const App = () => (
     <ThemeProvider defaultTheme="light" storageKey="hotel-ui-theme">
       <TooltipProvider>
         <Toaster />
-        <Sonner richColors position="top-right" />
+        <Sonner richColors position="top-right" offset={84} />
         {!isSupabaseConfigured ? (
           <NotConfigured />
         ) : (
@@ -124,6 +135,8 @@ const App = () => (
                   <Route path="/r/:token" element={<Guest><RoomQrPage /></Guest>} />
                   <Route path="/stay/:key" element={<Guest><GuestStayPage /></Guest>} />
                   <Route path="/" element={<Staff><Home /></Staff>} />
+                  <Route path="/provider" element={<Staff><ProviderConsole /></Staff>} />
+                  <Route path="/provider/login" element={<Staff><ProviderLogin /></Staff>} />
                   <Route path="/invoice/:id" element={<Protected><InvoicePrintPage /></Protected>} />
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
                   <Route path="/day-report/:day" element={<Protected><DayReportPage /></Protected>} />

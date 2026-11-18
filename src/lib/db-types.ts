@@ -70,6 +70,18 @@ export interface Membership {
   role: HotelRole;
   custom_role_id: string | null;
   hotels: Hotel;
+  /** Missing until the provider_licences update has run. */
+  license?: HotelLicense | null;
+}
+
+/** A hotel's licence from the HotelEasy provider, as the hotel sees it. */
+export type LicenseState = "active" | "expiring" | "expired" | "suspended" | "not_started";
+export interface HotelLicense {
+  state: LicenseState; starts_on: string | null; ends_on: string | null; days_left: number | null;
+  staff_limit: number | null; staff_used: number; plan_name: string | null;
+  /** Pages the plan includes (null = all). */
+  modules: string[] | null; core_modules: string[];
+  support: { name: string | null; email: string | null; phone: string | null };
 }
 
 export interface TeamMember {

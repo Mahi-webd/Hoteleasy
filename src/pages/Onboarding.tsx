@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
 import { AuthShell } from "./AuthPage";
+import { useSignupInfo } from "@/hooks/useProvider";
 
 /** Shown to a signed-in user who doesn't belong to any hotel yet. */
 const Onboarding = () => {
@@ -18,6 +19,7 @@ const Onboarding = () => {
   const { refresh, switchHotel } = useHotel();
   const [busy, setBusy] = useState(false);
   const [samples, setSamples] = useState(true);
+  const signup = useSignupInfo();
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,12 +39,32 @@ const Onboarding = () => {
     toast.success("Your hotel is ready.");
   };
 
+  // The provider registers hotels: an account without a hotel waits for an invitation.
+  if (signup.data && !signup.data.allow_self_signup) {
+    const s = signup.data.support;
+    return (
+      <AuthShell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your account isn't linked to a hotel yet</CardTitle>
+            <CardDescription>Hotels are opened by {s.name || "your HotelEasy provider"}.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-600">
+            <p>If your hotel has registered, ask the provider or your hotel's admin to invite <strong>{user?.email}</strong>, then sign in again.</p>
+            {(s.phone || s.email) && <p>Contact: {[s.phone, s.email].filter(Boolean).join(" · ")}</p>}
+            <Button variant="outline" size="sm" onClick={signOut}><LogOut className="mr-2 h-4 w-4" />Sign out</Button>
+          </CardContent>
+        </Card>
+      </AuthShell>
+    );
+  }
+
   return (
     <AuthShell>
       <Card>
         <CardHeader>
           <CardTitle>Set up your hotel</CardTitle>
-          <CardDescription>You'll be the owner and can invite your staff afterwards.</CardDescription>
+          <CardDescription>You'll be the owner and can invite your staff afterwards.{signup.data?.trial_days ? ` Includes a ${signup.data.trial_days}-day free trial.` : ""}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">

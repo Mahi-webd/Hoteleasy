@@ -42,6 +42,7 @@ import { HelpAssistant, HelpButton } from "@/components/help/HelpAssistant";
 import { useBackgroundCalendarSync } from "@/hooks/useChannels";
 import RolesPage from "@/features/roles/RolesPage";
 import { AlertsBell } from "@/features/owner/Alerts";
+import { LicenceBanner } from "@/features/provider/LicenceScreens";
 
 // Demo modules (still showing sample data)
 
@@ -168,6 +169,7 @@ const Index = () => {
         />
         </div>
         <main className="flex-1 min-w-0 p-4 md:p-6 space-y-4">
+          <LicenceBanner />
           {item?.preview && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <Info className="h-4 w-4 mt-0.5 shrink-0" />

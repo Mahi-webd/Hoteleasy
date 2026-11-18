@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
-import type { Hotel, HotelRole, Membership } from "@/lib/db-types";
+import type { Hotel, HotelLicense, HotelRole, Membership } from "@/lib/db-types";
 
 const STORAGE_KEY = "hoteleasy.currentHotel";
 
@@ -10,6 +10,12 @@ interface HotelState {
   memberships: Membership[];
   hotel: Hotel | null;
   role: HotelRole | null;
+  /** This hotel's licence from the HotelEasy provider (null before the provider_licences update). */
+  license: HotelLicense | null;
+  /** True when the licence hasn't started, has ended or is suspended: the app shows "contact your provider". */
+  licenseBlocked: boolean;
+  /** True when the plan includes the page of this permission ("pos.view"). */
+  inPlan: (perm: string) => boolean;
   loading: boolean;
   switchHotel: (hotelId: string) => void;
   refresh: () => Promise<void>;
@@ -37,6 +43,10 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
     queryFn: async () => {
       // Pick up any invitations sent to this email before listing hotels.
       await supabase.rpc("accept_pending_invitations");
+      // My hotels with each one's licence (also lists a hotel whose licence has ended, so the app can say so).
+      const mine = await supabase.rpc("my_hotels" as never);
+      if (!mine.error) return (mine.data ?? []) as unknown as Membership[];
+      // Before the provider_licences update: the plain list.
       const { data, error } = await supabase
         .from("hotel_members")
         .select("id, hotel_id, role, custom_role_id, hotels(*)")
@@ -70,10 +80,20 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
     if (current) localStorage.setItem(STORAGE_KEY, current.hotel_id);
   }, [current]);
 
+  const license = current?.license ?? null;
+  /** Pages the hotel's plan includes; a permission for another page is never allowed (also for the owner). */
+  const inPlan = (p: string) => !license?.modules || p.split("|").some((x) => {
+    const mod = x.split(".")[0];
+    return license.modules!.includes(mod) || license.core_modules.includes(mod);
+  });
+
   const value: HotelState = {
     memberships,
     hotel: current?.hotels ?? null,
     role: current?.role ?? null,
+    license,
+    licenseBlocked: !!license && (license.state === "expired" || license.state === "suspended" || license.state === "not_started"),
+    inPlan,
     loading: !!user && isLoading,
     switchHotel: (id) => {
       setCurrentId(id);
@@ -84,7 +104,7 @@ export const HotelProvider = ({ children }: { children: ReactNode }) => {
       await qc.invalidateQueries({ queryKey: ["memberships"] });
     },
     can: (...roles) => !!current && !current.custom_role_id && roles.includes(current.role),
-    allowed: (...ps) => !!current && (current.role === "owner" || ps.some((p) => p.split("|").some((x) => perms.has(x)))),
+    allowed: (...ps) => !!current && ps.some((p) => inPlan(p) && (current.role === "owner" || p.split("|").some((x) => perms.has(x)))),
     customRole,
     perms,
     permsReady: !current || current.role === "owner" || !!mine,
