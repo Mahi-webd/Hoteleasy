@@ -274,7 +274,9 @@ const TableQrPage = () => {
   const cartTotal = lines.reduce((n, l) => n + l.qty * Number(l.item.price), 0);
   const pending = t.order?.status === "pending";
   const canOrder = !!t.can_order;
-  const tracking = !!t.bill?.lines.some((l) => l.status);
+  // the food still coming, also after paying (older databases only know the open bill)
+  const food = t.food ?? t.bill?.lines ?? [];
+  const tracking = food.some((l) => l.status);
   const setQty = (id: string, n: number) => setCart((c) => ({ ...c, [id]: Math.max(0, Math.min(20, n)) }));
 
   return (
@@ -296,7 +298,7 @@ const TableQrPage = () => {
         </div>
         {active && <p className="text-center text-xs text-muted-foreground">Need something different? Tap another button — we'll update your request.</p>}
 
-        {t.bill && <FoodTracker lines={t.bill.lines} />}
+        {tracking && <FoodTracker lines={food} />}
         {t.bill && <BillCard bill={t.bill} cur={t.currency} canPay={!!t.can_pay} token={token} onPaid={() => q.refetch()} />}
 
         <section aria-labelledby="menu-h" className="space-y-3 pt-2">

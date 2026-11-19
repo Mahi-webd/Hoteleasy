@@ -16,4 +16,5 @@ Each restaurant table has its own QR code. A diner scans it with their phone cam
 - **Pay by M-Pesa from the phone** (per outlet in **Setup**; needs M-Pesa set up in Settings): diners see their bill and get an M-Pesa prompt. The payment goes on the bill automatically, in the shift of the waiter who opened it.
 - **Food from the kitchen to the table**: when the kitchen or bar screen marks dishes **Ready**, the table turns **green** with a sound ("Table T3: food ready to serve"). Collect the food and tap **Served** on the tile. Tiles also show what the kitchen is still making ("Kitchen: 1 waiting · 2 preparing").
 - The diner's phone follows each dish live: **Waiting for the kitchen/bar → Being prepared → Ready, coming to you → Served**, then "Everything is served — enjoy your meal!". If a dish takes over 25 minutes, the diner is offered "Call waiter" for an update.
+- If the guests pay before the food comes, the diner's tracker and the waiters' "food ready" alert carry on until everything is served.
 - Nothing here sends WhatsApp or SMS messages.

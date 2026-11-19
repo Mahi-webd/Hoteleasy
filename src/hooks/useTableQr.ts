@@ -33,14 +33,15 @@ export interface BillLine {
   /** progress, from the kitchen/bar screen and the waiter (missing before the kitchen-status update) */
   status?: ItemStatus; station?: "kitchen" | "bar" | "none"; sent_at?: string | null; ready_at?: string | null; served_at?: string | null;
 }
-export interface BoardBill {
-  id?: string; number: number; total: number; paid: number;
-  waiting?: number; preparing?: number; ready_since?: string | null;
-  ready?: { id: string; name: string; qty: number; station: string }[];
+export interface BoardBill { id?: string; number: number; total: number; paid: number }
+/** The food side of a table: its open bill and bills already paid that still have dishes coming. */
+export interface BoardKitchen {
+  order_ids: string[]; waiting: number; preparing: number; ready_since: string | null;
+  ready: { id: string; name: string; qty: number; station: string }[];
 }
 export interface BoardTable {
   id: string; name: string; seats: number; enabled: boolean; token: string | null; call: TableCall | null;
-  order?: TableOrder | null; bill?: BoardBill | null;
+  order?: TableOrder | null; bill?: BoardBill | null; kitchen?: BoardKitchen | null;
 }
 export interface BoardOutlet { id: string; name: string; enabled: boolean; order_enabled?: boolean; pay_enabled?: boolean; tables: BoardTable[] }
 export interface PublicMenuItem { id: string; name: string; description: string | null; price: number; available: boolean; self_order?: boolean }
@@ -49,6 +50,8 @@ export interface PublicTable {
   menu: { category: string; items: PublicMenuItem[] }[];
   call: TableCall | null;
   can_order?: boolean; can_pay?: boolean; order?: TableOrder | null; bill?: TableBill | null;
+  /** every dish and drink still coming (also after the bill is paid) */
+  food?: BillLine[];
 }
 export interface TableQrReport {
   calls: number; answered: number; avg_response_s: number | null; avg_done_s: number | null; slow: number;
@@ -149,7 +152,7 @@ export const usePublicTable = (token: string) =>
     // quicker while food is on its way or an order waits for a waiter
     refetchInterval: (q) => {
       const d = q.state.data as PublicTable | null | undefined;
-      const busy = d?.order?.status === "pending" || d?.bill?.lines.some((l) => l.status && l.status !== "served");
+      const busy = d?.order?.status === "pending" || (d?.food ?? d?.bill?.lines ?? []).some((l) => l.status && l.status !== "served");
       return busy ? 5_000 : 8_000;
     },
     retry: 1,

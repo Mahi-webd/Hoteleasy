@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BedDouble, Crown, Loader2, Search } from "lucide-react";
+import { BedDouble, ChefHat, Crown, Loader2, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,9 @@ export const PayDialog = ({ order, onPaid, onClose }: { order: PosOrder; onPaid:
       .sort((a, b) => (a.rooms?.room_number ?? "").localeCompare(b.rooms?.room_number ?? "", undefined, { numeric: true }));
   }, [guests.data, search]);
   const chosen = guests.data?.find((g) => g.id === roomRes);
+  // paying first is fine: the kitchen / bar still makes and serves these after the bill closes
+  const inKitchen = (order.pos_order_items ?? []).filter((i) => i.status === "sent" || i.status === "preparing" || i.status === "ready")
+    .reduce((n, i) => n + Number(i.quantity), 0);
 
   const setSplitN = (n: number) => {
     setSplit(n);
@@ -77,6 +80,12 @@ export const PayDialog = ({ order, onPaid, onClose }: { order: PosOrder; onPaid:
           <span className="text-sm text-slate-600 dark:text-slate-300">Still to pay</span>
           <span className="text-2xl font-bold">{formatMoney2(due, cur)}</span>
         </div>
+        {inKitchen > 0 && (
+          <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100" data-testid="pay-kitchen-note">
+            <ChefHat className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{inKitchen} item{inKitchen === 1 ? " is" : "s are"} still with the kitchen or bar. You can take payment now; they will still be made and served.</span>
+          </p>
+        )}
 
         <Tabs value={method} onValueChange={(v) => setMethod(v as PosPaymentMethod)}>
           <TabsList className="grid grid-cols-4">

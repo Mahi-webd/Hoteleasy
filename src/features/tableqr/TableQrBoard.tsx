@@ -45,8 +45,8 @@ const savePrefs = (hotelId: string, p: Prefs) => { try { localStorage.setItem(PR
 /** Waiting = a call nobody has answered, a phone order nobody has confirmed, or food ready at the pass. */
 const waitingSince = (t: BoardTable) =>
   [t.call?.status === "open" ? t.call.created_at : undefined, t.order?.status === "pending" ? t.order.created_at : undefined,
-   t.bill?.ready?.length ? (t.bill.ready_since ?? undefined) : undefined].filter(Boolean).sort()[0] as string | undefined;
-const hasReady = (t: BoardTable) => !!t.bill?.ready?.length;
+   t.kitchen?.ready?.length ? (t.kitchen.ready_since ?? undefined) : undefined].filter(Boolean).sort()[0] as string | undefined;
+const hasReady = (t: BoardTable) => !!t.kitchen?.ready?.length;
 const HELP_AFTER_MS = 3 * 60_000;
 
 const REFUSE = ["Sold out", "Kitchen is closed", "Please call a waiter"];
@@ -126,7 +126,7 @@ const useTick = (ms: number) => { const [, set] = useState(0); useEffect(() => {
 /** Food the kitchen / bar has made ready for this table: collect it, then tap Served. */
 const ReadyToServe = ({ t, canServe }: { t: BoardTable; canServe: boolean }) => {
   const serve = useServeItems();
-  const items = t.bill?.ready ?? [];
+  const items = t.kitchen?.ready ?? [];
   if (!items.length) return null;
   const bar = items.some((i) => i.station === "bar");
   const kitchen = items.some((i) => i.station !== "bar");
@@ -134,7 +134,7 @@ const ReadyToServe = ({ t, canServe }: { t: BoardTable; canServe: boolean }) => 
   return (
     <div className="mt-1 space-y-1 rounded-lg bg-green-100/70 p-2 dark:bg-green-900/30" data-testid="ready-to-serve">
       <div className="flex items-center gap-1 text-sm font-semibold text-green-800 dark:text-green-200">
-        <CheckCheck className="h-4 w-4" />Ready at the {where}{t.bill?.ready_since ? ` · ${ago(t.bill.ready_since)}` : ""}
+        <CheckCheck className="h-4 w-4" />Ready at the {where}{t.kitchen?.ready_since ? ` · ${ago(t.kitchen.ready_since)}` : ""}
       </div>
       <ul className="text-xs text-green-900 dark:text-green-100">{items.map((i) => <li key={i.id}>{Number(i.qty)}× {i.name}</li>)}</ul>
       <Button size="sm" className="h-9 w-full bg-green-600 hover:bg-green-700" disabled={serve.isPending || !canServe}
@@ -148,7 +148,7 @@ const ReadyToServe = ({ t, canServe }: { t: BoardTable; canServe: boolean }) => 
 const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: BoardTable; canRespond: boolean; canConfirm: boolean; currency: string; outlet?: string; me?: string }) => {
   const upd = useUpdateTableCall();
   const ready = hasReady(t);
-  const cooking = (t.bill?.waiting ?? 0) + (t.bill?.preparing ?? 0);
+  const cooking = (t.kitchen?.waiting ?? 0) + (t.kitchen?.preparing ?? 0);
   const c = t.call;
   const ord = t.order?.status === "pending" ? t.order : null;
   const open = c?.status === "open";
@@ -173,7 +173,7 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: Boa
       {t.bill && <div className="text-[11px] text-slate-500" data-testid="tile-bill">Bill {t.bill.number} · {money(Number(t.bill.total), currency)}{Number(t.bill.paid) > 0 ? ` · paid ${money(Number(t.bill.paid), currency)}` : ""}</div>}
       {cooking > 0 && (
         <div className="flex items-center gap-1 text-[11px] text-orange-700 dark:text-orange-300" data-testid="tile-kitchen">
-          <ChefHat className="h-3 w-3" />Kitchen: {[t.bill?.waiting ? `${t.bill.waiting} waiting` : "", t.bill?.preparing ? `${t.bill.preparing} preparing` : ""].filter(Boolean).join(" · ")}
+          <ChefHat className="h-3 w-3" />Kitchen: {[t.kitchen?.waiting ? `${t.kitchen.waiting} waiting` : "", t.kitchen?.preparing ? `${t.kitchen.preparing} preparing` : ""].filter(Boolean).join(" · ")}{!t.bill ? " (paid)" : ""}
         </div>
       )}
       <ReadyToServe t={t} canServe={canConfirm} />
@@ -456,7 +456,8 @@ const TableQrBoard = () => {
   const onNew = useCallback((a: TableAlert) => {
     if (a.what === "ready") {
       // which table is this bill for? (bills that aren't at a QR table, e.g. takeaway, don't ring here)
-      const hit = ctx.current.board.flatMap((o) => o.tables.map((t) => ({ o, t }))).find(({ t }) => a.orderId && t.bill?.id === a.orderId);
+      const hit = ctx.current.board.flatMap((o) => o.tables.map((t) => ({ o, t })))
+        .find(({ t }) => a.orderId && (t.bill?.id === a.orderId || t.kitchen?.order_ids?.includes(a.orderId)));
       if (!hit || !ctx.current.isMine(hit.o.id)) return;
       const now = Date.now();
       if (now - (readySeen.current[a.orderId!] ?? 0) < 8_000) return; // several dishes ready at once: one alert

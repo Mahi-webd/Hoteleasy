@@ -41,7 +41,7 @@ select pg_temp.expect((public.public_table((select token from qt))->'bill'->'lin
 -- the kitchen marks it ready → on the waiters' map
 select pg_temp.as_user('aaaaaaaa-0000-0000-0000-000000000001');
 select public.pos_set_item_status(array(select id from qi), 'ready');
-select pg_temp.expect((select x->'bill'->'ready'->0->>'name' from jsonb_array_elements(public.table_qr_board((select h from q))) o, jsonb_array_elements(o->'tables') x
+select pg_temp.expect((select x->'kitchen'->'ready'->0->>'name' from jsonb_array_elements(public.table_qr_board((select h from q))) o, jsonb_array_elements(o->'tables') x
                         where x->>'name' = 'K1') = 'Ugali fish', 'waiters see the dish ready to serve');
 select pg_temp.as_user(null);
 select pg_temp.expect((public.public_table((select token from qt))->'bill'->'lines'->0->>'status') = 'ready', 'diner sees: ready, on its way');
@@ -49,7 +49,7 @@ select pg_temp.expect_fail($$select public.pos_set_item_status(array(select id f
 -- the waiter serves it
 select pg_temp.as_user('aaaaaaaa-0000-0000-0000-000000000001');
 select public.pos_set_item_status(array(select id from qi), 'served');
-select pg_temp.expect((select x->'bill'->'ready' from jsonb_array_elements(public.table_qr_board((select h from q))) o, jsonb_array_elements(o->'tables') x
+select pg_temp.expect((select coalesce(x->'kitchen'->'ready', '[]'::jsonb) from jsonb_array_elements(public.table_qr_board((select h from q))) o, jsonb_array_elements(o->'tables') x
                         where x->>'name' = 'K1') = '[]'::jsonb, 'nothing left waiting at the pass');
 select pg_temp.as_user(null);
 select pg_temp.expect((public.public_table((select token from qt))->'bill'->'lines'->0->>'served_at') is not null, 'diner sees: served');

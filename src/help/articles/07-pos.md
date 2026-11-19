@@ -1,7 +1,7 @@
 ---
 title: Restaurant & Bar POS: taking orders and payment
 screen: pos
-tags: pos, order, table, bill, restaurant, bar, waiter, kitchen, send order, pay, split bill, charge to room, room service, takeaway, discount, void item, comp, service charge, receipt, shift, float
+tags: pos, pay first, bill is closed kitchen, order, table, bill, restaurant, bar, waiter, kitchen, send order, pay, split bill, charge to room, room service, takeaway, discount, void item, comp, service charge, receipt, shift, float
 ---
 **Start of shift:** Restaurant & Bar POS → **Open shift**, count your float (opening cash). You can take orders without a shift, but not payments.
 
@@ -12,6 +12,8 @@ tags: pos, order, table, bill, restaurant, bar, waiter, kitchen, send order, pay
 4. Send the order: items go to the kitchen or bar screen.
 
 **Get paid:** press **Pay**. Choose **Cash** (enter cash received; change is shown), **M-Pesa** (send a prompt, or type the code), **Card**, or **Room** to charge it to a checked-in guest's room bill (search by room number or name and confirm with the guest). **Split evenly** splits between people; pay part with one method and the rest with another.
+
+**Paying first is fine** (bar, café, counter): you can take payment while food is still being made. The kitchen/bar screen still shows it and can **Start**, mark **Ready**, and the waiter **Served**. Prices and items stay locked once paid. A cancelled (voided) bill can't be cooked.
 
 **Bill menu** (the ⋯ button on the bill):
 - **Split items to new bill**, **Move to another table**, **Change number of guests**.
