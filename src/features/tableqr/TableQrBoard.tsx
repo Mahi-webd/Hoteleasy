@@ -5,9 +5,11 @@
 // "My outlets" (saved on each device): a waiter sees and hears only the outlets they serve; tables left
 // waiting in other outlets still show in a banner, and after 3 minutes they sound for everyone, so no table
 // is ever forgotten. Tiles say who is on the way ("Ravi on the way").
+// Kitchen: when the kitchen / bar screen marks food ready, the table turns green with a sound ("T3: food
+// ready"); the waiter collects it and taps "Served" here. Tiles also show what the kitchen is still making.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNowStrict, parseISO, subDays } from "date-fns";
-import { BellRing, Check, ChevronDown, ExternalLink, Footprints, MapPin, Printer, QrCode, RefreshCw, ShoppingBag, Timer, Volume2, VolumeX, X } from "lucide-react";
+import { BellRing, Check, CheckCheck, ChefHat, ChevronDown, ExternalLink, Footprints, MapPin, Printer, QrCode, RefreshCw, ShoppingBag, Timer, Volume2, VolumeX, X } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -24,7 +26,7 @@ import { EmptyState, LoadingBlock, PageHeader } from "@/components/common/PageHe
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { cn } from "@/lib/utils";
 import {
-  CALL_LABEL, PAY_LABEL, fmtWait, useDecideTableOrder, useResetTableLink, useSetOutletOptions, useSetOutletQr, useSetTableQr, useTableBoard,
+  CALL_LABEL, PAY_LABEL, fmtWait, useDecideTableOrder, useServeItems, useResetTableLink, useSetOutletOptions, useSetOutletQr, useSetTableQr, useTableBoard,
   useTableCallsRealtime, useTableQrReport, useUpdateTableCall, type BoardOutlet, type BoardTable, type TableAlert, type TableOrder,
 } from "@/hooks/useTableQr";
 
@@ -40,9 +42,11 @@ const readPrefs = (hotelId: string): Prefs => {
 };
 const savePrefs = (hotelId: string, p: Prefs) => { try { localStorage.setItem(PREFS_KEY(hotelId), JSON.stringify(p)); } catch { /* private mode */ } };
 
-/** Waiting = a call nobody has answered, or a phone order nobody has confirmed. */
+/** Waiting = a call nobody has answered, a phone order nobody has confirmed, or food ready at the pass. */
 const waitingSince = (t: BoardTable) =>
-  [t.call?.status === "open" ? t.call.created_at : undefined, t.order?.status === "pending" ? t.order.created_at : undefined].filter(Boolean).sort()[0] as string | undefined;
+  [t.call?.status === "open" ? t.call.created_at : undefined, t.order?.status === "pending" ? t.order.created_at : undefined,
+   t.bill?.ready?.length ? (t.bill.ready_since ?? undefined) : undefined].filter(Boolean).sort()[0] as string | undefined;
+const hasReady = (t: BoardTable) => !!t.bill?.ready?.length;
 const HELP_AFTER_MS = 3 * 60_000;
 
 const REFUSE = ["Sold out", "Kitchen is closed", "Please call a waiter"];
@@ -119,8 +123,32 @@ const ago = (iso: string) => formatDistanceToNowStrict(parseISO(iso), { addSuffi
 /** Re-render every few seconds so the "2 min ago" labels move. */
 const useTick = (ms: number) => { const [, set] = useState(0); useEffect(() => { const i = setInterval(() => set((x) => x + 1), ms); return () => clearInterval(i); }, [ms]); };
 
+/** Food the kitchen / bar has made ready for this table: collect it, then tap Served. */
+const ReadyToServe = ({ t, canServe }: { t: BoardTable; canServe: boolean }) => {
+  const serve = useServeItems();
+  const items = t.bill?.ready ?? [];
+  if (!items.length) return null;
+  const bar = items.some((i) => i.station === "bar");
+  const kitchen = items.some((i) => i.station !== "bar");
+  const where = bar && kitchen ? "kitchen & bar" : bar ? "bar" : "kitchen";
+  return (
+    <div className="mt-1 space-y-1 rounded-lg bg-green-100/70 p-2 dark:bg-green-900/30" data-testid="ready-to-serve">
+      <div className="flex items-center gap-1 text-sm font-semibold text-green-800 dark:text-green-200">
+        <CheckCheck className="h-4 w-4" />Ready at the {where}{t.bill?.ready_since ? ` · ${ago(t.bill.ready_since)}` : ""}
+      </div>
+      <ul className="text-xs text-green-900 dark:text-green-100">{items.map((i) => <li key={i.id}>{Number(i.qty)}× {i.name}</li>)}</ul>
+      <Button size="sm" className="h-9 w-full bg-green-600 hover:bg-green-700" disabled={serve.isPending || !canServe}
+        title={canServe ? undefined : "You need the POS (take orders) permission"} onClick={() => serve.mutate({ ids: items.map((i) => i.id), table: t.name })}>
+        <Check className="mr-1 h-4 w-4" />Served
+      </Button>
+    </div>
+  );
+};
+
 const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: BoardTable; canRespond: boolean; canConfirm: boolean; currency: string; outlet?: string; me?: string }) => {
   const upd = useUpdateTableCall();
+  const ready = hasReady(t);
+  const cooking = (t.bill?.waiting ?? 0) + (t.bill?.preparing ?? 0);
   const c = t.call;
   const ord = t.order?.status === "pending" ? t.order : null;
   const open = c?.status === "open";
@@ -134,14 +162,21 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: Boa
     <div data-testid="table-tile"
       className={cn("relative flex min-h-[132px] flex-col rounded-2xl border-2 p-3 transition",
         open ? "border-red-500 bg-red-50 dark:bg-red-950/40 shadow-lg shadow-red-200/60 dark:shadow-none"
-          : ord ? "border-violet-500 bg-violet-50 dark:bg-violet-950/40 shadow-lg shadow-violet-200/60 dark:shadow-none" : onWay ? "border-sky-400 bg-sky-50 dark:bg-sky-950/40" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+          : ord ? "border-violet-500 bg-violet-50 dark:bg-violet-950/40 shadow-lg shadow-violet-200/60 dark:shadow-none"
+          : ready ? "border-green-500 bg-green-50 dark:bg-green-950/40 shadow-lg shadow-green-200/60 dark:shadow-none" : onWay ? "border-sky-400 bg-sky-50 dark:bg-sky-950/40" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
         !t.enabled && "opacity-50")}>
-      {(open || ord) && <span className={cn("absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full text-base font-black text-white", open ? "bg-red-600" : "bg-violet-600", late && "animate-bounce")}>!</span>}
+      {(open || ord || ready) && <span className={cn("absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full text-base font-black text-white", open ? "bg-red-600" : ord ? "bg-violet-600" : "bg-green-600", late && "animate-bounce")}>!</span>}
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t.name}</span>
         {outlet ? <span className="truncate text-[11px] text-slate-500">{outlet}</span> : <span className="text-[11px] text-slate-400">{t.seats} seats</span>}
       </div>
       {t.bill && <div className="text-[11px] text-slate-500" data-testid="tile-bill">Bill {t.bill.number} · {money(Number(t.bill.total), currency)}{Number(t.bill.paid) > 0 ? ` · paid ${money(Number(t.bill.paid), currency)}` : ""}</div>}
+      {cooking > 0 && (
+        <div className="flex items-center gap-1 text-[11px] text-orange-700 dark:text-orange-300" data-testid="tile-kitchen">
+          <ChefHat className="h-3 w-3" />Kitchen: {[t.bill?.waiting ? `${t.bill.waiting} waiting` : "", t.bill?.preparing ? `${t.bill.preparing} preparing` : ""].filter(Boolean).join(" · ")}
+        </div>
+      )}
+      <ReadyToServe t={t} canServe={canConfirm} />
       {ord && <PendingOrder order={ord} canConfirm={canConfirm} canRespond={canRespond} currency={currency} />}
       {c ? (
         <>
@@ -166,8 +201,8 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: Boa
             </div>
           )}
         </>
-      ) : !ord && (
-        <div className="mt-auto text-xs text-slate-400">{t.enabled ? "All good" : "QR off"}</div>
+      ) : !ord && !ready && (
+        <div className="mt-auto text-xs text-slate-400">{t.enabled ? (cooking ? "" : "All good") : "QR off"}</div>
       )}
     </div>
   );
@@ -185,7 +220,7 @@ const LiveTab = ({ board, mineIds, helpOthers, canRespond, canConfirm, currency,
   const rank = (t: BoardTable) => (waitingSince(t) ? 0 : 1);
   const order = (a: { t: BoardTable }, b: { t: BoardTable }) =>
     rank(a.t) - rank(b.t) || (waitingSince(a.t) ?? a.t.call?.created_at ?? "").localeCompare(waitingSince(b.t) ?? b.t.call?.created_at ?? "");
-  const active = (o: BoardOutlet) => o.tables.filter((t) => t.call || t.order?.status === "pending").map((t) => ({ t, o }));
+  const active = (o: BoardOutlet) => o.tables.filter((t) => t.call || t.order?.status === "pending" || hasReady(t)).map((t) => ({ t, o }));
   const attention = mineOutlets.flatMap(active).sort(order);
   const others = board.filter((o) => !isMine(o.id)).flatMap(active).filter(({ t }) => waitingSince(t)).sort(order);
   const othersLate = others.filter(({ t }) => Date.now() - parseISO(waitingSince(t)!).getTime() > HELP_AFTER_MS);
@@ -219,7 +254,7 @@ const LiveTab = ({ board, mineIds, helpOthers, canRespond, canConfirm, currency,
             {!showOthers && (
               <div className="flex flex-wrap gap-1.5">
                 {others.map(({ t, o }) => (
-                  <Badge key={t.id} variant="outline" className="bg-white dark:bg-slate-900">{o.name} · {t.name} · {t.call?.status === "open" ? what(t) : "Order"} · {ago(waitingSince(t)!)}</Badge>
+                  <Badge key={t.id} variant="outline" className="bg-white dark:bg-slate-900">{o.name} · {t.name} · {t.call?.status === "open" ? what(t) : t.order?.status === "pending" ? "Order" : "Food ready"} · {ago(waitingSince(t)!)}</Badge>
                 ))}
               </div>
             )}
@@ -417,7 +452,19 @@ const TableQrBoard = () => {
   // a new call or order: sound + message only for my outlets (others show in the banner)
   const ctx = useRef({ isMine, board });
   ctx.current = { isMine, board };
+  const readySeen = useRef<Record<string, number>>({});
   const onNew = useCallback((a: TableAlert) => {
+    if (a.what === "ready") {
+      // which table is this bill for? (bills that aren't at a QR table, e.g. takeaway, don't ring here)
+      const hit = ctx.current.board.flatMap((o) => o.tables.map((t) => ({ o, t }))).find(({ t }) => a.orderId && t.bill?.id === a.orderId);
+      if (!hit || !ctx.current.isMine(hit.o.id)) return;
+      const now = Date.now();
+      if (now - (readySeen.current[a.orderId!] ?? 0) < 8_000) return; // several dishes ready at once: one alert
+      readySeen.current[a.orderId!] = now;
+      if (soundRef.current) chime();
+      toast.success(`Table ${hit.t.name}${ctx.current.board.length > 1 ? ` (${hit.o.name})` : ""}: food ready to serve`, { duration: 6000 });
+      return;
+    }
     if (!ctx.current.isMine(a.outletId)) return;
     if (soundRef.current) chime();
     const o = ctx.current.board.find((x) => x.id === a.outletId);
@@ -452,7 +499,7 @@ const TableQrBoard = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Table QR & waiter calls" subtitle="Tables call or order from the QR code on the table. Red = waiting, violet = order to confirm, blue = someone's on the way."
+      <PageHeader title="Table QR & waiter calls" subtitle="Red = table waiting, violet = order to confirm, green = food ready to serve, blue = someone's on the way."
         actions={
           <div className="flex flex-wrap gap-2">
             {multi && <OutletPicker board={board} prefs={prefs} onChange={setPrefs} />}

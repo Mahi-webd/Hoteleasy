@@ -1,7 +1,7 @@
 ---
 title: Table QR codes and waiter calls (restaurant)
 screen: tableqr
-tags: table qr, my outlets, which waiter gets the alert, bar waiter, pool bar, who is on the way, order from phone, qr ordering, confirm order, pay bill mpesa phone, waiter call, call waiter, bring the bill, restaurant table, menu qr, scan menu, m-pesa bill, response time, table map
+tags: table qr, food ready, ready to serve, order status diner, preparing, served, kitchen progress, my outlets, which waiter gets the alert, bar waiter, pool bar, who is on the way, order from phone, qr ordering, confirm order, pay bill mpesa phone, waiter call, call waiter, bring the bill, restaurant table, menu qr, scan menu, m-pesa bill, response time, table map
 ---
 Each restaurant table has its own QR code. A diner scans it with their phone camera (no app, no sign-in) and sees the menu with prices, plus three buttons: **Call waiter**, **Bring the bill** (they choose cash, card or M-Pesa) and **Water / other** (with a short note).
 - Open **Table QR & waiter calls**. A table that calls turns **red with a "!"** and a sound plays ("T3 · Bill · M-Pesa · 2 min"). Tap **On my way** (the diner's phone shows "On the way"), then **Done**. Blue = someone is on the way.
@@ -14,4 +14,6 @@ Each restaurant table has its own QR code. A diner scans it with their phone cam
 - Tables and the menu come from **Restaurant & Bar POS → Setup**. Sold-out items show as sold out.
 - **Order from the phone** (switch it on per outlet in **Setup**; off by default): diners add dishes and send the order. It shows on the map in **violet** with a sound. Tap **Confirm** to put it on the table's POS bill and send it to the kitchen, or **Refuse** with a reason the diner sees. Prices always come from the menu. Dishes that need a choice (e.g. how the steak is cooked) are ordered through the waiter.
 - **Pay by M-Pesa from the phone** (per outlet in **Setup**; needs M-Pesa set up in Settings): diners see their bill and get an M-Pesa prompt. The payment goes on the bill automatically, in the shift of the waiter who opened it.
+- **Food from the kitchen to the table**: when the kitchen or bar screen marks dishes **Ready**, the table turns **green** with a sound ("Table T3: food ready to serve"). Collect the food and tap **Served** on the tile. Tiles also show what the kitchen is still making ("Kitchen: 1 waiting · 2 preparing").
+- The diner's phone follows each dish live: **Waiting for the kitchen/bar → Being prepared → Ready, coming to you → Served**, then "Everything is served — enjoy your meal!". If a dish takes over 25 minutes, the diner is offered "Call waiter" for an update.
 - Nothing here sends WhatsApp or SMS messages.

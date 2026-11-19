@@ -3,12 +3,13 @@
 // call the waiter, bring the bill (cash / card / M-Pesa), or ask for something else.
 // Where the manager has switched it on: order from the phone (a waiter confirms it before the kitchen
 // gets it), see the bill, and pay it with an M-Pesa prompt on this phone.
+// The food tracker follows every dish and drink live, as the kitchen / bar screen and the waiter move it on.
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Banknote, Check, CreditCard, Hand, Loader2, Minus, Plus, Receipt, ShoppingBag, Smartphone, Sparkles, UtensilsCrossed, X,
+  Banknote, Check, ChefHat, CreditCard, Flame, Hand, Loader2, Minus, Plus, Receipt, ShoppingBag, Smartphone, Sparkles, UtensilsCrossed, Wine, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +20,7 @@ import { friendlyError } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   PAY_LABEL, createTablePrompt, publicTableCall, publicTableCancel, publicTableOrder, publicTableOrderCancel, usePublicTable,
-  type PayMethod, type PublicMenuItem, type PublicTable, type TableBill, type TableCall, type TableCallKind, type TableOrder,
+  type BillLine, type ItemStatus, type PayMethod, type PublicMenuItem, type PublicTable, type TableBill, type TableCall, type TableCallKind, type TableOrder,
 } from "@/hooks/useTableQr";
 import { PublicShell } from "./GuestSite";
 
@@ -92,6 +93,86 @@ const OrderStatus = ({ order, cur, onCancel, busy }: { order: TableOrder; cur: s
       </div>
     );
   return null;
+};
+
+// ---------------------------------------------------------------- food tracker
+const STAGE: Record<ItemStatus, number> = { new: 0, sent: 1, preparing: 2, ready: 3, served: 4 };
+const STEPS = ["Received", "Preparing", "Ready", "Served"];
+const LONG_WAIT_MS = 25 * 60_000;
+const mins = (iso?: string | null) => (iso ? Math.max(0, Math.round((Date.now() - parseISO(iso).getTime()) / 60_000)) : 0);
+
+const LineStatus = ({ l }: { l: BillLine }) => {
+  const bar = l.station === "bar";
+  const cls = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";
+  switch (l.status) {
+    case "new": return <span className={cn(cls, "bg-slate-100 text-slate-600")}>Being added</span>;
+    case "sent": return <span className={cn(cls, "bg-amber-100 text-amber-800")}>Waiting for the {bar ? "bar" : "kitchen"}</span>;
+    case "preparing": return <span className={cn(cls, "bg-orange-100 text-orange-800")}><Flame className="h-3 w-3 animate-pulse" />Being prepared</span>;
+    case "ready": return <span className={cn(cls, "bg-green-100 text-green-800")}>Ready — coming to you</span>;
+    case "served": return <span className={cn(cls, "text-muted-foreground")}><Check className="h-3 w-3" />Served</span>;
+    default: return null;
+  }
+};
+
+/** Where each dish and drink is: waiting → being prepared → ready → served. */
+const FoodTracker = ({ lines }: { lines: BillLine[] }) => {
+  const [showServed, setShowServed] = useState(false);
+  const tracked = lines.filter((l) => l.status);
+  if (!tracked.length) return null;
+  const open = tracked.filter((l) => l.status !== "served");
+  const served = tracked.filter((l) => l.status === "served");
+  if (!open.length)
+    return (
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" data-testid="food-tracker">
+        <div className="font-semibold">🍽️ Everything is served — enjoy your meal!</div>
+        <div className="text-sm opacity-80">Want something else? Add it from the menu below or tap "Call waiter".</div>
+      </div>
+    );
+  // the step the whole order has reached = the least advanced dish still to come
+  const step = Math.max(0, Math.min(...open.map((l) => STAGE[l.status!])) - 1);
+  const slow = open.some((l) => (l.status === "sent" || l.status === "preparing") && mins(l.sent_at) * 60_000 > LONG_WAIT_MS);
+  const ready = open.filter((l) => l.status === "ready").length;
+  return (
+    <Card data-testid="food-tracker">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 font-semibold"><ChefHat className="h-5 w-5 text-primary" />Your food &amp; drinks</h2>
+          {ready > 0 && <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">{ready} ready</span>}
+        </div>
+        <ol className="grid grid-cols-4 gap-1" aria-label="Order progress">
+          {STEPS.map((label, i) => (
+            <li key={label} className="space-y-1 text-center">
+              <div className={cn("h-1.5 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />
+              <div className={cn("text-[11px]", i === step ? "font-semibold text-foreground" : "text-muted-foreground")}>{label}</div>
+            </li>
+          ))}
+        </ol>
+        <ul className="divide-y text-sm">
+          {open.map((l, i) => (
+            <li key={l.id ?? i} className="flex items-center gap-2 py-2">
+              {l.station === "bar" ? <Wine className="h-4 w-4 shrink-0 text-muted-foreground" /> : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
+              <span className="flex-1 min-w-0 truncate">{Number(l.qty)}× {l.name}</span>
+              <span className="flex flex-col items-end gap-0.5">
+                <LineStatus l={l} />
+                {l.sent_at && (l.status === "sent" || l.status === "preparing") && <span className="text-[10px] text-muted-foreground">{mins(l.sent_at)} min</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+        {served.length > 0 && (
+          <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setShowServed((v) => !v)}>
+            {showServed ? "Hide" : "Show"} {served.length} served item{served.length === 1 ? "" : "s"}
+          </button>
+        )}
+        {showServed && (
+          <ul className="text-sm text-muted-foreground">
+            {served.map((l, i) => <li key={l.id ?? i} className="flex justify-between py-0.5"><span>{Number(l.qty)}× {l.name}</span><span className="inline-flex items-center gap-1 text-xs"><Check className="h-3 w-3" />Served</span></li>)}
+          </ul>
+        )}
+        {slow && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">This is taking a little longer than usual. Tap "Call waiter" if you'd like an update.</p>}
+      </CardContent>
+    </Card>
+  );
 };
 
 const BillCard = ({ bill, cur, canPay, token, onPaid }: { bill: TableBill; cur: string; canPay: boolean; token: string; onPaid: () => void }) => (
@@ -193,6 +274,7 @@ const TableQrPage = () => {
   const cartTotal = lines.reduce((n, l) => n + l.qty * Number(l.item.price), 0);
   const pending = t.order?.status === "pending";
   const canOrder = !!t.can_order;
+  const tracking = !!t.bill?.lines.some((l) => l.status);
   const setQty = (id: string, n: number) => setCart((c) => ({ ...c, [id]: Math.max(0, Math.min(20, n)) }));
 
   return (
@@ -203,7 +285,7 @@ const TableQrPage = () => {
           <h1 className="gs-display text-4xl" data-testid="table-name">Table {t.table}</h1>
         </div>
 
-        {t.order && <OrderStatus order={t.order} cur={t.currency} onCancel={cancelOrder} busy={busy} />}
+        {t.order && !(t.order.status === "confirmed" && tracking) && <OrderStatus order={t.order} cur={t.currency} onCancel={cancelOrder} busy={busy} />}
         {t.call && <Status call={t.call} onCancel={cancel} busy={busy} />}
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
 
@@ -214,6 +296,7 @@ const TableQrPage = () => {
         </div>
         {active && <p className="text-center text-xs text-muted-foreground">Need something different? Tap another button — we'll update your request.</p>}
 
+        {t.bill && <FoodTracker lines={t.bill.lines} />}
         {t.bill && <BillCard bill={t.bill} cur={t.currency} canPay={!!t.can_pay} token={token} onPaid={() => q.refetch()} />}
 
         <section aria-labelledby="menu-h" className="space-y-3 pt-2">

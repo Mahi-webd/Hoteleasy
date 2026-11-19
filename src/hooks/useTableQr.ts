@@ -25,11 +25,22 @@ export interface TableOrder {
 }
 export interface TableBill {
   number: number; items_gross: number; discount: number; service_charge: number; total: number; paid: number; due: number; unsent: boolean;
-  lines: { name: string; qty: number; amount: number; comped: boolean }[];
+  lines: BillLine[];
+}
+export type ItemStatus = "new" | "sent" | "preparing" | "ready" | "served";
+export interface BillLine {
+  id?: string; name: string; qty: number; amount: number; comped: boolean;
+  /** progress, from the kitchen/bar screen and the waiter (missing before the kitchen-status update) */
+  status?: ItemStatus; station?: "kitchen" | "bar" | "none"; sent_at?: string | null; ready_at?: string | null; served_at?: string | null;
+}
+export interface BoardBill {
+  id?: string; number: number; total: number; paid: number;
+  waiting?: number; preparing?: number; ready_since?: string | null;
+  ready?: { id: string; name: string; qty: number; station: string }[];
 }
 export interface BoardTable {
   id: string; name: string; seats: number; enabled: boolean; token: string | null; call: TableCall | null;
-  order?: TableOrder | null; bill?: { number: number; total: number; paid: number } | null;
+  order?: TableOrder | null; bill?: BoardBill | null;
 }
 export interface BoardOutlet { id: string; name: string; enabled: boolean; order_enabled?: boolean; pay_enabled?: boolean; tables: BoardTable[] }
 export interface PublicMenuItem { id: string; name: string; description: string | null; price: number; available: boolean; self_order?: boolean }
@@ -67,7 +78,7 @@ export const useTableBoard = () => {
 };
 
 /** Live updates; onNew runs (with the outlet) when a table calls, changes what it wants, or sends an order. */
-export interface TableAlert { outletId: string | null; tableId: string | null; what: "call" | "order" }
+export interface TableAlert { outletId: string | null; tableId: string | null; orderId?: string | null; what: "call" | "order" | "ready" }
 export const useTableCallsRealtime = (onNew?: (a: TableAlert) => void) => {
   const { hotel } = useCurrentHotel();
   const qc = useQueryClient();
@@ -82,6 +93,12 @@ export const useTableCallsRealtime = (onNew?: (a: TableAlert) => void) => {
       qc.invalidateQueries({ queryKey: ["tableqr"] });
       if (p.eventType === "INSERT")
         onNew?.({ outletId: (p.new as { outlet_id?: string }).outlet_id ?? null, tableId: (p.new as { table_id?: string }).table_id ?? null, what: "order" });
+    })
+    // the kitchen / bar moves food along; "ready" means it is waiting at the pass for a waiter
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "pos_order_items", filter: `hotel_id=eq.${hotel.id}` }, (p) => {
+      qc.invalidateQueries({ queryKey: ["tableqr"] });
+      const n = p.new as { status?: string; order_id?: string };
+      if (n.status === "ready") onNew?.({ outletId: null, tableId: null, orderId: n.order_id ?? null, what: "ready" });
     })), [hotel.id, qc, onNew]);
 };
 
@@ -109,6 +126,9 @@ export const useDecideTableOrder = () =>
 export const useSetOutletOptions = () =>
   useAct(({ id, order, pay }: { id: string; order: boolean; pay: boolean }) => rpc("table_qr_set_outlet_options", { _outlet_id: id, _order: order, _pay: pay }),
     () => "Saved");
+export const useServeItems = () =>
+  useAct(({ ids }: { ids: string[]; table: string }) => rpc("pos_set_item_status", { _item_ids: ids, _status: "served" }),
+    (a) => `Served at table ${a.table}`);
 export const useResetTableLink = () =>
   useAct((id: string) => rpc("table_link_reset", { _table_id: id }), () => "New QR code made. Print it and replace the old sticker.");
 
@@ -126,7 +146,12 @@ export const usePublicTable = (token: string) =>
   useQuery({
     queryKey: ["public", "table", token],
     queryFn: () => rpc<PublicTable | null>("public_table", { _token: token }),
-    refetchInterval: 8_000,
+    // quicker while food is on its way or an order waits for a waiter
+    refetchInterval: (q) => {
+      const d = q.state.data as PublicTable | null | undefined;
+      const busy = d?.order?.status === "pending" || d?.bill?.lines.some((l) => l.status && l.status !== "served");
+      return busy ? 5_000 : 8_000;
+    },
     retry: 1,
   });
 export const publicTableCall = (token: string, kind: TableCallKind, note?: string, pay?: PayMethod | null) =>
