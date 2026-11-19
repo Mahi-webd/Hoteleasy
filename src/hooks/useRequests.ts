@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { liveChannel } from "@/lib/realtime";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
 import type { GuestRequest, RequestStatus, RequestType } from "@/lib/db-types";
@@ -35,13 +36,12 @@ export const useRequestsRealtime = (onNew?: (r: GuestRequest) => void) => {
   const { hotel } = useCurrentHotel();
   const qc = useQueryClient();
   useEffect(() => {
-    const ch = supabase.channel(`requests-${hotel.id}`)
+    const stop = liveChannel(`requests-${hotel.id}`, (c) => c
       .on("postgres_changes", { event: "*", schema: "public", table: "guest_requests", filter: `hotel_id=eq.${hotel.id}` }, (p) => {
         qc.invalidateQueries({ queryKey: ["requests"] });
         if (p.eventType === "INSERT" && (p.new as GuestRequest).from_guest) onNew?.(p.new as GuestRequest);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+      }));
+    return () => { stop(); };
   }, [hotel.id, qc, onNew]);
 };
 export const useRequestTypes = () => {

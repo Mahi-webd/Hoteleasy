@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { liveChannel } from "@/lib/realtime";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
 import type {
@@ -46,8 +47,7 @@ export const useRealtimeSync = () => {
   const qc = useQueryClient();
   useEffect(() => {
     const filter = `hotel_id=eq.${hotel.id}`;
-    const channel = supabase
-      .channel(`hotel-${hotel.id}`)
+    const stop = liveChannel(`hotel-${hotel.id}`, (c) => c
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter }, () =>
         qc.invalidateQueries({ queryKey: ["rooms"] }),
       )
@@ -74,10 +74,9 @@ export const useRealtimeSync = () => {
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "activity_log", filter }, () =>
         qc.invalidateQueries({ queryKey: ["activity"] }),
-      )
-      .subscribe();
+      ));
     return () => {
-      supabase.removeChannel(channel);
+      stop();
     };
   }, [hotel.id, qc]);
 };

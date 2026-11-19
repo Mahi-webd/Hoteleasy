@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar, ShieldCheck, RefreshCw, MessageCircle } from "lucide-react";
+  BarChart3, Calendar, Clock, CreditCard, Home, MapPin, Package, Settings, ShoppingCart, Smartphone, Globe, Wallet, UserCheck, Users, Wrench, X, ChefHat, type LucideIcon, CalendarRange, Building2, BellRing, LayoutDashboard, MoonStar, ShieldCheck, RefreshCw, MessageCircle, QrCode } from "lucide-react";
 import type { HotelRole } from "@/lib/db-types";
 
 export interface NavItem {
@@ -40,6 +40,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "pos", label: "Restaurant & Bar POS", icon: ShoppingCart, perm: "pos.view" },
       { key: "kds", label: "Kitchen & bar screen", icon: ChefHat, perm: "kds.view" },
+      { key: "tableqr", label: "Table QR & waiter calls", icon: QrCode, perm: "tableqr.view" },
     ],
   },
   {

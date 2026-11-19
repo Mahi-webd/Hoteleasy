@@ -24,6 +24,7 @@ import HousekeepingPage from "@/features/housekeeping/HousekeepingPage";
 import MaintenancePage from "@/features/maintenance/MaintenancePage";
 import PosPage from "@/features/pos/PosPage";
 import KitchenDisplay from "@/features/pos/KitchenDisplay";
+import TableQrBoard from "@/features/tableqr/TableQrBoard";
 import ReportsPage from "@/features/reports/ReportsPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import OnlinePage from "@/features/online/OnlinePage";
@@ -55,6 +56,7 @@ const SCREENS: Record<string, ComponentType<{ onNavigate?: (tab: string) => void
   billing: BillingPage,
   pos: PosPage,
   kds: KitchenDisplay,
+  tableqr: TableQrBoard,
   reports: ReportsPage,
   housekeeping: HousekeepingPage,
   maintenance: MaintenancePage,

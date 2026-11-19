@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { liveChannel } from "@/lib/realtime";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentHotel } from "@/contexts/HotelContext";
 import { friendlyError } from "@/lib/format";
@@ -45,18 +46,16 @@ export const usePosRealtime = () => {
   const qc = useQueryClient();
   useEffect(() => {
     const filter = `hotel_id=eq.${hotel.id}`;
-    const ch = supabase
-      .channel(`pos-${hotel.id}`)
+    const stop = liveChannel(`pos-${hotel.id}`, (c) => c
       .on("postgres_changes", { event: "*", schema: "public", table: "pos_orders", filter }, () => qc.invalidateQueries({ queryKey: ["pos", "orders"] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "pos_order_items", filter }, () => {
         qc.invalidateQueries({ queryKey: ["pos", "orders"] });
         qc.invalidateQueries({ queryKey: ["pos", "kds"] });
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "menu_items", filter }, () => qc.invalidateQueries({ queryKey: ["pos", "menu"] }))
-      .subscribe();
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "menu_items", filter }, () => qc.invalidateQueries({ queryKey: ["pos", "menu"] })));
     // Fallback refresh in case the live connection drops.
     const t = setInterval(() => qc.invalidateQueries({ queryKey: ["pos", "kds"] }), 20_000);
-    return () => { supabase.removeChannel(ch); clearInterval(t); };
+    return () => { stop(); clearInterval(t); };
   }, [hotel.id, qc]);
 };
 

@@ -37,10 +37,11 @@ create temp table lxyz as select public.provider_create_company((select id from 
   '{"name": "XYZ Hotel", "city": "Mombasa"}'::jsonb, '{"name": "Xavier", "email": "OWNER@xyz.test"}'::jsonb,
   jsonb_build_object('starts_on', current_date, 'ends_on', current_date + 30, 'staff_limit', 2), true) id;
 select pg_temp.expect(not exists (select 1 from hotel_members where hotel_id = (select id from lxyz)), 'provider is not added to the hotel');
-select pg_temp.expect((select count(*) from rooms where hotel_id = (select id from lxyz)) = 12, 'sample rooms added');
+select pg_temp.expect((select count(*) from rooms where hotel_id = (select id from lxyz)) = 0, 'provider can''t read the hotel''s rooms');
 select pg_temp.expect((public.provider_company((select id from lxyz))->'owner_invite'->>'email') = 'owner@xyz.test', 'owner invited (email in lower case)');
 select pg_temp.expect((public.provider_overview()->>'companies')::int >= 2, 'overview counts companies');
 reset role;
+select pg_temp.expect((select count(*) from rooms where hotel_id = (select id from lxyz)) = 12, 'sample rooms added');
 grant select on lplan, lxyz to authenticated, anon;
 
 -- Owner signs in: becomes owner, sees only the plan's pages
@@ -66,7 +67,7 @@ select pg_temp.expect(public.is_hotel_member((select id from lxyz)), 'still usab
 
 -- Expired: everything refused, but the hotel still appears in my list with its state
 reset role;
-update hotel_licenses set ends_on = public.hotel_today((select id from lxyz)) - 1 where hotel_id = (select id from lxyz);
+update hotel_licenses set starts_on = public.hotel_today((select id from lxyz)) - 30, ends_on = public.hotel_today((select id from lxyz)) - 1 where hotel_id = (select id from lxyz);
 select pg_temp.as_user('eeeeeeee-0000-0000-0000-000000000005');
 select pg_temp.expect(not public.is_hotel_member((select id from lxyz)), 'expired: membership checks fail');
 select pg_temp.expect((select count(*) from rooms where hotel_id = (select id from lxyz)) = 0, 'expired: no data visible');

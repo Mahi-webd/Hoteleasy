@@ -28,6 +28,8 @@ import RegCardPage from "./features/online/RegCardPage";
 import StatementPage from "./features/companies/StatementPage";
 import { GuestStayPage, RoomQrPage } from "./features/public/GuestStayPage";
 import RoomQrSheet from "./features/requests/RoomQrSheet";
+import TableQrSheet from "./features/tableqr/TableQrSheet";
+import TableQrPage from "./features/public/TableQrPage";
 import DayReportPage from "./features/audit/DayReportPage";
 import BookingPage from "./features/public/BookingPage";
 import FeedbackPage from "./features/public/FeedbackPage";
@@ -133,6 +135,7 @@ const App = () => (
                   <Route path="/feedback/:token" element={<Guest><FeedbackPage /></Guest>} />
                   <Route path="/checkin/:token" element={<Guest><PrecheckPage /></Guest>} />
                   <Route path="/r/:token" element={<Guest><RoomQrPage /></Guest>} />
+                  <Route path="/t/:token" element={<Guest><TableQrPage /></Guest>} />
                   <Route path="/stay/:key" element={<Guest><GuestStayPage /></Guest>} />
                   <Route path="/" element={<Staff><Home /></Staff>} />
                   <Route path="/provider" element={<Staff><ProviderConsole /></Staff>} />
@@ -141,6 +144,7 @@ const App = () => (
                   <Route path="/folio/:id" element={<Protected><FolioPrintPage /></Protected>} />
                   <Route path="/day-report/:day" element={<Protected><DayReportPage /></Protected>} />
                   <Route path="/room-qr" element={<Protected><RoomQrSheet /></Protected>} />
+                  <Route path="/table-qr" element={<Protected><TableQrSheet /></Protected>} />
                   <Route path="/statement/:id" element={<Protected><StatementPage /></Protected>} />
                   <Route path="/reg-card/:id" element={<Protected><RegCardPage /></Protected>} />
                   <Route path="/payslips/:runId" element={<Protected><PayslipPage /></Protected>} />
