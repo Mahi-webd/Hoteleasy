@@ -2,9 +2,16 @@
 // and a sound plays; the waiter taps "On my way", then "Done". Managers switch QR on/off per outlet or
 // table, print the QR codes and see how fast tables were answered.
 // Step 2: orders sent from the phone wait here (violet) until a waiter confirms them onto the POS bill.
+// "My outlets" (saved on each device): a waiter sees and hears only the outlets they serve; tables left
+// waiting in other outlets still show in a banner, and after 3 minutes they sound for everyone, so no table
+// is ever forgotten. Tiles say who is on the way ("Ravi on the way").
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNowStrict, parseISO, subDays } from "date-fns";
-import { BellRing, Check, ExternalLink, Footprints, Printer, QrCode, RefreshCw, ShoppingBag, Timer, Volume2, VolumeX, X } from "lucide-react";
+import { BellRing, Check, ChevronDown, ExternalLink, Footprints, MapPin, Printer, QrCode, RefreshCw, ShoppingBag, Timer, Volume2, VolumeX, X } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +25,25 @@ import { useCurrentHotel } from "@/contexts/HotelContext";
 import { cn } from "@/lib/utils";
 import {
   CALL_LABEL, PAY_LABEL, fmtWait, useDecideTableOrder, useResetTableLink, useSetOutletOptions, useSetOutletQr, useSetTableQr, useTableBoard,
-  useTableCallsRealtime, useTableQrReport, useUpdateTableCall, type BoardOutlet, type BoardTable, type TableOrder,
+  useTableCallsRealtime, useTableQrReport, useUpdateTableCall, type BoardOutlet, type BoardTable, type TableAlert, type TableOrder,
 } from "@/hooks/useTableQr";
+
+// ---------------------------------------------------------------- "My outlets" (per hotel, per device)
+interface Prefs { outlets: string[] | null; helpOthers: boolean; chosen: boolean }
+const PREFS_KEY = (hotelId: string) => `hoteleasy-tableqr-prefs-${hotelId}`;
+const readPrefs = (hotelId: string): Prefs => {
+  try {
+    const v = JSON.parse(localStorage.getItem(PREFS_KEY(hotelId)) ?? "null");
+    if (v && typeof v === "object") return { outlets: Array.isArray(v.outlets) ? v.outlets : null, helpOthers: v.helpOthers !== false, chosen: !!v.chosen };
+  } catch { /* private mode or bad value */ }
+  return { outlets: null, helpOthers: true, chosen: false };
+};
+const savePrefs = (hotelId: string, p: Prefs) => { try { localStorage.setItem(PREFS_KEY(hotelId), JSON.stringify(p)); } catch { /* private mode */ } };
+
+/** Waiting = a call nobody has answered, or a phone order nobody has confirmed. */
+const waitingSince = (t: BoardTable) =>
+  [t.call?.status === "open" ? t.call.created_at : undefined, t.order?.status === "pending" ? t.order.created_at : undefined].filter(Boolean).sort()[0] as string | undefined;
+const HELP_AFTER_MS = 3 * 60_000;
 
 const REFUSE = ["Sold out", "Kitchen is closed", "Please call a waiter"];
 
@@ -95,7 +119,7 @@ const ago = (iso: string) => formatDistanceToNowStrict(parseISO(iso), { addSuffi
 /** Re-render every few seconds so the "2 min ago" labels move. */
 const useTick = (ms: number) => { const [, set] = useState(0); useEffect(() => { const i = setInterval(() => set((x) => x + 1), ms); return () => clearInterval(i); }, [ms]); };
 
-const TableTile = ({ t, canRespond, canConfirm, currency, outlet }: { t: BoardTable; canRespond: boolean; canConfirm: boolean; currency: string; outlet?: string }) => {
+const TableTile = ({ t, canRespond, canConfirm, currency, outlet, me }: { t: BoardTable; canRespond: boolean; canConfirm: boolean; currency: string; outlet?: string; me?: string }) => {
   const upd = useUpdateTableCall();
   const c = t.call;
   const ord = t.order?.status === "pending" ? t.order : null;
@@ -103,6 +127,9 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet }: { t: BoardTa
   const onWay = c?.status === "on_way";
   const firstAt = [open ? c!.created_at : null, ord?.created_at ?? null].filter(Boolean).sort()[0] as string | undefined;
   const late = !!firstAt && Date.now() - parseISO(firstAt).getTime() > 3 * 60_000;
+  const mine = onWay && !!me && c?.by_id === me;
+  const who = mine ? "You're" : c?.by_name ? `${c.by_name} is` : "Someone is";
+  const slowWay = onWay && Date.now() - parseISO(c!.acknowledged_at ?? c!.created_at).getTime() > 5 * 60_000;
   return (
     <div data-testid="table-tile"
       className={cn("relative flex min-h-[132px] flex-col rounded-2xl border-2 p-3 transition",
@@ -119,7 +146,11 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet }: { t: BoardTa
       {c ? (
         <>
           <div className={cn("mt-1 text-sm font-semibold", open ? "text-red-700 dark:text-red-300" : "text-sky-700 dark:text-sky-300")}>{what(t)}</div>
-          <div className="text-xs text-slate-500">{open ? `${ago(c.created_at)} ago` : `On the way · ${ago(c.acknowledged_at ?? c.created_at)}`}</div>
+          {open ? <div className="text-xs text-slate-500">{ago(c.created_at)} ago</div> : (
+            <div className={cn("text-xs", slowWay ? "font-medium text-amber-700" : mine ? "font-medium text-sky-700" : "text-slate-500")} data-testid="on-the-way">
+              {who} on the way · {ago(c.acknowledged_at ?? c.created_at)}{slowWay ? " — not done yet?" : ""}
+            </div>
+          )}
           {c.kind !== "other" && c.note && <div className="mt-0.5 line-clamp-2 text-xs italic text-slate-600">"{c.note}"</div>}
           {canRespond && (
             <div className="mt-auto flex gap-1.5 pt-2">
@@ -128,7 +159,7 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet }: { t: BoardTa
                   <Footprints className="mr-1 h-4 w-4" />On my way
                 </Button>
               )}
-              <Button size="sm" variant={open ? "outline" : "default"} className={cn("h-9 flex-1", !open && "bg-emerald-600 hover:bg-emerald-700")} disabled={upd.isPending}
+              <Button size="sm" variant={open || (!mine && !slowWay) ? "outline" : "default"} className={cn("h-9 flex-1", !open && (mine || slowWay) && "bg-emerald-600 hover:bg-emerald-700")} disabled={upd.isPending}
                 onClick={() => upd.mutate({ id: c.id, status: "done" })}>
                 <Check className="mr-1 h-4 w-4" />Done
               </Button>
@@ -142,46 +173,81 @@ const TableTile = ({ t, canRespond, canConfirm, currency, outlet }: { t: BoardTa
   );
 };
 
-const LiveTab = ({ board, canRespond, canConfirm, currency }: { board: BoardOutlet[]; canRespond: boolean; canConfirm: boolean; currency: string }) => {
+const LiveTab = ({ board, mineIds, helpOthers, canRespond, canConfirm, currency, me, onChooseOutlets }: {
+  board: BoardOutlet[]; mineIds: Set<string> | null; helpOthers: boolean; canRespond: boolean; canConfirm: boolean; currency: string; me?: string;
+  onChooseOutlets: (ids: string[] | null) => void;
+}) => {
   useTick(10_000);
-  const [outlet, setOutlet] = useState<string | "all">("all");
-  const shown = board.filter((o) => outlet === "all" || o.id === outlet);
+  const [showOthers, setShowOthers] = useState(false);
+  const isMine = (id: string) => !mineIds || mineIds.has(id);
+  const mineOutlets = board.filter((o) => isMine(o.id));
   // waiting first (a call nobody answered or an order to confirm), oldest first; then "on the way"
-  const rank = (t: BoardTable) => (t.call?.status === "open" || t.order?.status === "pending" ? 0 : 1);
-  const since = (t: BoardTable) => [t.call?.created_at, t.order?.status === "pending" ? t.order.created_at : undefined].filter(Boolean).sort()[0] ?? "";
-  const waiting = board.flatMap((o) => o.tables.filter((t) => t.call || t.order?.status === "pending").map((t) => ({ t, o })))
-    .sort((a, b) => rank(a.t) - rank(b.t) || since(a.t).localeCompare(since(b.t)));
+  const rank = (t: BoardTable) => (waitingSince(t) ? 0 : 1);
+  const order = (a: { t: BoardTable }, b: { t: BoardTable }) =>
+    rank(a.t) - rank(b.t) || (waitingSince(a.t) ?? a.t.call?.created_at ?? "").localeCompare(waitingSince(b.t) ?? b.t.call?.created_at ?? "");
+  const active = (o: BoardOutlet) => o.tables.filter((t) => t.call || t.order?.status === "pending").map((t) => ({ t, o }));
+  const attention = mineOutlets.flatMap(active).sort(order);
+  const others = board.filter((o) => !isMine(o.id)).flatMap(active).filter(({ t }) => waitingSince(t)).sort(order);
+  const othersLate = others.filter(({ t }) => Date.now() - parseISO(waitingSince(t)!).getTime() > HELP_AFTER_MS);
 
   if (board.length === 0)
     return <Card><CardContent><EmptyState icon={QrCode} title="No restaurant tables yet">Add outlets and tables in Restaurant &amp; Bar POS → Setup. Each table gets its own QR code.</EmptyState></CardContent></Card>;
 
   return (
     <div className="space-y-4">
-      {waiting.length > 0 && (
+      {attention.length > 0 && (
         <Card className="border-red-200 dark:border-red-900">
-          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><BellRing className="h-4 w-4 text-red-600" />Needs attention ({waiting.length})</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><BellRing className="h-4 w-4 text-red-600" />Needs attention ({attention.length})</CardTitle></CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {waiting.map(({ t, o }) => <TableTile key={t.id} t={t} canRespond={canRespond} canConfirm={canConfirm} currency={currency} outlet={o.name} />)}
+            {attention.map(({ t, o }) => <TableTile key={t.id} t={t} canRespond={canRespond} canConfirm={canConfirm} currency={currency} outlet={o.name} me={me} />)}
           </CardContent>
         </Card>
       )}
-      {board.length > 1 && (
-        <div className="flex flex-wrap gap-2">
-          {[{ id: "all", name: "All outlets" }, ...board].map((o) => (
-            <Button key={o.id} size="sm" variant={outlet === o.id ? "default" : "outline"} onClick={() => setOutlet(o.id)}>{o.name}</Button>
-          ))}
-        </div>
+
+      {others.length > 0 && (
+        <Card className={cn(othersLate.length > 0 ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30" : "border-slate-200")} data-testid="other-outlets">
+          <CardContent className="space-y-3 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("text-sm font-semibold", othersLate.length > 0 ? "text-amber-800 dark:text-amber-200" : "text-slate-700 dark:text-slate-200")}>
+                {othersLate.length > 0
+                  ? `No one has answered ${othersLate.length === 1 ? "a table" : `${othersLate.length} tables`} in other outlets for over 3 minutes`
+                  : `${others.length} table${others.length === 1 ? "" : "s"} waiting in other outlets`}
+              </span>
+              <span className="flex-1" />
+              <Button size="sm" variant="outline" onClick={() => setShowOthers((v) => !v)}>{showOthers ? "Hide" : "Show and help"}</Button>
+            </div>
+            {!showOthers && (
+              <div className="flex flex-wrap gap-1.5">
+                {others.map(({ t, o }) => (
+                  <Badge key={t.id} variant="outline" className="bg-white dark:bg-slate-900">{o.name} · {t.name} · {t.call?.status === "open" ? what(t) : "Order"} · {ago(waitingSince(t)!)}</Badge>
+                ))}
+              </div>
+            )}
+            {showOthers && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {others.map(({ t, o }) => <TableTile key={t.id} t={t} canRespond={canRespond} canConfirm={canConfirm} currency={currency} outlet={o.name} me={me} />)}
+              </div>
+            )}
+            {!helpOthers && othersLate.length > 0 && <p className="text-xs text-amber-800">You've turned off sounds for other outlets in "My outlets".</p>}
+          </CardContent>
+        </Card>
       )}
-      {shown.map((o) => (
+
+      {mineOutlets.map((o) => (
         <section key={o.id} className="space-y-2">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-200">{o.name}{!o.enabled && <Badge variant="outline">QR off</Badge>}</h3>
           {o.tables.length === 0 ? <p className="text-sm text-slate-500">No tables in this outlet.</p> : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-              {o.tables.map((t) => <TableTile key={t.id} t={t} canRespond={canRespond} canConfirm={canConfirm} currency={currency} />)}
+              {o.tables.map((t) => <TableTile key={t.id} t={t} canRespond={canRespond} canConfirm={canConfirm} currency={currency} me={me} />)}
             </div>
           )}
         </section>
       ))}
+      {mineIds && board.length > mineOutlets.length && (
+        <p className="text-center text-xs text-slate-500">
+          Showing only your outlets. <button type="button" className="underline" onClick={() => onChooseOutlets(null)}>Show all outlets</button>
+        </p>
+      )}
     </div>
   );
 };
@@ -292,30 +358,89 @@ const ReportTab = () => {
   );
 };
 
+/** "My outlets" picker: what this device shows and rings for. */
+const OutletPicker = ({ board, prefs, onChange }: { board: BoardOutlet[]; prefs: Prefs; onChange: (p: Prefs) => void }) => {
+  const sel = prefs.outlets;
+  const all = !sel;
+  const label = all ? "All outlets" : board.filter((o) => sel!.includes(o.id)).map((o) => o.name).join(", ") || "All outlets";
+  const toggle = (id: string, on: boolean) => {
+    const cur = new Set(sel ?? board.map((o) => o.id));
+    if (on) cur.add(id); else cur.delete(id);
+    const ids = board.map((o) => o.id).filter((x) => cur.has(x));
+    // every outlet (or none) ticked means "all": nothing is ever silently hidden
+    onChange({ ...prefs, chosen: true, outlets: ids.length === 0 || ids.length === board.length ? null : ids });
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="max-w-[260px]" data-testid="my-outlets"><MapPin className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">My outlets: {label}</span><ChevronDown className="ml-1 h-4 w-4 shrink-0" /></Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel className="text-xs font-normal text-slate-500">What this device shows and rings for (saved on this device)</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem checked={all} onSelect={(e) => e.preventDefault()} onCheckedChange={() => onChange({ ...prefs, chosen: true, outlets: null })}>All outlets</DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        {board.map((o) => (
+          <DropdownMenuCheckboxItem key={o.id} checked={all || sel!.includes(o.id)} onSelect={(e) => e.preventDefault()} onCheckedChange={(v) => toggle(o.id, !!v)}>{o.name}</DropdownMenuCheckboxItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem checked={prefs.helpOthers} disabled={all} onSelect={(e) => e.preventDefault()} onCheckedChange={(v) => onChange({ ...prefs, chosen: true, helpOthers: !!v })}>
+          <span>Ring for other outlets after 3 min<br /><span className="text-[11px] text-slate-500">if nobody has answered there</span></span>
+        </DropdownMenuCheckboxItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const TableQrBoard = () => {
-  const { allowed } = useCurrentHotel();
-  const { hotel } = useCurrentHotel();
+  const { allowed, hotel } = useCurrentHotel();
+  const { user } = useAuth();
   const admin = allowed("tableqr.admin");
   const canRespond = allowed("tableqr.respond");
   const canConfirm = canRespond && allowed("pos.create");
   const q = useTableBoard();
+  const board = useMemo(() => q.data ?? [], [q.data]);
   const [sound, setSound] = useState(readSound);
   const soundRef = useRef(sound);
   soundRef.current = sound;
-  const onNew = useCallback(() => { if (soundRef.current) chime(); toast.warning("A table is calling", { duration: 4000 }); }, []);
+
+  const [prefs, setPrefsState] = useState<Prefs>(() => readPrefs(hotel.id));
+  useEffect(() => { setPrefsState(readPrefs(hotel.id)); }, [hotel.id]);
+  const setPrefs = (p: Prefs) => { setPrefsState(p); savePrefs(hotel.id, p); };
+  // outlets saved earlier that no longer exist are ignored; if none are left, show everything
+  const mineIds = useMemo(() => {
+    if (!prefs.outlets) return null;
+    const ids = prefs.outlets.filter((id) => board.some((o) => o.id === id));
+    return board.length && ids.length === 0 ? null : new Set(ids);
+  }, [prefs.outlets, board]);
+  const isMine = useCallback((id: string | null) => !mineIds || !id || mineIds.has(id), [mineIds]);
+
+  // a new call or order: sound + message only for my outlets (others show in the banner)
+  const ctx = useRef({ isMine, board });
+  ctx.current = { isMine, board };
+  const onNew = useCallback((a: TableAlert) => {
+    if (!ctx.current.isMine(a.outletId)) return;
+    if (soundRef.current) chime();
+    const o = ctx.current.board.find((x) => x.id === a.outletId);
+    const t = o?.tables.find((x) => x.id === a.tableId);
+    const where = t ? `Table ${t.name}${o && ctx.current.board.length > 1 ? ` (${o.name})` : ""}` : "A table";
+    toast.warning(a.what === "order" ? `${where} sent an order` : `${where} is calling`, { duration: 5000 });
+  }, []);
   useTableCallsRealtime(onNew);
 
-  // keep reminding while a table has waited over 2 minutes with nobody on the way
-  const waitingLong = useMemo(() => (q.data ?? []).some((o) => o.tables.some((t) =>
-    (t.call?.status === "open" && Date.now() - parseISO(t.call.created_at).getTime() > 120_000)
-    || (t.order?.status === "pending" && Date.now() - parseISO(t.order.created_at).getTime() > 120_000))), [q.data, q.dataUpdatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  // keep reminding: my tables waiting over 2 min; other outlets' tables nobody answered for 3 min.
+  // Checked every 10 s; rings at once when a table crosses the line, then every 45 s while it waits.
+  useTick(10_000);
+  const all = board.flatMap((o) => o.tables.map((t) => ({ t, o })));
+  const waitedMs = (t: BoardTable) => { const w = waitingSince(t); return w ? Date.now() - parseISO(w).getTime() : -1; };
+  const remind = all.some(({ t, o }) => isMine(o.id) ? waitedMs(t) > 120_000 : prefs.helpOthers && waitedMs(t) > HELP_AFTER_MS);
   useEffect(() => {
-    if (!waitingLong) return;
+    if (!remind) return;
+    if (soundRef.current) chime();
     const i = setInterval(() => { if (soundRef.current) chime(); }, 45_000);
     return () => clearInterval(i);
-  }, [waitingLong]);
+  }, [remind]);
 
-  const openCount = (q.data ?? []).reduce((n, o) => n + o.tables.filter((t) => t.call?.status === "open" || t.order?.status === "pending").length, 0);
+  const openCount = all.filter(({ t, o }) => isMine(o.id) && waitingSince(t)).length;
   useEffect(() => {
     const base = document.title.replace(/^\(\d+\) /, "");
     document.title = openCount ? `(${openCount}) ${base}` : base;
@@ -323,12 +448,14 @@ const TableQrBoard = () => {
   }, [openCount]);
 
   const toggleSound = () => { const v = !sound; setSound(v); saveSound(v); if (v) chime(); };
+  const multi = board.length > 1;
 
   return (
     <div className="space-y-4">
       <PageHeader title="Table QR & waiter calls" subtitle="Tables call or order from the QR code on the table. Red = waiting, violet = order to confirm, blue = someone's on the way."
         actions={
           <div className="flex flex-wrap gap-2">
+            {multi && <OutletPicker board={board} prefs={prefs} onChange={setPrefs} />}
             <Button variant="outline" onClick={toggleSound} aria-pressed={sound}>{sound ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}{sound ? "Sound on" : "Sound off"}</Button>
             {admin && <Button variant="outline" asChild><a href="/table-qr" target="_blank" rel="noreferrer"><Printer className="mr-2 h-4 w-4" />Print QR codes</a></Button>}
           </div>
@@ -336,16 +463,32 @@ const TableQrBoard = () => {
       {q.isLoading ? <LoadingBlock /> : q.isError ? (
         <Card><CardContent className="py-10 text-center text-sm text-slate-600">Table QR isn't ready yet. Ask your manager to run the latest database update (table_qr).</CardContent></Card>
       ) : (
-        <Tabs defaultValue="live">
-          <TabsList className="h-auto flex-wrap">
-            <TabsTrigger value="live">Live tables{openCount ? ` (${openCount})` : ""}</TabsTrigger>
-            {admin && <TabsTrigger value="setup">Setup</TabsTrigger>}
-            {admin && <TabsTrigger value="report"><Timer className="mr-1 h-4 w-4" />Response times</TabsTrigger>}
-          </TabsList>
-          <TabsContent value="live"><LiveTab board={q.data ?? []} canRespond={canRespond} canConfirm={canConfirm} currency={hotel.currency ?? "KES"} /></TabsContent>
-          {admin && <TabsContent value="setup"><SetupTab board={q.data ?? []} /></TabsContent>}
-          {admin && <TabsContent value="report"><ReportTab /></TabsContent>}
-        </Tabs>
+        <>
+          {multi && !prefs.chosen && (
+            <Card className="border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/30" data-testid="choose-outlets">
+              <CardContent className="flex flex-wrap items-center gap-2 p-4">
+                <MapPin className="h-4 w-4 text-sky-700" />
+                <span className="text-sm font-medium text-sky-900 dark:text-sky-100">Which outlet do you serve? This device will only show and ring for it.</span>
+                <span className="flex-1" />
+                {board.map((o) => <Button key={o.id} size="sm" variant="outline" onClick={() => setPrefs({ ...prefs, chosen: true, outlets: [o.id] })}>{o.name}</Button>)}
+                <Button size="sm" onClick={() => setPrefs({ ...prefs, chosen: true, outlets: null })}>All outlets</Button>
+              </CardContent>
+            </Card>
+          )}
+          <Tabs defaultValue="live">
+            <TabsList className="h-auto flex-wrap">
+              <TabsTrigger value="live">Live tables{openCount ? ` (${openCount})` : ""}</TabsTrigger>
+              {admin && <TabsTrigger value="setup">Setup</TabsTrigger>}
+              {admin && <TabsTrigger value="report"><Timer className="mr-1 h-4 w-4" />Response times</TabsTrigger>}
+            </TabsList>
+            <TabsContent value="live">
+              <LiveTab board={board} mineIds={mineIds} helpOthers={prefs.helpOthers} canRespond={canRespond} canConfirm={canConfirm}
+                currency={hotel.currency ?? "KES"} me={user?.id} onChooseOutlets={(ids) => setPrefs({ ...prefs, chosen: true, outlets: ids })} />
+            </TabsContent>
+            {admin && <TabsContent value="setup"><SetupTab board={board} /></TabsContent>}
+            {admin && <TabsContent value="report"><ReportTab /></TabsContent>}
+          </Tabs>
+        </>
       )}
     </div>
   );

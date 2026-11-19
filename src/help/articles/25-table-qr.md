@@ -1,10 +1,12 @@
 ---
 title: Table QR codes and waiter calls (restaurant)
 screen: tableqr
-tags: table qr, order from phone, qr ordering, confirm order, pay bill mpesa phone, waiter call, call waiter, bring the bill, restaurant table, menu qr, scan menu, m-pesa bill, response time, table map
+tags: table qr, my outlets, which waiter gets the alert, bar waiter, pool bar, who is on the way, order from phone, qr ordering, confirm order, pay bill mpesa phone, waiter call, call waiter, bring the bill, restaurant table, menu qr, scan menu, m-pesa bill, response time, table map
 ---
 Each restaurant table has its own QR code. A diner scans it with their phone camera (no app, no sign-in) and sees the menu with prices, plus three buttons: **Call waiter**, **Bring the bill** (they choose cash, card or M-Pesa) and **Water / other** (with a short note).
 - Open **Table QR & waiter calls**. A table that calls turns **red with a "!"** and a sound plays ("T3 · Bill · M-Pesa · 2 min"). Tap **On my way** (the diner's phone shows "On the way"), then **Done**. Blue = someone is on the way.
+- **My outlets** (top of the page, saved on each phone or tablet): choose the outlets you serve, e.g. only **Bar**. You then see and hear only those tables. Tables waiting in other outlets still show in a small banner (**Show and help**), and if nobody answers one for **3 minutes** it rings on every device, so no table is forgotten (you can switch that off in My outlets).
+- Every waiter of an outlet gets the alert; whoever taps **On my way** first takes it. Everyone then sees who is going ("Ravi is on the way"; "You're on the way" on your own phone). If it isn't marked **Done** within 5 minutes, the tile says "not done yet?".
 - Keep the page open on a phone, tablet or the POS screen. Use **Sound on/off** at the top; the sound repeats while a table has waited over 2 minutes.
 - One open call per table: if the diner taps again, the same call is updated (e.g. from "Waiter" to "Bill").
 - **Setup** (managers): **Print QR codes** (all, or one outlet), switch Table QR on/off for a whole outlet or a single table, and **New code** if a sticker is copied or lost (the old one stops working).

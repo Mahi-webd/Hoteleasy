@@ -14,6 +14,8 @@ export type PayMethod = "cash" | "card" | "mpesa";
 export interface TableCall {
   id: string; kind: TableCallKind; pay_method: PayMethod | null; note: string | null; status: TableCallStatus;
   created_at: string; acknowledged_at: string | null; done_at: string | null;
+  /** staff board only: who tapped "On my way" */
+  by_id?: string | null; by_name?: string | null;
 }
 export interface OrderLine { menu_item_id: string; name: string; price: number; qty: number; notes: string | null }
 export type TableOrderStatus = "pending" | "confirmed" | "rejected" | "cancelled";
@@ -64,19 +66,22 @@ export const useTableBoard = () => {
   });
 };
 
-/** Live updates; onNew runs when a table calls (a new call, or a table changing what it wants). */
-export const useTableCallsRealtime = (onNew?: () => void) => {
+/** Live updates; onNew runs (with the outlet) when a table calls, changes what it wants, or sends an order. */
+export interface TableAlert { outletId: string | null; tableId: string | null; what: "call" | "order" }
+export const useTableCallsRealtime = (onNew?: (a: TableAlert) => void) => {
   const { hotel } = useCurrentHotel();
   const qc = useQueryClient();
   useEffect(() => liveChannel(`tableqr-${hotel.id}`, (c) => c
     .on("postgres_changes", { event: "*", schema: "public", table: "table_calls", filter: `hotel_id=eq.${hotel.id}` }, (p) => {
       qc.invalidateQueries({ queryKey: ["tableqr"] });
       const n = p.new as Partial<TableCall> | undefined;
-      if (n?.status === "open" && (p.eventType === "INSERT" || (p.old as Partial<TableCall>)?.kind !== n.kind || (p.old as Partial<TableCall>)?.status !== "open")) onNew?.();
+      if (n?.status === "open" && (p.eventType === "INSERT" || (p.old as Partial<TableCall>)?.kind !== n.kind || (p.old as Partial<TableCall>)?.status !== "open"))
+        onNew?.({ outletId: (p.new as { outlet_id?: string }).outlet_id ?? null, tableId: (p.new as { table_id?: string }).table_id ?? null, what: "call" });
     })
     .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `hotel_id=eq.${hotel.id}` }, (p) => {
       qc.invalidateQueries({ queryKey: ["tableqr"] });
-      if (p.eventType === "INSERT") onNew?.();
+      if (p.eventType === "INSERT")
+        onNew?.({ outletId: (p.new as { outlet_id?: string }).outlet_id ?? null, tableId: (p.new as { table_id?: string }).table_id ?? null, what: "order" });
     })), [hotel.id, qc, onNew]);
 };
 
