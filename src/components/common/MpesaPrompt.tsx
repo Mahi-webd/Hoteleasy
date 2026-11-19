@@ -12,17 +12,24 @@ const FAIL: Record<string, string> = {
   expired: "The guest didn't answer in time (or the phone was off).",
   failed: "M-Pesa didn't take the payment.",
 };
+const FAIL_GUEST: Record<string, string> = {
+  cancelled: "The payment was cancelled on your phone.",
+  expired: "The prompt timed out before the PIN was entered.",
+  failed: "M-Pesa didn't take the payment.",
+};
 
 /**
  * "Send a pay prompt to this phone", then wait for the guest to enter their M-Pesa PIN.
  * The payment is posted by the server when Safaricom confirms; this only shows progress.
  */
 export const MpesaPrompt = ({
-  amount, currency, defaultPhone, create, onPaid, invalidate, compact,
+  amount, currency, defaultPhone, create, onPaid, invalidate, compact, guest,
 }: {
   amount: number; currency: string; defaultPhone?: string | null;
   create: (phone: string, amount: number) => Promise<{ id: string; token: string; phone: string; amount: number }>;
   onPaid?: (p: PromptState) => void; invalidate?: string[]; compact?: boolean;
+  /** wording for the guest paying on their own phone (instead of staff sending the prompt) */
+  guest?: boolean;
 }) => {
   const [phone, setPhone] = useState(defaultPhone ?? "");
   const { prompt, busy, send, stop, reset } = useMpesaPrompt({ onPaid, invalidate });
@@ -35,7 +42,7 @@ export const MpesaPrompt = ({
         <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0" />
         <div className="text-sm">
           <div className="font-semibold">Paid {formatMoney2(Number(prompt.paid_amount ?? prompt.amount), currency)}</div>
-          <div className="text-slate-600 dark:text-slate-300">M-Pesa receipt <span className="font-mono">{prompt.receipt}</span> · recorded automatically</div>
+          <div className="text-slate-600 dark:text-slate-300">M-Pesa receipt <span className="font-mono">{prompt.receipt}</span> · {guest ? "thank you!" : "recorded automatically"}</div>
         </div>
         <Button size="sm" variant="ghost" className="ml-auto" onClick={reset}>Done</Button>
       </div>
@@ -46,7 +53,7 @@ export const MpesaPrompt = ({
       <div className="rounded-lg border p-3 flex items-center gap-3 bg-white dark:bg-slate-900" data-testid="mpesa-waiting">
         <Loader2 className="h-6 w-6 animate-spin text-green-600 shrink-0" />
         <div className="text-sm flex-1">
-          <div className="font-semibold">{prompt.status === "confirming" ? "Paid, waiting for the receipt…" : `Waiting for ${pretty(prompt.phone)} to enter their PIN…`}</div>
+          <div className="font-semibold">{prompt.status === "confirming" ? "Paid, waiting for the receipt…" : guest ? `Check your phone (${pretty(prompt.phone)}) and enter your M-Pesa PIN` : `Waiting for ${pretty(prompt.phone)} to enter their PIN…`}</div>
           <div className="text-slate-500">Prompt for {formatMoney2(prompt.amount, currency)} sent. This usually takes under a minute.</div>
         </div>
         <Button size="sm" variant="outline" onClick={stop}>Stop waiting</Button>
@@ -58,20 +65,20 @@ export const MpesaPrompt = ({
       {prompt && (
         <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-900 p-3 flex items-start gap-2 text-sm" data-testid="mpesa-failed">
           <XCircle className="h-5 w-5 text-red-600 shrink-0" />
-          <div><div className="font-semibold">{FAIL[prompt.status] ?? "M-Pesa didn't take the payment."}</div>
+          <div><div className="font-semibold">{(guest ? FAIL_GUEST : FAIL)[prompt.status] ?? "M-Pesa didn't take the payment."}</div>
             {prompt.message && <div className="text-slate-600 dark:text-slate-300">{prompt.message}</div>}
-            <div className="text-slate-500">You can send the prompt again.</div></div>
+            <div className="text-slate-500">{guest ? "You can try again." : "You can send the prompt again."}</div></div>
         </div>
       )}
       <div className={compact ? "flex gap-2 items-end" : "grid md:grid-cols-[1fr_auto] gap-2 items-end"}>
         <div className="space-y-1 flex-1">
-          <Label htmlFor="mpesa-phone" className="text-xs">Guest's M-Pesa phone</Label>
+          <Label htmlFor="mpesa-phone" className="text-xs">{guest ? "Your M-Pesa number" : "Guest's M-Pesa phone"}</Label>
           <Input id="mpesa-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" inputMode="tel" />
         </div>
         <Button type="button" className="bg-green-600 hover:bg-green-700" disabled={busy || !phoneOk || whole < 1}
           onClick={() => send(() => create(phone, whole))}>
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Smartphone className="mr-2 h-4 w-4" />}
-          Send prompt for {formatMoney2(whole, currency)}
+          {guest ? `Pay ${formatMoney2(whole, currency)}` : `Send prompt for ${formatMoney2(whole, currency)}`}
         </Button>
       </div>
       {whole !== amount && amount > 0 && <p className="text-xs text-slate-500">M-Pesa takes whole shillings, so the prompt is rounded up.</p>}

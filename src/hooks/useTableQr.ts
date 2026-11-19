@@ -15,12 +15,27 @@ export interface TableCall {
   id: string; kind: TableCallKind; pay_method: PayMethod | null; note: string | null; status: TableCallStatus;
   created_at: string; acknowledged_at: string | null; done_at: string | null;
 }
-export interface BoardTable { id: string; name: string; seats: number; enabled: boolean; token: string | null; call: TableCall | null }
-export interface BoardOutlet { id: string; name: string; enabled: boolean; tables: BoardTable[] }
+export interface OrderLine { menu_item_id: string; name: string; price: number; qty: number; notes: string | null }
+export type TableOrderStatus = "pending" | "confirmed" | "rejected" | "cancelled";
+export interface TableOrder {
+  id: string; lines: OrderLine[]; note: string | null; total: number; status: TableOrderStatus; reason: string | null;
+  created_at: string; decided_at: string | null;
+}
+export interface TableBill {
+  number: number; items_gross: number; discount: number; service_charge: number; total: number; paid: number; due: number; unsent: boolean;
+  lines: { name: string; qty: number; amount: number; comped: boolean }[];
+}
+export interface BoardTable {
+  id: string; name: string; seats: number; enabled: boolean; token: string | null; call: TableCall | null;
+  order?: TableOrder | null; bill?: { number: number; total: number; paid: number } | null;
+}
+export interface BoardOutlet { id: string; name: string; enabled: boolean; order_enabled?: boolean; pay_enabled?: boolean; tables: BoardTable[] }
+export interface PublicMenuItem { id: string; name: string; description: string | null; price: number; available: boolean; self_order?: boolean }
 export interface PublicTable {
   off?: boolean; hotel: string; currency: string; outlet: string; table: string;
-  menu: { category: string; items: { id: string; name: string; description: string | null; price: number; available: boolean }[] }[];
+  menu: { category: string; items: PublicMenuItem[] }[];
   call: TableCall | null;
+  can_order?: boolean; can_pay?: boolean; order?: TableOrder | null; bill?: TableBill | null;
 }
 export interface TableQrReport {
   calls: number; answered: number; avg_response_s: number | null; avg_done_s: number | null; slow: number;
@@ -58,6 +73,10 @@ export const useTableCallsRealtime = (onNew?: () => void) => {
       qc.invalidateQueries({ queryKey: ["tableqr"] });
       const n = p.new as Partial<TableCall> | undefined;
       if (n?.status === "open" && (p.eventType === "INSERT" || (p.old as Partial<TableCall>)?.kind !== n.kind || (p.old as Partial<TableCall>)?.status !== "open")) onNew?.();
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "table_orders", filter: `hotel_id=eq.${hotel.id}` }, (p) => {
+      qc.invalidateQueries({ queryKey: ["tableqr"] });
+      if (p.eventType === "INSERT") onNew?.();
     })), [hotel.id, qc, onNew]);
 };
 
@@ -78,6 +97,13 @@ export const useSetOutletQr = () =>
     (a) => (a.enabled ? "Table QR switched on" : "Table QR switched off"));
 export const useSetTableQr = () =>
   useAct(({ id, enabled }: { id: string; enabled: boolean }) => rpc("table_qr_set_table", { _table_id: id, _enabled: enabled }), () => null);
+export const useDecideTableOrder = () =>
+  useAct(({ id, accept, reason }: { id: string; accept: boolean; reason?: string }) =>
+    rpc<{ pos_order_number?: number }>("table_order_decide", { _id: id, _accept: accept, _reason: reason ?? null }),
+    (a) => (a.accept ? "Order confirmed and sent to the kitchen" : "Order refused; the table sees your reason"));
+export const useSetOutletOptions = () =>
+  useAct(({ id, order, pay }: { id: string; order: boolean; pay: boolean }) => rpc("table_qr_set_outlet_options", { _outlet_id: id, _order: order, _pay: pay }),
+    () => "Saved");
 export const useResetTableLink = () =>
   useAct((id: string) => rpc("table_link_reset", { _table_id: id }), () => "New QR code made. Print it and replace the old sticker.");
 
@@ -101,6 +127,11 @@ export const usePublicTable = (token: string) =>
 export const publicTableCall = (token: string, kind: TableCallKind, note?: string, pay?: PayMethod | null) =>
   rpc<TableCall>("public_table_call", { _token: token, _kind: kind, _note: note || null, _pay_method: pay ?? null });
 export const publicTableCancel = (token: string) => rpc<TableCall | null>("public_table_cancel", { _token: token });
+export const publicTableOrder = (token: string, items: { menu_item_id: string; qty: number; notes?: string }[], note?: string) =>
+  rpc<TableOrder>("public_table_order", { _token: token, _items: items, _note: note || null });
+export const publicTableOrderCancel = (token: string) => rpc<TableOrder | null>("public_table_order_cancel", { _token: token });
+export const createTablePrompt = (token: string, phone: string) =>
+  rpc<{ id: string; token: string; phone: string; amount: number }>("public_table_mpesa", { _token: token, _phone: phone });
 
 export const fmtWait = (s: number | null | undefined) => {
   if (s == null) return "–";
